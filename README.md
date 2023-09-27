@@ -1,17 +1,19 @@
 # ARES
+## An Automated Evaluation Framework for Retrieval-Augmented Generation Systems
 
-To implement LLM-as-a-Judge for scoring your RAG system and comparing to other RAG configurations, you need two components:
+To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:
 ​
 - A human-labeled set of query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.
-- A much larger set of unlabeled query + document pairs
+- A set of few-shot examples for scoring context relevance, answer faithfulness, and/or answer relevance in your system
+- A much larger set of unlabeled query + document pairs for scoring using our downstream LLM-as-a-judge
 ​
-The LLM-as-a-Judge training pipeline is three separate steps:
+The ARES training pipeline is three separate steps:
 ​
 - Generate synthetic training data for fine-tuning LLM-as-a-Judge
 - Fine-tuning LLM-as-a-Judge with synthetic training data
 - Using fine-tuned LLM-as-a-Judge to score RAG system
 ​
-Note: Steps #1 and #2 can be skipped if you decide to go directly with zero/few-shot LLM-as-a-Judge
+Note: Steps #1 and #2 can be skipped if you decide to go directly with zero/few-shot LLM-as-a-Judge for ARES
 ​
 ### Installation
 ​
@@ -30,10 +32,10 @@ export OPENAI_API_KEY=<your key here>
 ​
 ## Step #1: Synthetic Data Generation
 ​
-To generate synthetic training data, use `LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
+To generate synthetic training data, use `Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
 ​
 ````
-python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
+python Generate_Synthetic_Queries_and_Answers.py \
        --document_filepath <document_filepath> \
        --few_shot_prompt_filename <few_shot_prompt_filename> \
        --answer_gen_few_shot_prompt_filename <answer_gen_few_shot_prompt_filename> \
@@ -45,10 +47,10 @@ Note: For examples files for `document_filepath`, `few_shot_prompt_filename`, an
 ​
 ## Step #2: Fine-tune LLM-as-a-Judge
 ​
-With the generated file under `synthetic_queries_filename` from the previous step, use `LLM-as-a-Judge_Adaptation/General_Binary_Classifier.py` to train your LLM-as-a-Judge with the following command:
+With the generated file under `synthetic_queries_filename` from the previous step, use `General_Binary_Classifier.py` to train your LLM-as-a-Judge with the following command:
 ​
 ````
-python LLM-as-a-Judge_Adaptation/General_Binary_Classifier.py \
+python General_Binary_Classifier.py \
        --classification_datasets <classification_datasets as list> \
        --test_set_selection <test_set_selection> \
        --label_column Context_Relevance_Label \
@@ -57,12 +59,12 @@ python LLM-as-a-Judge_Adaptation/General_Binary_Classifier.py \
        --learning_rate_choices 5e-6
 ````
 ​
-## Step #3: Score RAG System with LLM-as-a-Judge
+## Step #3: Score RAG System with ARES
 ​
-With the outputted model checkpoint from Step #2, you can now score your RAG system using LLM-as-a-Judge with following command:
+With the outputted model checkpoint from Step #2, you can now score your RAG system using ARES with following command:
 ​
 ````
-python LLM-as-a-Judge_Adaptation/LLMJudge_RAG_Compared_Scoring.py \
+python LLMJudge_RAG_Compared_Scoring.py \
        --alpha 0.05 \
        --num_trials 1000 \
        --evaluation_datasets <evaluation_datasets as list> \
