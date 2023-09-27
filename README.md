@@ -1,5 +1,4 @@
-# ARES
-## An Automated Evaluation Framework for Retrieval-Augmented Generation Systems
+## ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems
 
 To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:
 ​
