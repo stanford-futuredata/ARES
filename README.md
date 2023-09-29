@@ -5,12 +5,14 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 - A human-labeled set of query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.
 - A set of few-shot examples for scoring context relevance, answer faithfulness, and/or answer relevance in your system
 - A much larger set of unlabeled query + document pairs for scoring using our downstream LLM-as-a-judge
+
 ​
 The ARES training pipeline is three separate steps:
 ​
 - Generate synthetic training data for fine-tuning LLM-as-a-Judge
 - Fine-tuning LLM-as-a-Judge with synthetic training data
 - Using fine-tuned LLM-as-a-Judge to score RAG system
+
 ​
 Note: Steps #1 and #2 can be skipped if you decide to go directly with zero/few-shot LLM-as-a-Judge for ARES
 ​
@@ -75,4 +77,5 @@ python LLMJudge_RAG_Compared_Scoring.py \
 ​
 If you want to use GPT scoring, switch `GPT_scoring` to `True`. You can leave the `checkpoints` list as blank and specify the GPT model with the tag `--gpt_model <model selected>`.
 ​
+
 Note: For examples files for `evaluation_datasets` and `gold_label_path`, please see `example_files`.
