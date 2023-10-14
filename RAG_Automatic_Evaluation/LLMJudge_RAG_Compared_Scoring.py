@@ -39,7 +39,7 @@ from Evaluation_Functions import few_shot_answer_faithfulness_scoring, few_shot_
 
 #############################################################
 
-random_state = 42
+random_state = 44
 
 np.random.seed(random_state)
 random.seed(random_state)
@@ -71,8 +71,6 @@ class CustomBERTModel(nn.Module):
 
           elif model_choice in ['mosaicml/mpt-1b-redpajama-200b']:
 
-            #model_encoding = AutoModelForCausalLM.from_pretrained("mosaicml/mpt-1b-redpajama-200b", trust_remote_code=True, 
-            #                                                      torch_dtype=torch.bfloat16) #attn_impl='triton', 
             model_encoding = MptForSequenceClassification.from_pretrained("mosaicml/mpt-1b-redpajama-200b", trust_remote_code=True)
             embedding_size = 2048
             self.encoderModel = model_encoding
@@ -80,7 +78,6 @@ class CustomBERTModel(nn.Module):
           elif model_choice in ["google/t5-large-lm-adapt", "google/t5-xl-lm-adapt"]:
 
             model_encoding = AutoModelForSequenceClassification.from_pretrained(model_choice)
-            #model_encoding = AutoModel.from_pretrained(model_choice, torch_dtype=torch.bfloat16)
             embedding_size = 1024
             self.encoderModel = model_encoding#.transformer
 
@@ -175,7 +172,8 @@ def prepare_dataset_for_evaluation(dataframe, label_column: str, text_column: st
 def calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials):
 
     n_max = Y_labeled.shape[0]
-    ns = np.linspace(100,n_max,20).astype(int)
+    #ns = np.linspace(100,n_max,20).astype(int)
+    ns = np.linspace(0,n_max,20).astype(int)
 
     # Imputed-only estimate
     imputed_estimate = (Yhat_labeled.sum() + Yhat_unlabeled.sum())/(Yhat_labeled.shape[0] + Yhat_unlabeled.shape[0])
@@ -193,11 +191,22 @@ def calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials):
             output = pp_mean_iid_asymptotic(y,f,Yhat_unlabeled,alpha)
             ci[j,i,:] = output
             # Classical interval
-            ci_classical[j,i,:] = binomial_iid(n,alpha,y.mean())
- 
-    ci_imputed = binomial_iid(Yhat_unlabeled.shape[0], alpha, imputed_estimate)
+            try:
+                ci_classical[j,i,:] = binomial_iid(n,alpha,y.mean())
+            except:
+                avg_ci_classical = None
+
     avg_ci = ci.mean(axis=0)[-1]
-    avg_ci_classical = ci_classical.mean(axis=0)[-1]
+
+    try:
+        ci_imputed = binomial_iid(Yhat_unlabeled.shape[0], alpha, imputed_estimate)
+    except:
+        ci_imputed = None
+    try:
+        avg_ci_classical = ci_classical.mean(axis=0)[-1]
+    except:
+        avg_ci_classical = None
+    
     return avg_ci, avg_ci_classical, ci_imputed
 
 ######################################################################
@@ -212,7 +221,7 @@ def calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials):
 
 if __name__ == '__main__':
 
-    """ parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
     parser.add_argument("--alpha", type=float, required=True)
     parser.add_argument("--num_trials", type=int, required=True)
@@ -228,15 +237,21 @@ if __name__ == '__main__':
     parser.add_argument("--Y_labeled_count", type=list, default=300, required=False)
     parser.add_argument("--use_pseudo_human_labels", type=bool, default=False, required=False)
     parser.add_argument("--gold_label_path", type=str, required=False)
+    parser.add_argument("--swap_human_labels_for_gpt4_labels", type=str, required=False)
 
-    args = parser.parse_rgs()
+    args = parser.parse_args()
 
+    ### Instructions
+
+    # Settings for Human-labeled gold set for PPI
     alpha = args.alpha
     num_trials = args.num_trials
     evaluation_datasets = args.evaluation_datasets
     checkpoints = args.checkpoints
     labels = args.labels
+    correct_ranking = [i for i in range(0, len(evaluation_datasets))]
     
+    # Settings for zero/few-shot GPT scoring
     GPT_scoring = args.GPT_scoring
     gpt_model = args.gpt_model
     perform_zero_shot = args.perform_zero_shot
@@ -244,58 +259,11 @@ if __name__ == '__main__':
 
     Y_labeled_count = args.Y_labeled_count
     use_pseudo_human_labels = args.use_pseudo_human_labels
-    gold_label_path = args.gold_label_path """
+    gold_label_path = args.gold_label_path
+    swap_human_labels_for_gpt4_labels = args.swap_human_labels_for_gpt4_labels
 
-    ###############
-
-    ### Instructions
-
-    # Settings for Human-labeled gold set for PPI
-    alpha = 0.05 #0.05
-    num_trials = 1000
-    Y_labeled_count = 300
-    #evaluation_datasets = ['../datasets_v2/nq/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
-    #evaluation_datasets = ['../datasets_v2/nq/ratio_0.5_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.525_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.55_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.575_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.6_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.625_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.65_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.675_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv']
-    #evaluation_datasets = ['../datasets_v2/hotpotqa/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
-    #evaluation_datasets = ['../datasets_v2/wow/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
-    #evaluation_datasets = ['../datasets_v2/fever/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
-    #evaluation_datasets = ['../datasets_v2/multirc/ratio_0.7_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.725_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.75_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.775_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.8_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.825_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.85_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.875_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.9_validation_with_negatives.tsv']
-    evaluation_datasets = ['../datasets_v2/record/ratio_0.7_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.725_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.75_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.775_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.8_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.825_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.85_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.875_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.9_validation_with_negatives.tsv']
-    correct_ranking = [i for i in range(0, len(evaluation_datasets))]
-    use_pseudo_human_labels = True
-
-    # Settings for fine-tuned LLM-as-a-Judge scoring
-    #checkpoints = ["",""]
-    #checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-nq_synthetic_queries_v4.tsv/5e-06_0_False_1True_False_Context_Relevance_Label.pt",
-    #               "../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-nq_synthetic_queries_v4.1.tsv/5e-06_1_True_Answer_Faithfulness_Label_nq_reformatted_validation_with_negatives_1867825.pt"]
-    #checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-hotpotqa_synthetic_queries_v1.tsv/5e-06_0_False_1True_False.pt",
-    #               "../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-hotpotqa_synthetic_queries_v1.tsv/5e-06_0_False_1True_False_Answer_Faithfulness_Label.pt"]
-    #checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-hotpotqa_synthetic_queries_v2.tsv/5e-06_0_False_1True_False_Context_Relevance_Label.pt",
-    #               ""]
-    #checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-wow_synthetic_queries_v1.tsv/5e-06_0_False_1True_False_Context_Relevance_Label.pt",
-    #               "../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-wow_synthetic_queries_v1.1.tsv/5e-06_1_True_Answer_Faithfulness_Label_wow_reformatted_validation_with_negatives_1867825.pt"]
-    #checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-fever_synthetic_queries_v3.1.tsv/5e-06_0_False_1True_False_Context_Relevance_Label.pt",
-    #               "../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-fever_synthetic_queries_v3.2.tsv/5e-06_1_True_Answer_Faithfulness_Label_fever_reformatted_validation_with_negatives_1867825.pt"]
-    #checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-multirc_synthetic_queries_v1.tsv/5e-06_0_False_1True_False_Context_Relevance_Label.pt",
-    #               "../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-multirc_synthetic_queries_v1.tsv/5e-06_1_True_Answer_Faithfulness_Label.pt"]
-    checkpoints = ["../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-record_synthetic_queries_v1.tsv/5e-06_1_True_Context_Relevance_Label_record_validation_with_negatives_1867825.pt",
-                   "../LLM-as-a-Judge_Adaptation/checkpoints/microsoft-deberta-v3-large/datasets-record_synthetic_queries_v1.tsv/5e-06_1_True_Answer_Faithfulness_Label_record_validation_with_negatives_1867825.pt"]
-
-    labels = ['Context_Relevance_Label', 'Answer_Faithfulness_Label']
-    #labels = ['Answer_Faithfulness_Label']
     assigned_batch_size = 1
     number_of_labels = 2
-
-    # Settings for zero/few-shot GPT scoring
-    GPT_scoring = False
-    gpt_model = "gpt-3.5-turbo-16k"
-    perform_zero_shot = False
-    #few_shot_examples_filepath = "../datasets_v2/HotPotQA_Few_shot_prompt_v1.tsv"
-    #few_shot_examples_filepath = "../datasets_v2/WoW_Few_shot_prompt_v1.tsv"
-    #few_shot_examples_filepath = "../datasets_v2/FEVER_Few_shot_prompt_v1.tsv"
-    #few_shot_examples_filepath = "../datasets_v2/NQ_Few_shot_prompt_v1.tsv"
-    #few_shot_examples_filepath = "../datasets_v2/MultiRC_Few_shot_prompt_v1.tsv"
-    few_shot_examples_filepath = "../datasets_v2/ReCoRD_Few_shot_prompt_v1.tsv"
 
     ############################################################
 
@@ -349,17 +317,33 @@ if __name__ == '__main__':
         context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided question. "
         context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is sufficient and "[[No]]" if the document provided is not sufficient. '
         context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-
-    answer_faithfulness_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
+    
+    if "wow" in evaluation_datasets[0].lower():
+        answer_faithfulness_system_prompt = "Given the following dialogue, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
+    if "fever" in evaluation_datasets[0].lower():
+        answer_faithfulness_system_prompt = "Given the following statement, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
+    else:
+        answer_faithfulness_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
     answer_faithfulness_system_prompt += "The answer must not offer new information beyond the context provided in the document. "
     answer_faithfulness_system_prompt += "The answer also must not contradict information provided in the document. "
     answer_faithfulness_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is faithful to the document and "[[No]]" if the answer is not faithful to the document. '
     answer_faithfulness_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
 
-    answer_relevance_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided question. "
-    answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information from the document for answering the question. "
-    answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given question and "[[No]]" if the answer is not relevant for the given question. '
-    answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+    if "wow" in evaluation_datasets[0].lower():
+        answer_relevance_system_prompt = "Given the following dialogue, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided dialogue. "
+        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the dialogue and provides only correct information from the document for responding to the dialogue. "
+        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given dialogue and "[[No]]" if the answer is not relevant for the given dialogue. '
+        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+    if "fever" in evaluation_datasets[0].lower():
+        answer_relevance_system_prompt = "Given the following statement, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided statement. "
+        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the statement and provides only correct information from the document for answering the statement. "
+        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given statement and "[[No]]" if the answer is not relevant for the given statement. '
+        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+    else:
+        answer_relevance_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided question. "
+        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information from the document for answering the question. "
+        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given question and "[[No]]" if the answer is not relevant for the given question. '
+        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
 
     ####################################################################
 
@@ -407,8 +391,6 @@ if __name__ == '__main__':
                 model.load_state_dict(torch.load(checkpoint))
 
             ############################################################
-
-            #print("Beginning Evaluation")
 
             metric = load_metric("accuracy")
 
@@ -470,14 +452,6 @@ if __name__ == '__main__':
             ############################################################
 
             results = metric.compute(references=total_references, predictions=total_predictions)
-            #print("Validation Accuracy for " + test_set_selection + " - " + label_column + ": " + str(results['accuracy']))
-            #print("-------------------------------------------------------")
-            #print("Positive Reference Label Count: " + str(total_references.tolist().count(1)))
-            #print("Negative Reference Label Count: " + str(total_references.tolist().count(0)))
-            #print("-------------------------------------------------------")
-            #print("Positive Prediction Label Count: " + str(total_predictions.tolist().count(1)))
-            #print("Negative Prediction Label Count: " + str(total_predictions.tolist().count(0)))
-            #print("-------------------------------------------------------")
 
             ########################################################################
 
@@ -496,28 +470,39 @@ if __name__ == '__main__':
                 Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t")
                 Yhat_unlabeled_dataset = test_set
 
+            if swap_human_labels_for_gpt4_labels:
+                if "Context_Relevance_Label" == label_column:
+                    tqdm.pandas(desc="Generating context relevance labels using GPT...", total=Y_labeled_dataset.shape[0])
+                    Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], gpt_model, few_shot_examples), axis=1)
+                elif "Answer_Faithfulness_Label" == label_column:
+                    tqdm.pandas(desc="Generating answer faithfulness labels using GPT...", total=Y_labeled_dataset.shape[0])
+                    Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
+                elif "Answer_Relevance_Label" == label_column:
+                    tqdm.pandas(desc="Generating answer relevance labels using GPT...", total=Y_labeled_dataset.shape[0])
+                    Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
+                else:
+                    print("Error! Could not generate GPT labels for PPI.")
+                    assert False 
+                
             Y_labeled = Y_labeled_dataset[label_column].values.astype(int)
             Yhat_labeled = Y_labeled_dataset[prediction_column].values.astype(int)
             Yhat_unlabeled = Yhat_unlabeled_dataset[prediction_column].values.astype(int)
             
-            #print("Y_labeled, Yhat_labeled, Yhat_unlabeled for " + test_set_selection + " - " + label_column)
-            #print(len(Y_labeled))
-            #print(len(Yhat_labeled))
-            #print(len(Yhat_unlabeled))
-            #print("Positive/Negative Ratio for " + test_set_selection + " - " + label_column)
-            #print(Yhat_unlabeled_dataset[label_column].tolist().count(1))
-            #print(Yhat_unlabeled_dataset[label_column].tolist().count(0))
-            #print(Yhat_unlabeled_dataset[label_column].tolist().count(1) / len(Yhat_unlabeled_dataset))
-            #print(Yhat_unlabeled_dataset[label_column].tolist().count(0) / len(Yhat_unlabeled_dataset))
+            print("Y_labeled, Yhat_labeled, Yhat_unlabeled for " + test_set_selection + " - " + label_column)
+            print(len(Y_labeled))
+            print(len(Yhat_labeled))
+            print(len(Yhat_unlabeled))
+            print(Y_labeled_dataset[label_column].tolist().count(1))
+            print(Y_labeled_dataset[label_column].tolist().count(0))
+            print(Y_labeled_dataset[prediction_column].tolist().count(1))
+            print(Y_labeled_dataset[prediction_column].tolist().count(0))
+            print(Yhat_unlabeled_dataset[prediction_column].tolist().count(1))
+            print(Yhat_unlabeled_dataset[prediction_column].tolist().count(0))
 
             ######################################################################
 
             avg_ci, avg_ci_classical, ci_imputed = calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials)
             LLM_judge_prediction = sum(avg_ci) / len(avg_ci)
-            #print("PPI Confidence Interval for " + test_set_selection + " - " + label_column)
-            #print(avg_ci)
-            #print(LLM_judge_prediction)
-            #print("--------------------------------------------------\n")
 
             LLM_judge_ratio_predictions.append(LLM_judge_prediction)
             validation_set_lengths.append(len(test_set))
@@ -534,15 +519,15 @@ if __name__ == '__main__':
 
         print("--------------------------------------------------")
         print(label_column + " Scoring")
-        print("Correct Ranking v. LLM-as-a-Judge Ranking")
+        print("Correct Ranking v. ARES Ranking")
         print(correct_ranking)
         print(sorted_indices)
         print("Kendall's Tau: " + str(tau))
         print("P-Value: " + str(p_value))
         print("Avg. PPIs: " + str(LLM_judge_ratio_predictions))
         print("PPI Confidence Intervals: " + str(ppi_confidence_intervals))
-        print("Validation Set Lengths: " + str(validation_set_lengths))
-        print("Validation Set Ratio: " + str(validation_set_ratios))
+        print("Evaluation Set Lengths: " + str(validation_set_lengths))
+        print("Evaluation Set Ratio: " + str(validation_set_ratios))
         print("Test Accuracy Scores: " + str(accuracy_scores))
         print("Y-Labeled Example Count: " + str(len(Y_labeled)))
         print("--------------------------------------------------\n")

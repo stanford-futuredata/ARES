@@ -42,36 +42,24 @@ def clean_document(document: str):
 
 if __name__ == '__main__':
 
-    #parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    #parser.add_argument("--document_filepath", type=str, required=True)
-    #parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
-    #parser.add_argument("--answer_gen_few_shot_prompt_filename", type=str, required=True)
-    #parser.add_argument("--synthetic_queries_filename", type=str, required=True)
-    #parser.add_argument("--flan_approach", type=bool, default=True, required=False)
-    #parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
+    parser.add_argument("--document_filepath", type=str, required=True)
+    parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
+    parser.add_argument("--answer_gen_few_shot_prompt_filename", type=str, required=True)
+    parser.add_argument("--synthetic_queries_filename", type=str, required=True)
+    parser.add_argument("--flan_approach", type=bool, default=True, required=False)
+    parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
 
-    #args = parser.parse_args()
+    args = parser.parse_args()
 
     ### Instructions
 
-    #document_filepath = args.document_filepath
-    #few_shot_prompt_filename = args.few_shot_prompt_filename
-    #answer_gen_few_shot_prompt_filename = args.answer_gen_few_shot_prompt_filename
-    #synthetic_queries_filename = args.synthetic_queries_filename
-    #flan_approach = args.flan_approach
-    #few_shot_prompt_filename = args.few_shot_prompt_filename
-
-
-    # Configuration choice
-    #document_filepath = "../../datasets/docs_aws.json"
-    #document_filepath = "../datasets_v2/docs_aws_v2_smart_chunked.jsonl"
-    document_filepath = "../datasets_v2/nq_reformatted_train.tsv"
-    #document_filepath = "../datasets_v2/hotpotqa_reformatted_train.tsv"
-    #document_filepath = "../datasets_v2/fever_reformatted_train.tsv"
-    #document_filepath = "../datasets_v2/wow_reformatted_train.tsv"
-    #document_filepath = "../datasets_v2/multirc/multirc_train.tsv"
-    #document_filepath = "../datasets_v2/record/record_train.tsv"
+    document_filepath = args.document_filepath
+    few_shot_prompt_filename = args.few_shot_prompt_filename
+    answer_gen_few_shot_prompt_filename = args.answer_gen_few_shot_prompt_filename
+    synthetic_queries_filename = args.synthetic_queries_filename
+    flan_approach = args.flan_approach
 
     for_fever_dataset = False
     if "fever" in document_filepath.lower():
@@ -98,29 +86,6 @@ if __name__ == '__main__':
     flan_approach = True
     generate_contradictory_answers_with_flan = True
 
-    few_shot_prompt_filename = "../datasets_v2/NQ_Few_shot_prompt_v1.tsv"
-    #few_shot_prompt_filename = "../datasets_v2/nq_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #few_shot_prompt_filename = "../datasets_v2/hotpotqa_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #few_shot_prompt_filename = "../datasets_v2/fever_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #few_shot_prompt_filename = "../datasets_v2/wow_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #few_shot_prompt_filename = "../datasets_v2/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #few_shot_prompt_filename = "../datasets_v2/record_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-
-    #answer_gen_few_shot_prompt_filename = "../datasets_v2/FLAN_XXL_T5_Prompts_for_Answer_Generation_DocQA.tsv"
-    #answer_gen_few_shot_prompt_filename = "../datasets_v2/FLAN_XXL_T5_Prompts_for_Answer_Generation_NQ.tsv"
-    #answer_gen_few_shot_prompt_filename = "../datasets_v2/fever_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #answer_gen_few_shot_prompt_filename = "../datasets_v2/wow_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #answer_gen_few_shot_prompt_filename = "../datasets_v2/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-    #answer_gen_few_shot_prompt_filename = "../datasets_v2/record_few_shot_prompt_for_synthetic_query_generation_v1.tsv"
-
-    #synthetic_queries_filename = "../../datasets/synthetic_queries_v16.tsv"
-    synthetic_queries_filename = "../../datasets/nq_synthetic_queries_v2_testing_contradictory_questions.tsv"
-    #synthetic_queries_filename = "../../datasets/hotpotqa_synthetic_queries_v2.tsv"
-    #synthetic_queries_filename = "../../datasets/fever_synthetic_queries_v3.tsv"
-    #synthetic_queries_filename = "../../datasets/wow_synthetic_queries_v2.tsv"
-    #synthetic_queries_filename = "../../datasets/multirc_synthetic_queries_v1.tsv"
-    #synthetic_queries_filename = "../../datasets/record_synthetic_queries_v1.tsv"
-
     training_filename = synthetic_queries_filename.replace(".tsv", "_train.tsv")
     test_filename = synthetic_queries_filename.replace(".tsv", "_test.tsv")
 
@@ -136,15 +101,11 @@ if __name__ == '__main__':
 
     synthetic_query_prompt = "You are an expert question-answering system. You must create a question for the provided document. The question must be answerable within the context of the document.\n\n"
 
-    #instruction_model = "mosaicml/mpt-30b-instruct" #"mosaicml/mpt-1b-redpajama-200b-dolly" #"mosaicml/mpt-7b-8k-instruct" #"mosaicml/mpt-30b-instruct"
-    instruction_model = "microsoft/deberta-v3-large" #"microsoft/deberta-v3-large"
-    checkpoint_path = "microsoft-deberta-v3-large_sequence_classification_checkpoint_v2.0"
-    #checkpoint_path = "mosaicml-mpt-7b-instruct_generation_checkpoint_v2.0"
-    device = "cuda:0" #"cuda:0"
+    instruction_model = "microsoft/deberta-v3-large"
+    device = "cuda:0"
     use_eval_set = True
 
     print("Model selected: " + instruction_model)
-    print("Model run checkpoint: " + checkpoint_path)
     print("Document File: " + document_filepath)
     print("Synthetic File Path: " + synthetic_queries_filename)
     print("number_of_negatives_added_ratio: " + str(number_of_negatives_added_ratio))
@@ -198,7 +159,7 @@ if __name__ == '__main__':
         documents['document'] = documents['document'].str.strip()
         if "nq" in document_filepath:
             documents = documents[documents["document"].str.len() > 100]
-        documents = documents.sample(n=100, random_state=43)
+        documents = documents.sample(n=10000, random_state=43)
 
     #documents = documents[:10]
     print("documents")
@@ -214,7 +175,7 @@ if __name__ == '__main__':
     length_of_fewshot_prompt = len(few_shot_prompt)
     few_shot_examples = ""
     for row in range(len(few_shot_prompt)):
-        few_shot_examples += "Example " + str(row + 1) +":\n"
+        few_shot_examples += "Example " + str(row + 1) + ":\n"
         few_shot_examples += "Document: " + clean_document(few_shot_prompt.iloc[row]['Document']) + "\n"
         if for_fever_dataset:
             few_shot_examples += "Statement: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
@@ -222,9 +183,6 @@ if __name__ == '__main__':
             few_shot_examples += "Dialogue: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
         else:
             few_shot_examples += "Question: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
-        #synthetic_query_prompt += "Example " + str(row + 1) +":\n"
-        #synthetic_query_prompt += "Document: " + few_shot_prompt.iloc[row]['Document'] + "\n"
-        #synthetic_query_prompt += "Question: " + few_shot_prompt.iloc[row]['Question'] + "\n\n"
 
     print("Fewshot Prompt")
     print(few_shot_examples)
@@ -306,18 +264,6 @@ if __name__ == '__main__':
     synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
     print(len(synth_queries))
 
-    #synth_queries = synth_queries[synth_queries["Context_Relevance_Label"].notna()]
-    #synth_queries = synth_queries[synth_queries["generated_answer"].notna()]
-    #synth_queries = synth_queries[synth_queries["negative_sample_retrieved"].isna()]
-    #synth_queries = synth_queries.drop_duplicates(subset=['synthetic_query', 'document'])
-
-    #synth_queries = synth_queries[:10]
-    #synth_queries = synth_queries.drop('__index_level_0__', axis=1)
-
-    print("synth_queries")
-    print(len(synth_queries))
-    print(synth_queries.head())
-
     if regenerate_answers:
         print("Beginning answer generation!")
         
@@ -378,7 +324,7 @@ if __name__ == '__main__':
     print(set(synth_queries['Answer_Relevance_Label'].tolist()))
     print(synth_queries.head())
 
-    print("Yes and No Counts")
+    print("Positive and Negative Counts")
     print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "Yes"]))
     print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "No"]))
     print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "Yes"]))
@@ -388,18 +334,7 @@ if __name__ == '__main__':
 
     synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
     print("Completed synthetic generation!")
+    print("Saved synthetic queries file to: " + synthetic_queries_filename)
 
     ######################################################################
 
-    """ print("Generating train-test split...")
-    train_df, test_df = train_test_split(synth_queries, test_size=0.1, random_state=42)
-    train_df.to_csv(training_filename, index=False, sep="\t")
-    test_df.to_csv(test_filename, index=False, sep="\t")
-    print("Saved train dataset to: " + training_filename)
-    print("Saved test dataset to: " + test_filename)
-
-    if not use_eval_set:
-        test_df = None
-    #instruction_finetuned_model = instruction_finetune(checkpoint_path, instruction_model, device, train_df, test_df)
-    #instruction_finetuned_model = instruction_finetune_v2(checkpoint_path, instruction_model, device, train_df)
-    print("Completed model training and save!") """

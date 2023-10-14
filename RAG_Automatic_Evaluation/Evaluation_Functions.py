@@ -37,12 +37,12 @@ def few_shot_context_relevance_scoring(system_prompt: str, query: str, document:
             user_prompt = ""
             if few_shot_examples is not None:
                 for row in range(len(few_shot_examples)):
-                    user_prompt += "Statement: " + few_shot_examples.iloc[row]['Query'] + "\n"
+                    user_prompt += "Question: " + few_shot_examples.iloc[row]['Query'] + "\n"
                     user_prompt += "Document: " + few_shot_examples.iloc[row]['Document'] + "\n"
                     current_label = few_shot_examples.iloc[row]['Context_Relevance_Label']
                     user_prompt += "Label: " + current_label + "\n\n"
             
-            user_prompt += "Statement: " + query + "\n"
+            user_prompt += "Question: " + query + "\n"
             user_prompt += "Document: " + document + "\n"
             user_prompt += "Label: "
             
@@ -62,13 +62,6 @@ def few_shot_context_relevance_scoring(system_prompt: str, query: str, document:
                             )    
             final_response = response["choices"][0]["message"]["content"]
 
-            #print("Question")
-            #print(synth_question)
-            #print("Document")
-            #print(document)
-            #print("Final Response")
-            #print(final_response)
-            #print('--------------------------------------------')
 
             if "[[Yes]]" in final_response:
                 return 1
@@ -118,14 +111,6 @@ def few_shot_answer_faithfulness_scoring(system_prompt, query: str, document: st
                             )    
             final_response = response["choices"][0]["message"]["content"]
 
-            #print("Question")
-            #print(synth_question)
-            #print("Document")
-            #print(document)
-            #print("Final Response")
-            #print(final_response)
-            #print('--------------------------------------------')
-
             if "[[Yes]]" in final_response:
                 return 1
             elif "[[No]]" in final_response:
@@ -174,13 +159,6 @@ def few_shot_answer_relevance_scoring(system_prompt: str, query: str, document: 
                             )    
             final_response = response["choices"][0]["message"]["content"]
 
-            #print("Question")
-            #print(synth_question)
-            #print("Document")
-            #print(document)
-            #print("Final Response")
-            #print(final_response)
-            #print('--------------------------------------------')
 
             if "[[Yes]]" in final_response:
                 return 1
@@ -192,3 +170,6 @@ def few_shot_answer_relevance_scoring(system_prompt: str, query: str, document: 
         except:
             print("Error with querying OpenAI! Trying again...")
             time.sleep(60)
+
+
+            
