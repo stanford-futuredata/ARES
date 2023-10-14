@@ -60,9 +60,6 @@ def combine_query_document(query: str, document: str, answer=None):
 def format_text_for_fine_tuning_content_relevance_sequence_classification(question: str, document: str):
     instruction = "You are an expert judge for evaluating question answering systems. "
     instruction += "Given the following question and document, you must analyze the provided document and determine whether it is sufficient for answering the question. \n\n"
-    #instruction += "In your evaluation, you should consider the content of the document and how it relates to the provided question. "
-    #instruction += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is sufficient and "[[No]]" if the document provided is not sufficient. '
-    #instruction += 'Do not provide any additional explanation for your decision. Solely output "[[Yes]]" or "[[No]]"\n\n'
 
     cleaned_document = re.sub(r'\n+', '\n', document.replace("\r"," ").replace("\t"," ")).strip()
     cleaned_document = cleaned_document.replace("=", " ").replace("-", " ")
@@ -127,7 +124,6 @@ class CustomBERTModel(nn.Module):
           elif model_choice in ["google/t5-large-lm-adapt", "google/t5-xl-lm-adapt"]:
 
             model_encoding = AutoModelForSequenceClassification.from_pretrained(model_choice)
-            #model_encoding = AutoModel.from_pretrained(model_choice, torch_dtype=torch.bfloat16)
             embedding_size = 1024
             self.encoderModel = model_encoding#.transformer
 
@@ -179,88 +175,41 @@ class CustomBERTModel(nn.Module):
 
 if __name__ == '__main__':
 
-    #parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    #parser.add_argument("--classification_datasets", type=list, required=True)
-    #parser.add_argument("--test_set_selection", type=str, required=True)
-    #parser.add_argument("--label_column", type=str, required=True)
-    #parser.add_argument("--num_epochs", type=int, required=True)
-    #parser.add_argument("--patience_value", type=int, required=True)
-    #parser.add_argument("--learning_rate_choices", type=list, required=True)
+    parser.add_argument("--classification_datasets", type=list, required=True)
+    parser.add_argument("--test_set_selection", type=str, required=True)
+    parser.add_argument("--label_column", type=str, required=True)
+    parser.add_argument("--num_epochs", type=int, required=True)
+    parser.add_argument("--patience_value", type=int, required=True)
+    parser.add_argument("--learning_rate_choices", type=list, required=True)
 
-    #args = parser.parse_args()
+    args = parser.parse_args()
 
-    #classification_datasets = args.classification_datasets
-    #test_set_selection = args.test_set_selection
-    #label_column = args.label_column
-    #num_epochs = args.num_epochs
-    #patience_value = args.patience_value
-    #learning_rate_choices = args.learning_rate_choices
+    classification_datasets = args.classification_datasets
+    test_set_selection = args.test_set_selection
+    label_column = args.label_column
+    num_epochs = args.num_epochs
+    patience_value = args.patience_value
+    learning_rate_choices = args.learning_rate_choices
 
     ### Instructions
 
     device = "cuda:0"
     device = torch.device(device)
 
-    #classification_datasets = ['../../datasets/synthetic_queries_v15.tsv']
-    #classification_datasets = ["../datasets_v2/nq_reformatted_train_with_negatives.tsv"]
-    #classification_datasets = ['../../datasets/nq_synthetic_queries_v2.tsv']
-    #classification_datasets = ["../../datasets/hotpotqa_synthetic_queries_v1.tsv"]
-    #classification_datasets = ["../../datasets/nq_synthetic_queries_v4.1.tsv"]
-    #classification_datasets = ["../../datasets/hotpotqa_synthetic_queries_v1.tsv"]
-    #classification_datasets = ["../../datasets/fever_synthetic_queries_v3.2.tsv"]
-    classification_datasets = ["../../datasets/wow_synthetic_queries_v1.1.tsv"]
-    #classification_datasets = ["../../datasets/wow_synthetic_queries_v2.tsv"]
-    #classification_datasets = ["../../datasets/multirc_synthetic_queries_v1.tsv"]
-    #classification_datasets = ["../../datasets/record_synthetic_queries_v1.tsv"]
-
-    #test_set_selection = "../datasets_v2/LLM_Judge_Test_Set_Human_Annotations.tsv"
-    #test_set_selection = "../datasets_v2/LLM_Judge_Test_Set_Human_Annotations.tsv"
-    #test_set_selection = "../datasets_v2/nq_reformatted_validation_with_negatives.tsv"
-    #test_set_selection = "../datasets_v2/hotpotqa_reformatted_validation_with_negatives.tsv"
-    #test_set_selection = "../datasets_v2/fever_reformatted_validation_with_negatives.tsv"
-    test_set_selection = "../datasets_v2/wow_reformatted_validation_with_negatives.tsv"
-    #test_set_selection = "../datasets_v2/multirc/multirc_validation_with_negatives.tsv"
-    #test_set_selection = "../datasets_v2/record/record_validation_with_negatives.tsv"
-
-    label_column = "Context_Relevance_Label" #"Context_Relevance_Label" #"Answer_Faithfulness_Label"
-    ratio_sampled = 0.05
-
-    num_epochs = 20 #1000 #10
-    patience_value = 1 #10 #3
-    number_of_runs = 1 #1 #5
-
     validation_set_scoring = True
     assigned_batch_size = 1
     gradient_accumulation_multiplier = 32
 
+    number_of_runs = 1
     num_warmup_steps = 100
-
-    learning_rate_choices = [5e-6] #[1e-4, 2e-4, 1e-5, 2e-5, 5e-5, 5e-6]
 
     ############################################################
 
     model_choice = "microsoft/deberta-v3-large"
     max_token_length = 2048
     tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
-
-    #model_choice = "microsoft/deberta-v2-xxlarge"
-    #max_token_length = 2048
-    #tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
-
-    #model_choice = "google/t5-large-lm-adapt" #["google/t5-large-lm-adapt", "google/t5-xl-lm-adapt"]
-    #max_token_length = 2048
-    #tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
-
-    #model_choice = "mosaicml/mpt-1b-redpajama-200b" #"mosaicml/mpt-7b" #"mosaicml/mpt-1b-redpajama-200b" #"mosaicml/mpt-7b-instruct"
-    #max_token_length = 2048
-    #tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length, padding="max_length", truncation=True)
-    #tokenizer.pad_token = tokenizer.eos_token
-
-    #model_choice = "mosaicml/mpt-7b" #"mosaicml/mpt-1b-redpajama-200b" #"mosaicml/mpt-7b-instruct"
-    #max_token_length = 2048
-    #tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length, padding="max_length", truncation=True)
-    #tokenizer.pad_token = tokenizer.eos_token
 
     ############################################################
 
@@ -305,22 +254,10 @@ if __name__ == '__main__':
         for dataset in classification_datasets:
             
             from random import randrange
-            random_int = randrange(10000000)
+            random_int = randrange(1000000)
 
             checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
             checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(test_set_selection.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
-
-            print("GPU Memory available at the start")
-            print(get_gpu_memory())
-
-            #print("Actual memory usage")
-            #from pynvml import *
-            #nvmlInit()
-            #h = nvmlDeviceGetHandleByIndex(0)
-            #info = nvmlDeviceGetMemoryInfo(h)
-            #print(f'total    : {info.total}')
-            #print(f'free     : {info.free}')
-            #print(f'used     : {info.used}')
 
             execution_start = time.time()
 
@@ -389,7 +326,7 @@ if __name__ == '__main__':
                 synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
                 synth_queries = synth_queries[synth_queries[label_column].notna()]
                 synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
-                synth_queries = synth_queries[:40000]
+                #synth_queries = synth_queries[:40000]
 
                 print("Number of unique questions")
                 print(len(set(synth_queries['synthetic_query'].tolist())))
@@ -412,19 +349,11 @@ if __name__ == '__main__':
 
                 synth_queries = synth_queries[synth_queries['token_length'] <= 2048]
 
+                ########################################################
 
-
-
-
-
-
-
-                #train_df, temp_df = train_test_split(synth_queries, test_size=0.2, random_state=42)
-                #validation_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
                 train_df = synth_queries
 
                 test_set = pd.read_csv(test_set_selection, sep="\t")
-                #if test_set_selection == "../datasets_v2/nq_reformatted_validation_with_negatives.tsv":
                 test_set['Question'] = test_set['Query']
                 test_set['Document'] = test_set['Document'].str.strip()
                 test_set = test_set[test_set["Document"].str.len() > 100]
@@ -446,19 +375,11 @@ if __name__ == '__main__':
                     print("Refining data for Answer_Faithfulness classification!")
                     train_df = train_df[train_df["Context_Relevance_Label"].notna()]
                     train_df = train_df[train_df["Answer_Faithfulness_Label"].notna()]
-                    #train_df = train_df[train_df["Context_Relevance_Label"] == "Yes"]
                     error_strings = ['answer', 'contrad', 'false', 'information', 'unanswer', 'Answer', 'Contrad', 'False', 'Information', 'Unanswer']
                     train_df['generated_answer'] = train_df['generated_answer'].astype(str)
                     train_df = train_df[~train_df['generated_answer'].str.contains('|'.join(error_strings))]
 
-
-
-
-
-
-
-
-
+                ########################################################
 
                 conversion_dict = {"Yes": 1, "No": 0}
                 train_set_text = [train_df.iloc[i]['concat_text'] for i in range(len(train_df))]
@@ -466,7 +387,6 @@ if __name__ == '__main__':
                     train_set_label = [conversion_dict[train_df.iloc[i][label_column]] for i in range(len(train_df))]
                 else:
                     train_set_label = [int(train_df.iloc[i][label_column]) for i in range(len(train_df))]
-                #train_set_label = [train_df.iloc[i]['Label'] for i in range(len(train_df))]
                 
                 #dev_set_text = [validation_df.iloc[i]['concat_text'] for i in range(len(validation_df))]
                 #dev_set_label = [conversion_dict[validation_df.iloc[i]['Label']] for i in range(len(validation_df))]
@@ -489,26 +409,15 @@ if __name__ == '__main__':
                 print('---------------------------------------------------')
 
 
-
-
-
             ############################################################
 
             labels_list = sorted(list(set(train_set_label + dev_set_label + test_set_label)))
 
             print("Label List")
             print(labels_list)
-
-            #label_to_value_dict = {}
-
-            #count = 0
-            #for label in labels_list:
-            #  label_to_value_dict[label] = count
-            #  count += 1
-
-            #train_set_label = [label_to_value_dict[label] for label in train_set_label]
-            #dev_set_label = [label_to_value_dict[label] for label in dev_set_label]
-            #test_set_label = [label_to_value_dict[label] for label in test_set_label]
+            print(set(train_set_label))
+            print(set(dev_set_label))
+            print(set(test_set_label))
 
             ############################################################
 
@@ -581,12 +490,8 @@ if __name__ == '__main__':
 
                 ############################################################
 
-
-                #optimizer = AdamW(model.parameters(), lr=5e-5)
-
                 criterion = nn.CrossEntropyLoss()
-                optimizer = Adam(model.parameters(), lr=chosen_learning_rate) #5e-6
-                #optimizer = Adam(model.parameters(), lr=1e-5) #5e-6
+                optimizer = Adam(model.parameters(), lr=chosen_learning_rate)
 
                 num_training_steps = num_epochs * len(train_dataloader)
 
@@ -595,8 +500,6 @@ if __name__ == '__main__':
                 )
 
                 ############################################################
-
-
 
                 # to track the training loss as the model trains
                 train_losses = []
@@ -607,7 +510,6 @@ if __name__ == '__main__':
                 # to track the average validation loss per epoch as the model trains
                 avg_valid_losses = []
 
-
                 # import EarlyStopping
                 from pytorchtools import EarlyStopping
                 # initialize the early_stopping object
@@ -615,7 +517,6 @@ if __name__ == '__main__':
                 #early_stopping = EarlyStopping(patience=10, verbose=True)
 
                 print("Checkpoint Path: " + checkpoint_path)
-
 
                 print("Beginning Training")
 
@@ -629,43 +530,32 @@ if __name__ == '__main__':
 
                     progress_bar = tqdm(range(len(train_dataloader)))
 
-
                     gradient_accumulation_count = 0
 
                     model.train()
                     for batch in train_dataloader:
 
-                        #with torch.no_grad():
-                        
-                            #batch = {k: v.to(device) for k, v in batch.items()}
+                        if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
+                            new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
+                        else:
+                            new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
 
-                            if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
-                                new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
-                            else:
-                                new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
+                        outputs = model(**new_batch)
 
-                            #if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
-                            #    new_batch['labels'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+                        loss = criterion(outputs, batch['labels'].to(device))
 
-                            outputs = model(**new_batch)
+                        loss.backward()
 
-                            #print("Example outputs")
-                            #print(outputs)
-                            #print(labels)
-
-                            loss = criterion(outputs, batch['labels'].to(device))
-
-                            loss.backward()
-
-                            gradient_accumulation_count += 1
-                            if gradient_accumulation_count % (gradient_accumulation_multiplier) == 0:
-                                optimizer.step()
-                                lr_scheduler.step()
-                                optimizer.zero_grad()
+                        gradient_accumulation_count += 1
+                        if gradient_accumulation_count % (gradient_accumulation_multiplier) == 0:
+                            optimizer.step()
+                            lr_scheduler.step()
+                            optimizer.zero_grad()
                             
-                            progress_bar.update(1)
-                            train_losses.append(loss.item())
+                        progress_bar.update(1)
+                        train_losses.append(loss.item())
 
+                    ######################################################
 
                     progress_bar = tqdm(range(len(validation_dataloader)))
 
@@ -674,9 +564,6 @@ if __name__ == '__main__':
 
                         with torch.no_grad():
                         
-                            #batch = {k: v.to(device) for k, v in batch.items()}
-                            #labels = batch['labels']
-
                             if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
                                 new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
                             else:
@@ -691,7 +578,6 @@ if __name__ == '__main__':
                             progress_bar.update(1)
 
                             valid_losses.append(loss.item())
-
 
                     # print training/validation statistics 
                     # calculate average loss over an epoch
@@ -721,31 +607,24 @@ if __name__ == '__main__':
                         break
 
 
-
                 ############################################################
 
                 print("Loading the Best Model")
 
                 model.load_state_dict(torch.load(checkpoint_path))
 
-                #torch.save(model.encoderModel.state_dict(), model_encoder_path)
-
-
-
                 ############################################################
 
                 print("Beginning Evaluation")
 
                 metric = load_metric("accuracy")
-                #model.eval()
 
                 total_predictions = torch.FloatTensor([]).to(device)
                 total_references = torch.FloatTensor([]).to(device)
 
                 inference_start = time.time()
 
-                #progress_bar = tqdm(range(len(eval_dataloader)))
-                #for batch in eval_dataloader:
+                ############################################################
 
                 progress_bar = tqdm(range(len(eval_dataloader)))
                 for batch in eval_dataloader:
@@ -762,8 +641,6 @@ if __name__ == '__main__':
 
                         outputs = model(**new_batch)
 
-                        #labels = batch['labels'].to(device)
-
                         logits = outputs
                         predictions = torch.argmax(logits, dim=-1)
                         metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
@@ -773,7 +650,7 @@ if __name__ == '__main__':
 
                         progress_bar.update(1)
 
-
+                ############################################################
 
                 inference_end = time.time()
                 total_inference_time = inference_end - inference_start
@@ -799,15 +676,4 @@ if __name__ == '__main__':
 
                 ############################################################
 
-                test_set[label_column + "_Model_Predictions"] = total_predictions.tolist()
-
-                test_set_sample = test_set.sample(n=int(len(test_set) * ratio_sampled), random_state=43)
-                test_set_non_sample = test_set.drop(test_set_sample.index)
-
-                test_set_selection = test_set_selection.replace(".tsv", label_column + "_with_Model_Predictions_Sampled.tsv")
-                test_set_sample.to_csv(test_set_selection, sep="\t", index=False)
-                print("Saved test set sampled predictions to: " + test_set_selection)
-
-                test_set_selection = test_set_selection.replace("_Sampled.tsv", "_NonSampled.tsv")
-                test_set_non_sample.to_csv(test_set_selection, sep="\t", index=False)
-                print("Saved test set non-sampled predictions to: " + test_set_selection)
+                print("Saved classification checkpoint to: " + str(checkpoint_path))

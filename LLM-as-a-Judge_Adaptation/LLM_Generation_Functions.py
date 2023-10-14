@@ -33,18 +33,11 @@ def generate_synthetic_query_llm_approach(document: str, prompt: str, length_of_
     prompt_tokens_length = tokenizer.encode(prompt_without_document, return_tensors='pt').to(device).shape[1]
     document_length = tokenizer.encode(document, return_tensors='pt').to(device).shape[1]
 
-    #print("Starting lengths")
-    #print(prompt_tokens_length)
-    #print(document_length)
-
     if prompt_tokens_length + document_length + 100 >= 2048:
         # Added buffer for truncation
         encoded_input = tokenizer(document, max_length=2048 - prompt_tokens_length - 100, truncation=True, return_tensors='pt')
         truncated_document = tokenizer.decode(encoded_input['input_ids'][0][:2048 - prompt_tokens_length - 100]) 
         document = truncated_document.replace("</s>", "")
-
-        #truncated_document = (" ").join(document.split(" ")[:2048 - prompt_tokens_length - 100])
-        #document = truncated_document
 
     prompt += "Example " + str(length_of_fewshot_prompt + 1) +":\n"
     prompt += "Document: " + document + "\n"
@@ -56,10 +49,6 @@ def generate_synthetic_query_llm_approach(document: str, prompt: str, length_of_
         prompt += "Question: "
 
     input_ids = tokenizer.encode(prompt, max_length=2048, truncation=True, return_tensors='pt').to(device)
-
-    #print("New input ids")
-    #print(input_ids.shape)
-    #assert False
 
     max_length = 32
     if for_wow_dataset:
@@ -118,10 +107,6 @@ def generate_answer_llm_approach(document: str, question: str, prompt: str, leng
         prompt += "Answer: " 
 
     input_ids = tokenizer.encode(prompt, max_length=2048, truncation=True, return_tensors='pt').to(device)
-
-    #print("New input ids")
-    #print(input_ids.shape)
-    #assert False
 
     if input_ids.shape[0] != 1 or input_ids.shape[1] >= 2048:
         print("Length of problematic input ids: " + str(input_ids.shape))
@@ -304,7 +289,7 @@ def generate_contradictory_answer_examples(queries_dataset, number_of_contradict
         contradictory_labels.append("No")
 
     queries_dataset_copy['generated_answer'] = contradictory_answers
-    queries_dataset_copy['Answer_Faithfulness_Label'] = contradictory_labels
+    queries_dataset_copy['Answer_Relevance_Label'] = contradictory_labels
 
     print("Contradictory Answers Added using Contradiction Generation")
     print(len(queries_dataset_copy))
@@ -315,7 +300,7 @@ def generate_contradictory_answer_examples(queries_dataset, number_of_contradict
     queries_dataset_copy_2 = queries_dataset_copy_2.drop_duplicates(subset=['synthetic_query'])
 
     queries_dataset_copy_2 = queries_dataset_copy_2.sample(n=number_of_contradictory_answers_to_generate, random_state=42)
-    total_answers = queries_dataset[queries_dataset['Answer_Faithfulness_Label'] == "Yes"]['generated_answer'].tolist()
+    total_answers = queries_dataset[queries_dataset['Answer_Relevance_Label'] == "Yes"]['generated_answer'].tolist()
     total_answers = [answer for answer in total_answers if isinstance(answer, str)]
     total_answers = [str(answer) for answer in total_answers]
     total_answers = [answer for answer in total_answers if len(answer) > 5]
@@ -329,7 +314,7 @@ def generate_contradictory_answer_examples(queries_dataset, number_of_contradict
         contradictory_labels_2.append("No")
 
     queries_dataset_copy_2['generated_answer'] = contradictory_answers_2
-    queries_dataset_copy_2['Answer_Faithfulness_Label'] = contradictory_labels_2
+    queries_dataset_copy_2['Answer_Relevance_Label'] = contradictory_labels_2
 
     print("Contradictory Answers Added using Answer Randomization")
     print(len(queries_dataset_copy_2))
