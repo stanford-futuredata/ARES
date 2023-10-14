@@ -333,8 +333,8 @@ if __name__ == '__main__':
             else:
                 test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) for i in range(len(test_set))]
 
-            test_set = test_set.drop_duplicates(["concat_text"])
             train_df = train_df.drop_duplicates(["concat_text"])
+            test_set = test_set.drop_duplicates(["concat_text"])
 
             if "Faith" in label_column:
                 print("Refining data for Answer_Faithfulness classification!")
