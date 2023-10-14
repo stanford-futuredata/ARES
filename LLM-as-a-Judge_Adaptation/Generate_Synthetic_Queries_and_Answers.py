@@ -191,7 +191,6 @@ if __name__ == '__main__':
     #################################################
 
     few_shot_prompt_for_contradictory_answers = pd.read_csv(few_shot_prompt_filename, sep="\t")
-    pdb.set_trace()
     few_shot_prompt_for_contradictory_answers = few_shot_prompt_for_contradictory_answers[few_shot_prompt_for_contradictory_answers['Contradictory_Answer'].str.len() > 4]
 
     if generate_contradictory_answers_with_flan:
