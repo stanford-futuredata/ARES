@@ -191,7 +191,7 @@ if __name__ == '__main__':
     label_column = args.label_column
     num_epochs = args.num_epochs
     patience_value = args.patience_value
-    learning_rate_choices = [args.learning_rate_choices]
+    learning_rate_choices = [args.learning_rate]
 
     ### Instructions
 
