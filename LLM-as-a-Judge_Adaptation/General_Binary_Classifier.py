@@ -371,9 +371,9 @@ if __name__ == '__main__':
             print(len(dev_set_text))
             print(len(test_set_text))
             print("Training example")
-            print(train_set_text[500])
+            print(train_set_text[100])
             print('---------------------------------------------------')
-            print(train_set_label[500])
+            print(train_set_label[100])
             print('---------------------------------------------------')
 
 
