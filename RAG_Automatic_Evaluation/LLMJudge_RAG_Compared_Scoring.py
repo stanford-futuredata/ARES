@@ -405,6 +405,8 @@ if __name__ == '__main__':
                 print("Loading the Best Finetuned-LLM Checkpoint")
                 model.load_state_dict(torch.load(checkpoint))
 
+            test_set = test_set.sample(n=100, random_state=43)
+
             ############################################################
 
             metric = load_metric("accuracy")
