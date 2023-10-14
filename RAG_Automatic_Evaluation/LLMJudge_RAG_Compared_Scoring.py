@@ -229,7 +229,7 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoints", nargs='+', required=True)
     parser.add_argument("--labels", nargs='+', required=True)
 
-    parser.add_argument("--GPT_scoring", type=bool, default=False, required=True)
+    parser.add_argument("--GPT_scoring", type=str, default=False, required=True)
     parser.add_argument("--gpt_model", type=str, default="gpt-3.5-turbo-16k", required=False)
     parser.add_argument("--perform_zero_shot", type=bool, default=False, required=False)
     parser.add_argument("--few_shot_examples_filepath", type=str, required=False)
@@ -253,6 +253,11 @@ if __name__ == '__main__':
     
     # Settings for zero/few-shot GPT scoring
     GPT_scoring = args.GPT_scoring
+    if GPT_scoring == "True":
+        GPT_scoring = True
+    else:
+        GPT_scoring = False
+    
     gpt_model = args.gpt_model
     perform_zero_shot = args.perform_zero_shot
     few_shot_examples_filepath = args.few_shot_examples_filepath
@@ -283,8 +288,6 @@ if __name__ == '__main__':
     print("Labels: "  + str(labels))
     print("GPT Scoring: " + str(GPT_scoring))
     print("--------------------------------------------------------")
-
-    assert type(GPT_scoring) == bool
 
     ######################################################################
 
