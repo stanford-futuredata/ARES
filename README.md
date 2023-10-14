@@ -42,6 +42,7 @@ python Generate_Synthetic_Queries_and_Answers.py \
        --answer_gen_few_shot_prompt_filename <answer_gen_few_shot_prompt_filename> \
        --synthetic_queries_filename <synthetic_queries_filename> \
        --few_shot_prompt_filename <few_shot_prompt_filename>
+       --documents_sampled 10000
 ````
 ​
 Note: For examples files for `document_filepath`, `few_shot_prompt_filename`, and `answer_gen_few_shot_prompt_filename`, please see `example_files`.
@@ -73,6 +74,7 @@ python LLMJudge_RAG_Compared_Scoring.py \
        --labels <label columns as list> \
        --GPT_scoring <True or False> \
        --gold_label_path <gold_label_path>
+       --swap_human_labels_for_gpt_labels False
 ````
 ​
 If you want to use GPT scoring, switch `GPT_scoring` to `True`. You can leave the `checkpoints` list as blank and specify the GPT model with the tag `--gpt_model <model selected>`.
