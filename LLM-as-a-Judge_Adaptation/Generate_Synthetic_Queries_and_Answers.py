@@ -14,6 +14,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import re
 import argparse
+import pdb
 
 from LLM_Generation_Functions import generate_synthetic_query_openai_approach, generate_answer_from_context, generate_contradictory_answer_from_context
 from LLM_Generation_Functions import check_generated_answer, generate_contradictory_answer_examples, generate_synthetic_query_llm_approach, generate_answer_llm_approach
@@ -190,6 +191,7 @@ if __name__ == '__main__':
     #################################################
 
     few_shot_prompt_for_contradictory_answers = pd.read_csv(few_shot_prompt_filename, sep="\t")
+    pdb.set_trace()
     few_shot_prompt_for_contradictory_answers = few_shot_prompt_for_contradictory_answers[few_shot_prompt_for_contradictory_answers['Contradictory_Answer'].str.len() > 4]
 
     if generate_contradictory_answers_with_flan:
