@@ -102,11 +102,7 @@ if __name__ == '__main__':
 
     synthetic_query_prompt = "You are an expert question-answering system. You must create a question for the provided document. The question must be answerable within the context of the document.\n\n"
 
-    instruction_model = "microsoft/deberta-v3-large"
-    device = "cuda:0"
-    use_eval_set = True
-
-    print("Model selected: " + instruction_model)
+    print("------------------------------------------------------------")
     print("Document File: " + document_filepath)
     print("Synthetic File Path: " + synthetic_queries_filename)
     print("number_of_negatives_added_ratio: " + str(number_of_negatives_added_ratio))
@@ -119,6 +115,7 @@ if __name__ == '__main__':
     print("lower_bound_for_negatives: " + str(lower_bound_for_negatives))
     print("for_fever_dataset: " + str(for_fever_dataset))
     print("for_wow_dataset: " + str(for_wow_dataset))
+    print("------------------------------------------------------------")
 
     #################################################
 
