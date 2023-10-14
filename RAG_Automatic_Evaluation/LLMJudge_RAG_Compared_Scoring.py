@@ -277,9 +277,14 @@ if __name__ == '__main__':
 
     ######################################################################
 
+    print("--------------------------------------------------------")
     print("Evaluation Sets: " + str(evaluation_datasets))
     print("Checkpoints: " + str(checkpoints))
     print("Labels: "  + str(labels))
+    print("GPT Scoring: " + str(GPT_scoring))
+    print("--------------------------------------------------------")
+
+    assert type(GPT_scoring) == bool
 
     ######################################################################
 
