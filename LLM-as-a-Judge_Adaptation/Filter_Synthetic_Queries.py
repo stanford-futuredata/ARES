@@ -46,6 +46,7 @@ def filter_synthetic_queries(queries_dataset, document_index):
     for i in tqdm(range(len(queries_dataset))):
         question = queries_dataset[i]["synthetic_query"]
         question_embedding = np.array(get_embedding(question))
+        pdb.set_trace()
         scores, samples = document_index.get_nearest_examples(
             "embeddings", question_embedding, k=20
         )
