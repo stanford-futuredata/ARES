@@ -49,7 +49,6 @@ if __name__ == '__main__':
     parser.add_argument("--answer_gen_few_shot_prompt_filename", type=str, required=True)
     parser.add_argument("--synthetic_queries_filename", type=str, required=True)
     parser.add_argument("--flan_approach", type=bool, default=True, required=False)
-    parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
     parser.add_argument("--documents_sampled", type=int, required=True)
 
     args = parser.parse_args()
