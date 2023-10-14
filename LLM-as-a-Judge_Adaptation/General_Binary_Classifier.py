@@ -182,7 +182,7 @@ if __name__ == '__main__':
     parser.add_argument("--label_column", type=str, required=True)
     parser.add_argument("--num_epochs", type=int, required=True)
     parser.add_argument("--patience_value", type=int, required=True)
-    parser.add_argument("--learning_rate_choices", type=list, required=True)
+    parser.add_argument("--learning_rate", type=float, required=True)
 
     args = parser.parse_args()
 
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     label_column = args.label_column
     num_epochs = args.num_epochs
     patience_value = args.patience_value
-    learning_rate_choices = args.learning_rate_choices
+    learning_rate_choices = [args.learning_rate_choices]
 
     ### Instructions
 
