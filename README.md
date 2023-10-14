@@ -41,7 +41,6 @@ python Generate_Synthetic_Queries_and_Answers.py \
        --few_shot_prompt_filename <few_shot_prompt_filename> \
        --answer_gen_few_shot_prompt_filename <answer_gen_few_shot_prompt_filename> \
        --synthetic_queries_filename <synthetic_queries_filename> \
-       --few_shot_prompt_filename <few_shot_prompt_filename>
        --documents_sampled 10000
 ````
 ​
