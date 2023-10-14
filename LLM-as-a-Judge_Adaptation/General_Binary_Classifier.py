@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--classification_datasets", type=list, required=True)
+    parser.add_argument("--classification_dataset", type=str, required=True)
     parser.add_argument("--test_set_selection", type=str, required=True)
     parser.add_argument("--label_column", type=str, required=True)
     parser.add_argument("--num_epochs", type=int, required=True)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    classification_datasets = args.classification_datasets
+    classification_datasets = [args.classification_dataset]
     test_set_selection = args.test_set_selection
     label_column = args.label_column
     num_epochs = args.num_epochs
