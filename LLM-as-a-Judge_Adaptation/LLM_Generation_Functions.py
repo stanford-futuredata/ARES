@@ -289,6 +289,8 @@ def generate_contradictory_answer_examples(queries_dataset, number_of_contradict
         contradictory_labels.append("No")
 
     queries_dataset_copy['generated_answer'] = contradictory_answers
+    queries_dataset_copy['Answer_Faithfulness_Label'] = contradictory_labels
+    queries_dataset_copy['generated_answer'] = contradictory_answers
     queries_dataset_copy['Answer_Relevance_Label'] = contradictory_labels
 
     print("Contradictory Answers Added using Contradiction Generation")
@@ -381,3 +383,5 @@ def generate_contradictory_answer_llm_approach(document: str, question: str, pro
     query = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     return query
+
+
