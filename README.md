@@ -33,7 +33,7 @@ export OPENAI_API_KEY=<your key here>
 ​
 ## Step #1: Synthetic Data Generation
 ​
-To generate synthetic training data, use `Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
+To generate synthetic training data, use `LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
 ​
 ````
 python Generate_Synthetic_Queries_and_Answers.py \
@@ -48,7 +48,7 @@ Note: For examples files for `document_filepath`, `few_shot_prompt_filename`, an
 ​
 ## Step #2: Fine-tune LLM-as-a-Judge
 ​
-With the generated file under `synthetic_queries_filename` from the previous step, use `General_Binary_Classifier.py` to train your LLM-as-a-Judge with the following command:
+With the generated file under `synthetic_queries_filename` from the previous step, use `LLM-as-a-Judge_Adaptation/General_Binary_Classifier.py` to train your LLM-as-a-Judge with the following command:
 ​
 ````
 python General_Binary_Classifier.py \
@@ -62,7 +62,7 @@ python General_Binary_Classifier.py \
 ​
 ## Step #3: Score RAG System with ARES
 ​
-With the outputted model checkpoint from Step #2, you can now score your RAG system using ARES with following command:
+With the outputted model checkpoint from Step #2, you can now score your RAG system using ARES with following command in folder `RAG_Automatic_Evaluation/`:
 ​
 ````
 python LLMJudge_RAG_Compared_Scoring.py \
