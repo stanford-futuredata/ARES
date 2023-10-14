@@ -52,7 +52,7 @@ With the generated file under `synthetic_queries_filename` from the previous ste
 ​
 ````
 python General_Binary_Classifier.py \
-       --classification_datasets <classification_datasets as list> \
+       --classification_dataset <classification_dataset> \
        --test_set_selection <test_set_selection> \
        --label_column Context_Relevance_Label \
        --num_epochs 10 \
