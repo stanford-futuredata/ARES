@@ -385,6 +385,16 @@ if __name__ == '__main__':
 
             ############################################################
 
+            if GPT_scoring:
+                test_set = test_set.sample(n=2000, random_state=43)
+            else:
+                print("Loading the Best Finetuned-LLM Checkpoint")
+                model.load_state_dict(torch.load(checkpoint))
+
+            test_set = test_set.sample(n=100, random_state=43)
+
+            ############################################################
+
             model_choice = "microsoft/deberta-v3-large"
             max_token_length = 2048
             tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
@@ -398,14 +408,6 @@ if __name__ == '__main__':
             ############################################################
 
             eval_dataloader = prepare_dataset_for_evaluation(test_set, label_column, text_column)
-            
-            if GPT_scoring:
-                test_set = test_set.sample(n=2000, random_state=43)
-            else:
-                print("Loading the Best Finetuned-LLM Checkpoint")
-                model.load_state_dict(torch.load(checkpoint))
-
-            test_set = test_set.sample(n=100, random_state=43)
 
             ############################################################
 
