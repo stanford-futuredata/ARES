@@ -50,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument("--synthetic_queries_filename", type=str, required=True)
     parser.add_argument("--flan_approach", type=bool, default=True, required=False)
     parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
+    parser.add_argument("--documents_sampled", type=int, required=True)
 
     args = parser.parse_args()
 
@@ -60,6 +61,7 @@ if __name__ == '__main__':
     answer_gen_few_shot_prompt_filename = args.answer_gen_few_shot_prompt_filename
     synthetic_queries_filename = args.synthetic_queries_filename
     flan_approach = args.flan_approach
+    documents_sampled = args.documents_sampled
 
     for_fever_dataset = False
     if "fever" in document_filepath.lower():
@@ -159,7 +161,7 @@ if __name__ == '__main__':
         documents['document'] = documents['document'].str.strip()
         if "nq" in document_filepath:
             documents = documents[documents["document"].str.len() > 100]
-        documents = documents.sample(n=10000, random_state=43)
+        documents = documents.sample(n=documents_sampled, random_state=43)
 
     #documents = documents[:10]
     print("documents")
