@@ -226,9 +226,12 @@ if __name__ == '__main__':
 
     ############################################################
 
+    checkpoints_folder_path = "checkpoints/"
+    if not os.path.isdir(checkpoints_folder_path):
+        os.mkdir(checkpoints_folder_path)
+
     dataset_folder_path = "checkpoints/" + model_choice.replace("/", "-")
     if not os.path.isdir(dataset_folder_path):
-
         print("Creating folder: " + dataset_folder_path)
         os.mkdir(dataset_folder_path)
 
