@@ -225,7 +225,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--alpha", type=float, required=True)
     parser.add_argument("--num_trials", type=int, required=True)
-    parser.add_argument("--evaluation_datasets", type=list, required=True)
+    parser.add_argument("--evaluation_datasets", nargs='+', type=list, required=True)
     parser.add_argument("--checkpoints", type=list, required=True)
     parser.add_argument("--labels", type=list, required=True)
 
