@@ -70,8 +70,8 @@ if __name__ == '__main__':
     if "wow" in document_filepath.lower():
         for_wow_dataset = True
 
-    regenerate_synth_questions = True
-    regenerate_answers = True
+    regenerate_synth_questions = False
+    regenerate_answers = False
     regenerate_embeddings = True
 
     lower_bound_for_negatives = 20

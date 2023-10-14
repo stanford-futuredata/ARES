@@ -272,141 +272,106 @@ if __name__ == '__main__':
             print("Number of Epochs: " + str(num_epochs))
             print("Number of warmup steps: " + str(num_warmup_steps))
 
-            if dataset in ['chemprot', 'sci-cite', "sciie-relation-extraction"]:
+            ########################################################
 
-                with open('text_classification/' + dataset + '/train.txt') as f:
+            synth_queries = pd.read_csv(dataset, sep="\t")
+            if "nq_reformatted" in dataset:
+                synth_queries['synthetic_query'] = synth_queries['Query']
+                synth_queries['generated_answer'] = synth_queries['Answer']
+                synth_queries['document'] = synth_queries['Document']
 
-                    train_set = f.readlines()
-                    train_set = [ast.literal_eval(line) for line in train_set]
-                    train_set_text = [line['text'] for line in train_set]
-                    train_set_label = [line['label'] for line in train_set]
+            print("Positive and Negative Label Count")
+            print(synth_queries[label_column].tolist().count("Yes"))
+            print(synth_queries[label_column].tolist().count("No"))
+            print(set(synth_queries[label_column].tolist()))
+            
+            synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
+            synth_queries = synth_queries[synth_queries["synthetic_query"].notna()]
+            synth_queries = synth_queries[synth_queries["document"].notna()]
+            synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
+            synth_queries = synth_queries[synth_queries[label_column].notna()]
+            synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
+            #synth_queries = synth_queries[:40000]
 
-                with open('text_classification/' + dataset + '/dev.txt') as f:
-                    
-                    dev_set = f.readlines()
-                    dev_set = [ast.literal_eval(line) for line in dev_set]
+            print("Number of unique questions")
+            print(len(set(synth_queries['synthetic_query'].tolist())))
+            print("Positive and Negative Label Count")
+            print(synth_queries[label_column].tolist().count("Yes"))
+            print(synth_queries[label_column].tolist().count("No"))
+            print(set(synth_queries[label_column].tolist()))
+            
+            if "Context" in label_column:
+                synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document']) for i in range(len(synth_queries))]
+            else:
+                synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer']) for i in range(len(synth_queries))]
+            synth_queries['token_length'] = [len(tokenizer.encode(synth_queries.iloc[i]['concat_text'], return_tensors='pt')[0]) for i in range(len(synth_queries))]
+            synth_queries = synth_queries.drop_duplicates(["concat_text"])
 
-                    dev_set_text = []
-                    dev_set_label = []
-                    for line in dev_set:
+            print("Max token length")
+            print(synth_queries['token_length'].max())
+            print("Total inputs over max token length set of " + str(max_token_length))
+            print(len(synth_queries[synth_queries['token_length'] > max_token_length]))
 
-                        # Fix bug in MAG dev where there is a single label called "category"
-                        if line['label'] != 'category':
-                            dev_set_text.append(line['text'])
-                            dev_set_label.append(line['label'])
-                        else:
-                            print("Found the error with category")
+            synth_queries = synth_queries[synth_queries['token_length'] <= 2048]
 
-                with open('text_classification/' + dataset + '/test.txt') as f:
-                    
-                    test_set = f.readlines()
-                    test_set = [ast.literal_eval(line) for line in test_set]
-                    test_set_text = [line['text'] for line in test_set]
-                    test_set_label = [line['label'] for line in test_set]
+            ########################################################
 
-            else: #if dataset in ["synth_queries_v3"]:
+            train_df = synth_queries
 
-                synth_queries = pd.read_csv(dataset, sep="\t")
-                if "nq_synthetic" in dataset:
-                    synth_queries = synth_queries.drop(columns=['paragraph_number', 'Query', 'Answer', 'wikipedia_id', 'input', 'meta'])
-                if "nq_reformatted" in dataset:
-                    synth_queries['synthetic_query'] = synth_queries['Query']
-                    synth_queries['generated_answer'] = synth_queries['Answer']
-                    synth_queries['document'] = synth_queries['Document']
+            test_set = pd.read_csv(test_set_selection, sep="\t")
+            test_set['Question'] = test_set['Query']
+            test_set['Document'] = test_set['Document'].str.strip()
+            test_set = test_set[test_set["Document"].str.len() > 100]
+            test_set = test_set[test_set[label_column].notna()]
 
-                print("Positive and Negative Label Count")
-                print(synth_queries[label_column].tolist().count("Yes"))
-                print(synth_queries[label_column].tolist().count("No"))
-                print(set(synth_queries[label_column].tolist()))
-                
-                synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
-                #synth_queries = synth_queries.dropna(subset=['synthetic_query',"document", "generated_answer", label_column])
-                synth_queries = synth_queries[synth_queries["synthetic_query"].notna()]
-                synth_queries = synth_queries[synth_queries["document"].notna()]
-                synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
-                synth_queries = synth_queries[synth_queries[label_column].notna()]
-                synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
-                #synth_queries = synth_queries[:40000]
+            train_df['document'] = train_df['document'].str.strip()
+            train_df = train_df[train_df["document"].str.len() > 100]
+            train_df = train_df[train_df[label_column].notna()]
 
-                print("Number of unique questions")
-                print(len(set(synth_queries['synthetic_query'].tolist())))
-                print("Positive and Negative Label Count")
-                print(synth_queries[label_column].tolist().count("Yes"))
-                print(synth_queries[label_column].tolist().count("No"))
-                print(set(synth_queries[label_column].tolist()))
-                
-                if "Context" in label_column:
-                    synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document']) for i in range(len(synth_queries))]
-                else:
-                    synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer']) for i in range(len(synth_queries))]
-                synth_queries['token_length'] = [len(tokenizer.encode(synth_queries.iloc[i]['concat_text'], return_tensors='pt')[0]) for i in range(len(synth_queries))]
-                synth_queries = synth_queries.drop_duplicates(["concat_text"])
+            if "Context" in label_column:
+                test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document']) for i in range(len(test_set))]
+            else:
+                test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) for i in range(len(test_set))]
 
-                print("Max token length")
-                print(synth_queries['token_length'].max())
-                print("Total inputs over max token length set of " + str(max_token_length))
-                print(len(synth_queries[synth_queries['token_length'] > max_token_length]))
+            test_set = test_set.drop_duplicates(["concat_text"])
+            train_df = train_df.drop_duplicates(["concat_text"])
 
-                synth_queries = synth_queries[synth_queries['token_length'] <= 2048]
+            if "Faith" in label_column:
+                print("Refining data for Answer_Faithfulness classification!")
+                train_df = train_df[train_df["Context_Relevance_Label"].notna()]
+                train_df = train_df[train_df["Answer_Faithfulness_Label"].notna()]
+                error_strings = ['answer', 'contrad', 'false', 'information', 'unanswer', 'Answer', 'Contrad', 'False', 'Information', 'Unanswer']
+                train_df['generated_answer'] = train_df['generated_answer'].astype(str)
+                train_df = train_df[~train_df['generated_answer'].str.contains('|'.join(error_strings))]
 
-                ########################################################
+            ########################################################
 
-                train_df = synth_queries
+            conversion_dict = {"Yes": 1, "No": 0}
+            train_set_text = [train_df.iloc[i]['concat_text'] for i in range(len(train_df))]
+            if "nq_reformatted" not in dataset:
+                train_set_label = [conversion_dict[train_df.iloc[i][label_column]] for i in range(len(train_df))]
+            else:
+                train_set_label = [int(train_df.iloc[i][label_column]) for i in range(len(train_df))]
+            
+            #dev_set_text = [validation_df.iloc[i]['concat_text'] for i in range(len(validation_df))]
+            #dev_set_label = [conversion_dict[validation_df.iloc[i]['Label']] for i in range(len(validation_df))]
+            dev_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
+            dev_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
+            
+            #test_set_text = [test_df.iloc[i]['concat_text'] for i in range(len(test_df))]
+            #test_set_label = [conversion_dict[test_df.iloc[i]['Label']] for i in range(len(test_df))]
+            test_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
+            test_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
 
-                test_set = pd.read_csv(test_set_selection, sep="\t")
-                test_set['Question'] = test_set['Query']
-                test_set['Document'] = test_set['Document'].str.strip()
-                test_set = test_set[test_set["Document"].str.len() > 100]
-                test_set = test_set[test_set[label_column].notna()]
-
-                train_df['document'] = train_df['document'].str.strip()
-                train_df = train_df[train_df["document"].str.len() > 100]
-                train_df = train_df[train_df[label_column].notna()]
-
-                if "Context" in label_column:
-                    test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document']) for i in range(len(test_set))]
-                else:
-                    test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) for i in range(len(test_set))]
-
-                test_set = test_set.drop_duplicates(["concat_text"])
-                train_df = train_df.drop_duplicates(["concat_text"])
-
-                if "Faith" in label_column:
-                    print("Refining data for Answer_Faithfulness classification!")
-                    train_df = train_df[train_df["Context_Relevance_Label"].notna()]
-                    train_df = train_df[train_df["Answer_Faithfulness_Label"].notna()]
-                    error_strings = ['answer', 'contrad', 'false', 'information', 'unanswer', 'Answer', 'Contrad', 'False', 'Information', 'Unanswer']
-                    train_df['generated_answer'] = train_df['generated_answer'].astype(str)
-                    train_df = train_df[~train_df['generated_answer'].str.contains('|'.join(error_strings))]
-
-                ########################################################
-
-                conversion_dict = {"Yes": 1, "No": 0}
-                train_set_text = [train_df.iloc[i]['concat_text'] for i in range(len(train_df))]
-                if "nq_reformatted" not in dataset:
-                    train_set_label = [conversion_dict[train_df.iloc[i][label_column]] for i in range(len(train_df))]
-                else:
-                    train_set_label = [int(train_df.iloc[i][label_column]) for i in range(len(train_df))]
-                
-                #dev_set_text = [validation_df.iloc[i]['concat_text'] for i in range(len(validation_df))]
-                #dev_set_label = [conversion_dict[validation_df.iloc[i]['Label']] for i in range(len(validation_df))]
-                dev_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
-                dev_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
-                
-                #test_set_text = [test_df.iloc[i]['concat_text'] for i in range(len(test_df))]
-                #test_set_label = [conversion_dict[test_df.iloc[i]['Label']] for i in range(len(test_df))]
-                test_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
-                test_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
-
-                print("Lengths of train, dev, and test")
-                print(len(train_set_text))
-                print(len(dev_set_text))
-                print(len(test_set_text))
-                print("Training example")
-                print(train_set_text[500])
-                print('---------------------------------------------------')
-                print(train_set_label[500])
-                print('---------------------------------------------------')
+            print("Lengths of train, dev, and test")
+            print(len(train_set_text))
+            print(len(dev_set_text))
+            print(len(test_set_text))
+            print("Training example")
+            print(train_set_text[500])
+            print('---------------------------------------------------')
+            print(train_set_label[500])
+            print('---------------------------------------------------')
 
 
             ############################################################
