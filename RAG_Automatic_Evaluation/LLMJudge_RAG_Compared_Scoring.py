@@ -280,10 +280,11 @@ if __name__ == '__main__':
     if GPT_scoring:
         checkpoint = ["" for _ in range(len(labels))]
 
-    few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
-    print("few_shot_examples")
-    print(len(few_shot_examples))
-    print(few_shot_examples.head())
+    if few_shot_examples_filepath is not None:
+        few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
+        print("few_shot_examples")
+        print(len(few_shot_examples))
+        print(few_shot_examples.head())
 
     ####################################################################
 
