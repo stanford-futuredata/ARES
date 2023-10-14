@@ -46,11 +46,8 @@ def filter_synthetic_queries(queries_dataset, document_index):
     queries_dataset = Dataset.from_pandas(queries_dataset)
     for i in tqdm(range(len(queries_dataset))):
         question = queries_dataset[i]["synthetic_query"]
-        question_embedding = np.array(get_embedding(question))
-        pdb.set_trace()
-        scores, samples = document_index.get_nearest_examples(
-            "embeddings", question_embedding, k=20
-        )
+        question_embedding = np.array(get_embedding(question)).astype(np.float32)
+        scores, samples = document_index.get_nearest_examples("embeddings", question_embedding, k=20)
         if samples["document"][0] == queries_dataset[i]["document"]:
             total_labels.append("Yes")
         else:
