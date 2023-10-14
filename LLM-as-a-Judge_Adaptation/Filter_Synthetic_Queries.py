@@ -85,7 +85,7 @@ def generate_additional_negatives(queries_dataset, document_index, number_of_neg
 
     for i in tqdm(range(len(queries_dataset_copy))):
         question = queries_dataset_copy.iloc[i]["synthetic_query"]
-        question_embedding = np.array(get_embedding(question))
+        question_embedding = np.array(get_embedding(question)).astype(np.float32)
         scores, samples = document_index.get_nearest_examples(
             "embeddings", question_embedding, k=100
         )
@@ -123,7 +123,7 @@ def generate_additional_positives(queries_dataset, document_index, number_of_pos
 
     for i in tqdm(range(len(queries_dataset_copy))):
         question = queries_dataset_copy.iloc[i]["synthetic_query"]
-        question_embedding = np.array(get_embedding(question))
+        question_embedding = np.array(get_embedding(question)).astype(np.float32)
         scores, samples = document_index.get_nearest_examples(
             "embeddings", question_embedding, k=100
         )
