@@ -237,7 +237,7 @@ if __name__ == '__main__':
     parser.add_argument("--Y_labeled_count", type=int, default=300, required=False)
     parser.add_argument("--use_pseudo_human_labels", type=bool, default=False, required=False)
     parser.add_argument("--gold_label_path", type=str, required=False)
-    parser.add_argument("--swap_human_labels_for_gpt_labels", type=str, default="False" required=False)
+    parser.add_argument("--swap_human_labels_for_gpt_labels", type=str, default="False", required=False)
 
     args = parser.parse_args()
 
