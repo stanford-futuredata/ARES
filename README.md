@@ -57,7 +57,7 @@ python General_Binary_Classifier.py \
        --label_column Context_Relevance_Label \
        --num_epochs 10 \
        --patience_value 3 \
-       --learning_rate_choices 5e-6
+       --learning_rate 5e-6
 ````
 ​
 ## Step #3: Score RAG System with ARES
