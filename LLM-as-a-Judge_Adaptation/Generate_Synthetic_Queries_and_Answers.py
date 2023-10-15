@@ -47,7 +47,6 @@ if __name__ == '__main__':
 
     parser.add_argument("--document_filepath", type=str, required=True)
     parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
-    parser.add_argument("--answer_gen_few_shot_prompt_filename", type=str, required=True)
     parser.add_argument("--synthetic_queries_filename", type=str, required=True)
     parser.add_argument("--flan_approach", type=bool, default="True", required=False)
     parser.add_argument("--documents_sampled", type=int, required=True)
@@ -58,7 +57,6 @@ if __name__ == '__main__':
 
     document_filepath = args.document_filepath
     few_shot_prompt_filename = args.few_shot_prompt_filename
-    answer_gen_few_shot_prompt_filename = args.answer_gen_few_shot_prompt_filename
     synthetic_queries_filename = args.synthetic_queries_filename
     flan_approach = args.flan_approach
     if flan_approach == "True":
@@ -76,8 +74,8 @@ if __name__ == '__main__':
     if "wow" in document_filepath.lower():
         for_wow_dataset = True
 
-    regenerate_synth_questions = False
-    regenerate_answers = False
+    regenerate_synth_questions = True
+    regenerate_answers = True
     regenerate_embeddings = True
 
     lower_bound_for_negatives = 20
