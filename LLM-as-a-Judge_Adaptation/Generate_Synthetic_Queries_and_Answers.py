@@ -171,8 +171,8 @@ if __name__ == '__main__':
     # Load few-shot prompt
     few_shot_prompt = pd.read_csv(few_shot_prompt_filename, sep="\t")
     few_shot_prompt = few_shot_prompt[few_shot_prompt['Context_Relevance_Label'] == "[[Yes]]"]
-    if "Question" not in few_shot_prompt:
-        few_shot_prompt['Question'] = few_shot_prompt['Query']
+    if "Query" not in few_shot_prompt:
+        few_shot_prompt['Query'] = few_shot_prompt['Question']
 
     length_of_fewshot_prompt = len(few_shot_prompt)
     few_shot_examples = ""
