@@ -39,7 +39,6 @@ To generate synthetic training data, use `LLM-as-a-Judge_Adaptation/Generate_Syn
 python Generate_Synthetic_Queries_and_Answers.py \
        --document_filepath <document_filepath> \
        --few_shot_prompt_filename <few_shot_prompt_filename> \
-       --answer_gen_few_shot_prompt_filename <answer_gen_few_shot_prompt_filename> \
        --synthetic_queries_filename <synthetic_queries_filename> \
        --documents_sampled 10000
 ````
