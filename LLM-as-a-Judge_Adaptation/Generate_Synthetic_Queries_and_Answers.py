@@ -49,7 +49,7 @@ if __name__ == '__main__':
     parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
     parser.add_argument("--answer_gen_few_shot_prompt_filename", type=str, required=True)
     parser.add_argument("--synthetic_queries_filename", type=str, required=True)
-    parser.add_argument("--flan_approach", type=bool, default=True, required=False)
+    parser.add_argument("--flan_approach", type=bool, default="True", required=False)
     parser.add_argument("--documents_sampled", type=int, required=True)
 
     args = parser.parse_args()
@@ -61,7 +61,13 @@ if __name__ == '__main__':
     answer_gen_few_shot_prompt_filename = args.answer_gen_few_shot_prompt_filename
     synthetic_queries_filename = args.synthetic_queries_filename
     flan_approach = args.flan_approach
+    if flan_approach == "True":
+        flan_approach = True 
+    else:
+        flan_approach = False
     documents_sampled = args.documents_sampled
+
+    ########################################################
 
     for_fever_dataset = False
     if "fever" in document_filepath.lower():
@@ -87,9 +93,6 @@ if __name__ == '__main__':
 
     flan_approach = True
     generate_contradictory_answers_with_flan = True
-
-    training_filename = synthetic_queries_filename.replace(".tsv", "_train.tsv")
-    test_filename = synthetic_queries_filename.replace(".tsv", "_test.tsv")
 
     #################################################
 

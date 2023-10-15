@@ -231,11 +231,11 @@ if __name__ == '__main__':
 
     parser.add_argument("--GPT_scoring", type=str, default="False", required=True)
     parser.add_argument("--gpt_model", type=str, default="gpt-3.5-turbo-16k", required=False)
-    parser.add_argument("--perform_zero_shot", type=bool, default=False, required=False)
+    parser.add_argument("--perform_zero_shot", type=str, default="False", required=False)
     parser.add_argument("--few_shot_examples_filepath", type=str, required=False)
 
     parser.add_argument("--Y_labeled_count", type=int, default=300, required=False)
-    parser.add_argument("--use_pseudo_human_labels", type=bool, default=False, required=False)
+    parser.add_argument("--use_pseudo_human_labels", type=str, default="False", required=False)
     parser.add_argument("--gold_label_path", type=str, required=False)
     parser.add_argument("--swap_human_labels_for_gpt_labels", type=str, default="False", required=False)
 
@@ -260,10 +260,18 @@ if __name__ == '__main__':
     
     gpt_model = args.gpt_model
     perform_zero_shot = args.perform_zero_shot
+    if perform_zero_shot == "True":
+        perform_zero_shot = True
+    else:
+        perform_zero_shot = False
     few_shot_examples_filepath = args.few_shot_examples_filepath
 
     Y_labeled_count = args.Y_labeled_count
     use_pseudo_human_labels = args.use_pseudo_human_labels
+    if use_pseudo_human_labels == "True":
+        use_pseudo_human_labels = True
+    else:
+        use_pseudo_human_labels = False
     gold_label_path = args.gold_label_path
     
     swap_human_labels_for_gpt4_labels = args.swap_human_labels_for_gpt_labels
