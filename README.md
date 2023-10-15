@@ -51,14 +51,16 @@ With the generated file under `synthetic_queries_filename` from the previous ste
 ​
 ````
 python General_Binary_Classifier.py \
-       --classification_dataset <classification_dataset> \
+       --classification_dataset <synthetic queries file> \
        --test_set_selection <test_set_selection> \
        --label_column Context_Relevance_Label \
        --num_epochs 10 \
        --patience_value 3 \
        --learning_rate 5e-6
 ````
-​
+For `document_filepath`, put the filepath of the synthetic queries generated in the previous step. For `test_set_selection`, put the filepath of the human annotated examples of your dataset; it should be formatted like the file `example_files/evaluation_datasets.tsv`.
+
+
 ## Step #3: Score RAG System with ARES
 ​
 With the outputted model checkpoint from Step #2, you can now score your RAG system using ARES with following command in folder `RAG_Automatic_Evaluation/`:
