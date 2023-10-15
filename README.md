@@ -80,4 +80,4 @@ python LLMJudge_RAG_Compared_Scoring.py \
 If you want to use GPT scoring, switch `GPT_scoring` to `True`. You can leave the `checkpoints` list as blank and specify the GPT model with the tag `--gpt_model <model selected>`.
 ​
 
-Note: For examples files for `evaluation_datasets` and `gold_label_path`, please see `example_files`.
+Note: For examples files for `evaluation_datasets` and `gold_label_path`, please see `example_files/evaluation_datasets.tsv` for formatting.
