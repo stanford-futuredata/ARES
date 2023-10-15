@@ -43,7 +43,7 @@ python Generate_Synthetic_Queries_and_Answers.py \
        --documents_sampled 10000
 ````
 ​
-Note: For examples files for `document_filepath`, `few_shot_prompt_filename`, and `answer_gen_few_shot_prompt_filename`, please see `example_files`.
+Note: For examples files for `document_filepath` and `few_shot_prompt_filename`, please see `example_files`.
 ​
 ## Step #2: Fine-tune LLM-as-a-Judge
 ​
