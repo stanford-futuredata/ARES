@@ -81,3 +81,7 @@ If you want to use GPT scoring, switch `GPT_scoring` to `True`. You can leave th
 ​
 
 Note: For examples files of `evaluation_datasets` and `gold_label_path`, please see `example_files/evaluation_datasets.tsv` for formatting.
+
+### Results Replication
+
+We include synthetic datasets for key experimental results in `synthetic_datasets`. Additionally, we include instructions for fine-tuning LLM judges in the paper itself. Please reach out to jonsaadfalcon@stanford.edu if you have any further questions.
