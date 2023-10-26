@@ -20,7 +20,9 @@ evaluation_datasets = ['../datasets_v2/hotpotqa/ratio_0.7_reformatted_full_artic
 #evaluation_datasets = evaluation_datasets[:2]
 correct_ranking = [i for i in range(0, len(evaluation_datasets))]
 
-labels = ["Context Relevance", "Answer Faithfulness", "Answer Relevance"]
+#labels = ["Context Relevance", "Answer Faithfulness", "Answer Relevance"]
+labels = ["Context Relevance", "Answer Relevance"]
+
 context_scores = []
 answer_relevance_scores = []
 answer_faithfulness_scores = []
@@ -51,11 +53,11 @@ for evaluation_dataset in evaluation_datasets:
 
     context_scores.append(results['context_precision'])
     answer_relevance_scores.append(results['answer_relevancy'])
-    answer_faithfulness_scores.append(results['faithfulness'])
+    #answer_faithfulness_scores.append(results['faithfulness'])
 
 ####################################
 
-for label, scores in zip(labels, [context_scores, answer_relevance_scores, answer_faithfulness_scores]):
+for label, scores in zip(labels, [context_scores, answer_relevance_scores]):
 
     indexed_list = list(enumerate(scores))
     sorted_list = sorted(indexed_list, key=lambda x: x[1])
