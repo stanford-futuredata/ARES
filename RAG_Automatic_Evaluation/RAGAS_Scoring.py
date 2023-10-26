@@ -25,7 +25,7 @@ answer_faithfulness_scores = []
 
 for evaluation_dataset in evaluation_datasets:
     dataset = pd.read_csv(evaluation_dataset.replace("../", "../../ColBERT-FM/"), sep="\t")
-    dataset = dataset[:5000]
+    dataset = dataset[:2000]
 
     def string_to_list(text):
         return [text]
