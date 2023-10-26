@@ -19,10 +19,16 @@ for evaluation_dataset in evaluation_datasets[:1]:
     dataset = pd.read_csv(evaluation_dataset.replace("../", "../../ColBERT-FM/"), sep="\t")
     dataset = dataset[:100]
 
+    def string_to_list(text):
+        return [text]
+
+    # Apply the function to the 'text_column' to convert it to a column of lists
+    dataset['contexts'] = dataset['Document'].apply(string_to_list)
+
     dataset = Dataset.from_pandas(dataset)
     dataset = dataset.rename_column("Query", "question")
     dataset = dataset.rename_column("Answer", "answer")
-    dataset = dataset.rename_column("Document", "contexts")
+    #dataset = dataset.rename_column("Document", "contexts")
 
     results = evaluate(dataset, metrics=[
         context_precision,
