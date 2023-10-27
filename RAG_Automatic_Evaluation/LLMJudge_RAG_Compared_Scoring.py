@@ -501,6 +501,8 @@ if __name__ == '__main__':
                 Yhat_unlabeled_dataset, Y_labeled_dataset = train_test_split(test_set, test_size=y_labeled_ratio, random_state=42)
                 Yhat_unlabeled_dataset = test_set
             else:
+
+                print("Gathering ML predictions for Y_labeled_dataset in PPI!")
                 
                 Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t")
                 
