@@ -494,13 +494,61 @@ if __name__ == '__main__':
                 if label != label_column:
                     test_set = test_set[test_set[label] != 0]
 
+            ############################################################
+
             if use_pseudo_human_labels:
                 y_labeled_ratio = Y_labeled_count / len(test_set)
                 Yhat_unlabeled_dataset, Y_labeled_dataset = train_test_split(test_set, test_size=y_labeled_ratio, random_state=42)
                 Yhat_unlabeled_dataset = test_set
             else:
+                
                 Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t")
+                
+                text_column = 'concat_text'
+                Y_labeled_dataset = Y_labeled_dataset[Y_labeled_dataset[label_column].notna()]
+                if "Context" in label_column:
+                    Y_labeled_dataset[text_column] = [combine_query_document(Y_labeled_dataset.iloc[i]['Query'], Y_labeled_dataset.iloc[i]['Document']) for i in range(len(Y_labeled_dataset))]
+                else:
+                    Y_labeled_dataset[text_column] = [combine_query_document(Y_labeled_dataset.iloc[i]['Query'], Y_labeled_dataset.iloc[i]['Document'], Y_labeled_dataset.iloc[i]['Answer']) for i in range(len(Y_labeled_dataset))]
+
+                Y_labeled_dataset = Y_labeled_dataset[Y_labeled_dataset[text_column] != "Error"]
+                Y_labeled_dataloader = prepare_dataset_for_evaluation(Y_labeled_dataset, label_column, text_column)
+
+                ####################################
+
+                Y_labeled_predictions = torch.FloatTensor([]).to(device)
+
+                progress_bar = tqdm(range(len(Y_labeled_dataloader)))
+                model.eval()
+                for batch in Y_labeled_dataloader:
+
+                    with torch.no_grad():
+
+                        if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
+                            new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
+                        else:
+                            new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
+
+                        if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
+                            new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+
+                        outputs = model(**new_batch)
+
+                        logits = outputs
+                        predictions = torch.argmax(logits, dim=-1)
+                        metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+
+                        Y_labeled_predictions = torch.cat((Y_labeled_predictions, predictions), 0)
+
+                        progress_bar.update(1)
+
+                ####################################
+
+                Y_labeled_dataset[prediction_column] = Y_labeled_predictions.detach().cpu().numpy().tolist()
+                
                 Yhat_unlabeled_dataset = test_set
+
+            ############################################################
 
             if swap_human_labels_for_gpt4_labels:
                 if "Context_Relevance_Label" == label_column:
