@@ -2,18 +2,20 @@
 
 To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:
 ​
-- A human-labeled set of query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.
-- A set of few-shot examples for scoring context relevance, answer faithfulness, and/or answer relevance in your system
-- A much larger set of unlabeled query + document pairs for scoring using our downstream LLM-as-a-judge
+- A **human preference validation set** of annotated query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.
+- A **set of few-shot examples** for scoring context relevance, answer faithfulness, and/or answer relevance in your system
+- A much larger **set of unlabeled query-document-answer triples** outputted by your RAG system for scoring
 
-​
-The ARES training pipeline is three separate steps:
-​
-- Generate synthetic training data for fine-tuning LLM-as-a-Judge
-- Fine-tuning LLM-as-a-Judge with synthetic training data
-- Using fine-tuned LLM-as-a-Judge to score RAG system
 
+The ARES training pipeline is two steps:
 ​
+1) Select LLM judge configuration: 1) **few-shot off-the-shelf LLM** or 2) **lightweight LLM fine-tuned on synthetic data**
+2) Prepare LLM judge for scoring RAG system
+    - For the in-context learning configuration of the LLM judge, you prepare few-shot examples of context relevance, answer faithfulness, and answer relevance
+    - For the fine-tuned configuration of the LLM judge, you generate synthetic training data and fine-tune the LLM judge
+3) Deploy the prepared LLM judge to your RAG system across key performance metrics
+
+
 Note: Steps #1 and #2 can be skipped if you decide to go directly with zero/few-shot LLM-as-a-Judge for ARES
 ​
 ### Installation
