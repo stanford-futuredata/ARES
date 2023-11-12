@@ -9,14 +9,12 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 
 The ARES training pipeline is two steps:
 ​
-1) Select LLM judge configuration: 1) **few-shot off-the-shelf LLM** or 2) **lightweight LLM fine-tuned on synthetic data**
-2) Prepare LLM judge for scoring RAG system
-    - For the in-context learning configuration of the LLM judge, you prepare few-shot examples of context relevance, answer faithfulness, and answer relevance
-    - For the fine-tuned configuration of the LLM judge, you generate synthetic training data and fine-tune the LLM judge
-3) Deploy the prepared LLM judge to your RAG system across key performance metrics
+1) Generate synthetic queries and answers from in-domain passages
+2) Prepare LLM judges for scoring RAG system by fine-tuning on synthetically-generated training data
+3) Deploy the prepared LLM judges to evaluate your RAG system across key performance metrics
 
 
-Note: Steps #1 and #2 can be skipped if you decide to go directly with zero/few-shot LLM-as-a-Judge for ARES
+Note: We also allow users to skip Steps #1 and #2 deploying a zero/few-shot LLM-as-a-Judge
 ​
 ### Installation
 ​
@@ -79,7 +77,7 @@ python LLMJudge_RAG_Compared_Scoring.py \
        --swap_human_labels_for_gpt_labels False
 ````
 ​
-If you want to use GPT scoring, switch `GPT_scoring` to `True`. You can leave the `checkpoints` list as blank and specify the GPT model with the tag `--gpt_model <model selected>`.
+If you want to use few-shot GPT scoring, switch `GPT_scoring` to `True`. You can leave the `checkpoints` list as blank and specify the GPT model with the tag `--gpt_model <model selected>`.
 ​
 
 Note: For examples files of `evaluation_datasets` and `gold_label_path`, please see `example_files/evaluation_datasets.tsv` for formatting.
