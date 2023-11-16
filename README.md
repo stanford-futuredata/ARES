@@ -42,6 +42,8 @@ python Generate_Synthetic_Queries_and_Answers.py \
        --synthetic_queries_filename <synthetic_queries_filename> \
        --documents_sampled 10000
 ````
+
+This script will output a filepath to the generated synthetic queries for the next step.
 ​
 Note: For examples files for `document_filepath` and `few_shot_prompt_filename`, please see `example_files`.
 ​
@@ -58,7 +60,10 @@ python General_Binary_Classifier.py \
        --patience_value 3 \
        --learning_rate 5e-6
 ````
+
 For `document_filepath`, put the filepath of the synthetic queries generated in the previous step. For `test_set_selection`, put the filepath of the human annotated examples of your dataset; it should be formatted like the file `example_files/evaluation_datasets.tsv`.
+
+This script will output a model checkpoint path for the next step.
 
 
 ## Step #3: Score RAG System with ARES
