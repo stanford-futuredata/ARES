@@ -1,5 +1,7 @@
 ## ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems
 
+Paper: [ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems](http://tiny.cc/ares_rag)
+
 To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:
 ​
 - A **human preference validation set** of annotated query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.
