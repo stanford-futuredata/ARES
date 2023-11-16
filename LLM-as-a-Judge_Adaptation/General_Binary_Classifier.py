@@ -627,7 +627,7 @@ if __name__ == '__main__':
                 ############################################################
 
                 print("--------------------------")
-                print("Predictions Shapes")
+                print("Predictions and Reference Shapes")
                 print(total_predictions.shape)
                 print(total_references.shape)
 
