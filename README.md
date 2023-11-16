@@ -69,7 +69,7 @@ This script will output a model checkpoint path for the next step.
 
 ## Step #3: Score RAG System with ARES
 ​
-With the outputted model checkpoint from Step #2, you can now score your RAG system using ARES with following command in folder `RAG_Automatic_Evaluation/`:
+With the outputted model checkpoint from Step #2, you can now score your RAG system's configurations using ARES with following command in folder `RAG_Automatic_Evaluation/`:
 ​
 ````
 python LLMJudge_RAG_Compared_Scoring.py \
@@ -83,6 +83,8 @@ python LLMJudge_RAG_Compared_Scoring.py \
        --swap_human_labels_for_gpt_labels False
 ````
 ​
+For `evaluation_datasets`, we expect a list of filepaths to query-passage-answer TSVs for each RAG configuration you wish to score.
+
 If you want to use few-shot GPT scoring, switch `GPT_scoring` to `True`. You can leave the `checkpoints` list as blank and specify the GPT model with the tag `--gpt_model <model selected>`.
 ​
 
