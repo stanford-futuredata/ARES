@@ -249,7 +249,6 @@ if __name__ == '__main__':
     evaluation_datasets = args.evaluation_datasets
     checkpoints = args.checkpoints
     labels = args.labels
-    correct_ranking = [i for i in range(0, len(evaluation_datasets))]
     
     # Settings for zero/few-shot GPT scoring
     GPT_scoring = args.GPT_scoring
@@ -397,7 +396,7 @@ if __name__ == '__main__':
             print(test_set.iloc[10][text_column])
 
             ############################################################
-
+            
             model_choice = "microsoft/deberta-v3-large"
             max_token_length = 2048
             tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
@@ -411,12 +410,11 @@ if __name__ == '__main__':
             ############################################################
 
             if GPT_scoring:
-                test_set = test_set.sample(n=2000, random_state=43)
+                #test_set = test_set.sample(n=2000, random_state=43)
+                test_set = test_set.sample(n=len(test_set), random_state=43)
             else:
                 print("Loading the Best Finetuned-LLM Checkpoint")
                 model.load_state_dict(torch.load(checkpoint))
-
-            test_set = test_set.sample(n=100, random_state=43)
 
             ############################################################
 
@@ -574,10 +572,13 @@ if __name__ == '__main__':
             print(len(Y_labeled))
             print(len(Yhat_labeled))
             print(len(Yhat_unlabeled))
+            print("Y_labeled_dataset Label Distribution: ")
             print(Y_labeled_dataset[label_column].tolist().count(1))
             print(Y_labeled_dataset[label_column].tolist().count(0))
+            print("Y_labeled_dataset Prediction Distribution: ")
             print(Y_labeled_dataset[prediction_column].tolist().count(1))
             print(Y_labeled_dataset[prediction_column].tolist().count(0))
+            print("Yhat_unlabeled_dataset Prediction Distribution: ")
             print(Yhat_unlabeled_dataset[prediction_column].tolist().count(1))
             print(Yhat_unlabeled_dataset[prediction_column].tolist().count(0))
 
@@ -597,15 +598,11 @@ if __name__ == '__main__':
         indexed_list = list(enumerate(LLM_judge_ratio_predictions))
         sorted_list = sorted(indexed_list, key=lambda x: x[1])
         sorted_indices = [index for index, _ in sorted_list]
-        tau, p_value = stats.kendalltau(correct_ranking, sorted_indices)
 
         print("--------------------------------------------------")
         print(label_column + " Scoring")
-        print("Correct Ranking v. ARES Ranking")
-        print(correct_ranking)
+        print("ARES Ranking")
         print(sorted_indices)
-        print("Kendall's Tau: " + str(tau))
-        print("P-Value: " + str(p_value))
         print("Avg. PPIs: " + str(LLM_judge_ratio_predictions))
         print("PPI Confidence Intervals: " + str(ppi_confidence_intervals))
         print("Evaluation Set Lengths: " + str(validation_set_lengths))
