@@ -7,7 +7,7 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 - A much larger **set of unlabeled query-document-answer triples** outputted by your RAG system for scoring
 
 
-The ARES training pipeline is two steps:
+The ARES training pipeline is three steps:
 ​
 1) Generate synthetic queries and answers from in-domain passages
 2) Prepare LLM judges for scoring RAG system by fine-tuning on synthetically-generated training data
