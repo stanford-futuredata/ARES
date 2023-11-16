@@ -292,17 +292,11 @@ if __name__ == '__main__':
     #################################################
 
     synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
-    #synth_queries = synth_queries[:10]
-    #synth_queries = synth_queries.drop('__index_level_0__', axis=1)
+    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
 
     print("synth_queries")
     print(len(synth_queries))
     print(synth_queries.head())
-
-    print("Filtered synth queries")
-    print(len(synth_queries))
-    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
-    print(len(synth_queries))
 
     if regenerate_embeddings:
         print("Generating index and negatives!")
@@ -319,18 +313,23 @@ if __name__ == '__main__':
     #Shuffle queries
     synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
 
-    print("synth_queries filtered")
-    print(len(synth_queries))
+    print("Label Sets for each Metric")
     print(set(synth_queries['Context_Relevance_Label'].tolist()))
     print(set(synth_queries['Answer_Faithfulness_Label'].tolist()))
     print(set(synth_queries['Answer_Relevance_Label'].tolist()))
+
+    print("synth_queries filtered")
+    print(len(synth_queries))
     print(synth_queries.head())
 
     print("Positive and Negative Counts")
+    print("Context Relevance")
     print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "Yes"]))
     print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "No"]))
+    print("Answer Faithfulness")
     print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "Yes"]))
     print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "No"]))
+    print("Answer Relevance")
     print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "Yes"]))
     print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "No"]))
 
