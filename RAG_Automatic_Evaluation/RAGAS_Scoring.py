@@ -78,16 +78,3 @@ for label, scores in zip(labels, [context_scores, answer_relevance_scores]):
     print("Scores: " + str(scores))
     print("--------------------------------------------------")
 
-
-# prepare your huggingface dataset in the format
-# Dataset({
-#     features: ['question', 'contexts', 'answer', 'ground_truths'],
-#     num_rows: 25
-# })
-
-#dataset: Dataset
-
-#results = evaluate(dataset)
-# {'ragas_score': 0.860, 'context_precision': 0.817,
-# 'faithfulness': 0.892, 'answer_relevancy': 0.874}
-
