@@ -45,6 +45,7 @@ python Generate_Synthetic_Queries_and_Answers.py \
 
 This script will output a filepath to the generated synthetic queries for the next step.
 ​
+
 Note: For examples files for `document_filepath` and `few_shot_prompt_filename`, please see `example_files`.
 ​
 ## Step #2: Fine-tune LLM-as-a-Judge
