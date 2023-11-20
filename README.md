@@ -100,11 +100,13 @@ We include synthetic datasets for key experimental results in `synthetic_dataset
 
 To cite our work, please use the following Bibtex:
 
-`@misc{saadfalcon2023ares,
+````
+@misc{saadfalcon2023ares,
       title={ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems}, 
       author={Jon Saad-Falcon and Omar Khattab and Christopher Potts and Matei Zaharia},
       year={2023},
       eprint={2311.09476},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
-}`
+}
+````
