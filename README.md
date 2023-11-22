@@ -94,7 +94,7 @@ Note: For examples files of `evaluation_datasets` and `gold_label_path`, please 
 
 ## Results Replication
 
-We include synthetic datasets for key experimental results in `synthetic_datasets`. The few-shot prompts used for generation and evaluation are included in `prompts`. We also include instructions for fine-tuning LLM judges in the paper itself. Please reach out to jonsaadfalcon@stanford.edu if you have any further questions.
+We include synthetic datasets for key experimental results in `synthetic_datasets`. The few-shot prompts used for generation and evaluation are included in `datasets`. We also include instructions for fine-tuning LLM judges in the paper itself. Please reach out to jonsaadfalcon@stanford.edu if you have any further questions.
 
 ## Citation
 
