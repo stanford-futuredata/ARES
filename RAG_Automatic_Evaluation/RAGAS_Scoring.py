@@ -14,15 +14,17 @@ from ragas.metrics import (
 
 #os.environ["OPENAI_API_KEY"] = "your-openai-key"
 
-#evaluation_datasets = ['../datasets_v2/nq/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
+evaluation_datasets = ['../datasets_v2/nq/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/nq/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
 #evaluation_datasets = ['../datasets_v2/hotpotqa/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/hotpotqa/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
 #evaluation_datasets = ['../datasets_v2/wow/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/wow/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
 #evaluation_datasets = ['../datasets_v2/fever/ratio_0.7_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.725_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.75_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.775_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.8_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.825_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.85_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.875_reformatted_full_articles_False_validation_with_negatives.tsv', '../datasets_v2/fever/ratio_0.9_reformatted_full_articles_False_validation_with_negatives.tsv']
 #evaluation_datasets = ['../datasets_v2/multirc/ratio_0.7_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.725_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.75_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.775_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.8_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.825_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.85_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.875_validation_with_negatives.tsv', '../datasets_v2/multirc/ratio_0.9_validation_with_negatives.tsv']
-evaluation_datasets = ['../datasets_v2/record/ratio_0.7_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.725_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.75_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.775_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.8_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.825_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.85_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.875_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.9_validation_with_negatives.tsv']
+#evaluation_datasets = ['../datasets_v2/record/ratio_0.7_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.725_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.75_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.775_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.8_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.825_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.85_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.875_validation_with_negatives.tsv', '../datasets_v2/record/ratio_0.9_validation_with_negatives.tsv']
 
 #evaluation_datasets = evaluation_datasets[:2]
 correct_ranking = [i for i in range(0, len(evaluation_datasets))]
+
+use_annotations_for_ranking = True
 
 #labels = ["Context Relevance", "Answer Faithfulness", "Answer Relevance"]
 labels = ["Context Relevance", "Answer Relevance"]
@@ -46,18 +48,28 @@ for evaluation_dataset in evaluation_datasets:
     dataset = dataset.rename_column("Answer", "answer")
     #dataset = dataset.rename_column("Document", "contexts")
 
-    results = evaluate(dataset, metrics=[
-        context_precision,
-        #faithfulness,
-        answer_relevancy,
-    ])
+    if not use_annotations_for_ranking:
 
-    print("Results for " + evaluation_dataset)
-    print(results)
+        results = evaluate(dataset, metrics=[
+            context_precision,
+            #faithfulness,
+            answer_relevancy,
+        ])
 
-    context_scores.append(results['context_precision'])
-    answer_relevance_scores.append(results['answer_relevancy'])
-    #answer_faithfulness_scores.append(results['faithfulness'])
+        print("Results for " + evaluation_dataset)
+        print(results)
+
+        context_scores.append(results['context_precision'])
+        answer_relevance_scores.append(results['answer_relevancy'])
+        #answer_faithfulness_scores.append(results['faithfulness'])
+
+    else:
+        
+        sampled_y_labels = dataset.sample(n=300, random_state=42)
+        context_relevance_prediction = sum(dataset["Context_Relevance_Label"].tolist()) / len(sampled_y_labels)
+        answer_relevance_prediction = sum(dataset["Answer_Relevance_Label"].tolist()) / len(sampled_y_labels)
+        context_scores.append(context_relevance_prediction)
+        answer_relevance_scores.append(answer_relevance_prediction)
 
 ####################################
 
@@ -77,4 +89,17 @@ for label, scores in zip(labels, [context_scores, answer_relevance_scores]):
     print("P-Value: " + str(p_value))
     print("Scores: " + str(scores))
     print("--------------------------------------------------")
+
+
+# prepare your huggingface dataset in the format
+# Dataset({
+#     features: ['question', 'contexts', 'answer', 'ground_truths'],
+#     num_rows: 25
+# })
+
+#dataset: Dataset
+
+#results = evaluate(dataset)
+# {'ragas_score': 0.860, 'context_precision': 0.817,
+# 'faithfulness': 0.892, 'answer_relevancy': 0.874}
 
