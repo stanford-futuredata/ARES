@@ -209,12 +209,13 @@ QtPy==2.3.1
 questionary==1.10.0
 rank-bm25==0.2.2
 regex==2023.5.5
+requests==2.31.0
 responses==0.18.0
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rich==13.5.2
-ruamel.yaml==0.17.32
 ruamel.yaml.clib==0.2.7
+ruamel.yaml==0.17.32
 s3transfer==0.6.2
 safetensors==0.3.1
 scikit-learn==1.2.2
@@ -276,4 +277,3 @@ yarl==1.9.2
 zipp==3.15.0
 zlib-state==0.1.5
 zstd==1.5.5.1
-requests==2.31.0
