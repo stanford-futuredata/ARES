@@ -38,7 +38,7 @@ export OPENAI_API_KEY=<your key here>
 To generate synthetic training data, use `LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
 ​
 ````
-python Generate_Synthetic_Queries_and_Answers.py \
+python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
        --document_filepath <document_filepath> \
        --few_shot_prompt_filename <few_shot_prompt_filename> \
        --synthetic_queries_filename <synthetic_queries_filename> \
@@ -47,11 +47,10 @@ python Generate_Synthetic_Queries_and_Answers.py \
 
 Example:
 ````
----
 python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
        --document_filepath example_files/document_filepath.tsv \
        --few_shot_prompt_filename example_files/few_shot_prompt_filename.tsv \
-       --synthetic_queries_filename ./output/synthetic_queries_1.tsv \
+       --synthetic_queries_filename output/synthetic_queries_1.tsv \
        --documents_sampled 10000
 ````
 
