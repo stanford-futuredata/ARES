@@ -23,7 +23,7 @@ Note: We also allow users to skip Steps #1 and #2 deploying a zero/few-shot LLM-
 To install the necessary dependencies, run the following commands:
 ​
 ````
-conda create -n llm_judge python=3.10
+conda create -n llm_judge python=3.10 --yes
 conda activate llm_judge
 pip install -r requirements.txt
 ````
@@ -38,10 +38,19 @@ export OPENAI_API_KEY=<your key here>
 To generate synthetic training data, use `LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
 ​
 ````
-python Generate_Synthetic_Queries_and_Answers.py \
+python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
        --document_filepath <document_filepath> \
        --few_shot_prompt_filename <few_shot_prompt_filename> \
        --synthetic_queries_filename <synthetic_queries_filename> \
+       --documents_sampled 10000
+````
+
+Example:
+````
+python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
+       --document_filepath example_files/document_filepath.tsv \
+       --few_shot_prompt_filename example_files/few_shot_prompt_filename.tsv \
+       --synthetic_queries_filename output/synthetic_queries_1.tsv \
        --documents_sampled 10000
 ````
 
