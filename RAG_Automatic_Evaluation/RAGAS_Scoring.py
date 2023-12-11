@@ -66,8 +66,8 @@ for evaluation_dataset in evaluation_datasets:
     else:
         
         sampled_y_labels = dataset.sample(n=300, random_state=42)
-        context_relevance_prediction = sum(dataset["Context_Relevance_Label"].tolist()) / len(sampled_y_labels)
-        answer_relevance_prediction = sum(dataset["Answer_Relevance_Label"].tolist()) / len(sampled_y_labels)
+        context_relevance_prediction = sum(sampled_y_labels["Context_Relevance_Label"].tolist()) / len(sampled_y_labels)
+        answer_relevance_prediction = sum(sampled_y_labels["Answer_Relevance_Label"].tolist()) / len(sampled_y_labels)
         context_scores.append(context_relevance_prediction)
         answer_relevance_scores.append(answer_relevance_prediction)
 
