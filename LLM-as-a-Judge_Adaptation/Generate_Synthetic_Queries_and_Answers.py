@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 import re
 import argparse
 import pdb
+import sys
 
 from LLM_Generation_Functions import generate_synthetic_query_openai_approach, generate_answer_from_context, generate_contradictory_answer_from_context
 from LLM_Generation_Functions import check_generated_answer, generate_contradictory_answer_examples, generate_synthetic_query_llm_approach, generate_answer_llm_approach
@@ -159,6 +160,8 @@ if __name__ == '__main__':
         documents['document'] = documents['document'].str.strip()
         if "nq" in document_filepath:
             documents = documents[documents["document"].str.len() > 100]
+        if documents_sampled > documents.shape[0]:
+            sys.exit(f"`--documents_sampled` ({documents_sampled}) cannot be higher than the number of documents in `--document_filepath` after filtering ({documents.shape[0]})")
         documents = documents.sample(n=documents_sampled, random_state=43)
 
     #documents = documents[:10]
