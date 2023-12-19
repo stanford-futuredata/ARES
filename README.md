@@ -119,3 +119,37 @@ To cite our work, please use the following Bibtex:
       primaryClass={cs.CL}
 }
 ````
+
+# Appendix
+### Machine requirements and setup when not using OpenAI API
+**Machine requirements**
+
+- Over ~100 GB of available disk space
+- GPU
+    - Should work: A100 (e.g. `Standard_NC24ads_A100_v4` on Azure)
+    - Does not work:
+        - Tested on 2023-12-17 with both `Standard_NC6s_v3` and `Standard_NC12s_v3`, and ran into this error: `torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 160.00 MiB (GPU 0; 15.77 GiB total capacity; 15.12 GiB already allocated; 95.44 MiB free; 15.12 GiB reserved in total by PyTorch)`
+
+
+**Machine setup**
+
+For example, on an Azure VM running Linux (ubuntu 20.04), you will need to do the following:
+- Install conda
+    - First set of commands (can copy-paste multiple lines)
+        - `wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh`
+        - `chmod +x Miniconda3-latest-Linux-x86_64.sh`
+        - `./Miniconda3-latest-Linux-x86_64.sh -b`
+    - Second set of commands (can copy-paste multiple lines)
+        - `export PATH="~/miniconda3/bin:$PATH"`
+        - `conda init`
+- Install gcc
+    - `sudo apt-get -y update`
+    - `sudo apt-get -y upgrade`
+    - `sudo apt-get -y install build-essential`
+    - `sudo apt-get -y install libpcre3-dev`
+- Install NVIDIA drivers
+    - `sudo apt install ubuntu-drivers-common -y`
+    - `sudo ubuntu-drivers autoinstall`
+    - `sudo reboot`
+    - SSH in again and confirm the installation was successful by running `nvidia-smi`
+- `cd` to ARES folder and follow the rest of the README
