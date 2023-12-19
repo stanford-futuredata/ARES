@@ -153,13 +153,8 @@ if __name__ == '__main__':
 
     else:
         documents = pd.read_csv(document_filepath, sep="\t")
-        if "multirc" not in document_filepath and "record" not in document_filepath:
-            documents = documents[documents["wikipedia_id"].notna()]
-        documents = documents[documents["Answer"].notna()]
         documents.rename(columns={"Document": "document"}, inplace=True)
         documents['document'] = documents['document'].str.strip()
-        if "nq" in document_filepath:
-            documents = documents[documents["document"].str.len() > 100]
         if documents_sampled > documents.shape[0]:
             sys.exit(f"`--documents_sampled` ({documents_sampled}) cannot be higher than the number of documents in `--document_filepath` after filtering ({documents.shape[0]})")
         documents = documents.sample(n=documents_sampled, random_state=43)
