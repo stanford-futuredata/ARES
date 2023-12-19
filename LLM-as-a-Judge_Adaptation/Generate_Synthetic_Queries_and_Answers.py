@@ -152,13 +152,8 @@ if __name__ == '__main__':
 
     else:
         documents = pd.read_csv(document_filepath, sep="\t")
-        if "multirc" not in document_filepath and "record" not in document_filepath:
-            documents = documents[documents["wikipedia_id"].notna()]
-        documents = documents[documents["Answer"].notna()]
         documents.rename(columns={"Document": "document"}, inplace=True)
         documents['document'] = documents['document'].str.strip()
-        if "nq" in document_filepath:
-            documents = documents[documents["document"].str.len() > 100]
         documents = documents.sample(n=documents_sampled, random_state=43)
 
     #documents = documents[:10]
