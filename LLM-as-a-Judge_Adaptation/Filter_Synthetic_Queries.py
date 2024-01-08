@@ -89,7 +89,7 @@ def generate_additional_negatives(queries_dataset, document_index, number_of_neg
         scores, samples = document_index.get_nearest_examples(
             "embeddings", question_embedding, k=100
         )
-        random_negative_sample = random.randint(lower_bound_for_negatives, 99)
+        random_negative_sample = random.randint(lower_bound_for_negatives, min(99, len(samples) - 1))
         negative_sample_retrieved.append(random_negative_sample)
         negative_documents.append(samples["document"][random_negative_sample])
         negative_labels.append("No")
