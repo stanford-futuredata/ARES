@@ -5,7 +5,7 @@ torchmetrics==0.11.3
 torchtext==0.14.1
 torchvision==0.14.1
 accelerate==0.21.0
-aiohttp==3.8.4
+aiohttp==3.9.0
 aiosignal==1.3.1
 antlr4-python3-runtime==4.9.3
 anyio==3.6.2
