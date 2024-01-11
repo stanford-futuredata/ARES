@@ -186,7 +186,7 @@ py7zr==0.20.5
 pyarrow==14.0.1
 pybcj==1.0.1
 pybind11==2.6.1
-pycryptodomex==3.18.0
+pycryptodomex==3.19.1
 pydantic==1.10.7
 Pygments==2.15.1
 pyjnius==1.5.0
