@@ -270,7 +270,7 @@ webcolors==1.13
 webencodings==0.5.1
 websocket-client==1.5.1
 websockets==10.4
-Werkzeug==2.3.4
+Werkzeug==2.3.8
 widgetsnbextension==4.0.7
 xxhash==3.2.0
 yarl==1.9.2
