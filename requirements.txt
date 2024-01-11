@@ -31,7 +31,7 @@ boto3==1.28.51
 botocore==1.31.51
 catalogue==2.0.8
 cbor==1.0.0
-certifi==2023.5.7
+certifi==2023.7.22
 circuitbreaker==1.4.0
 click==8.1.3
 cmake==3.26.3
