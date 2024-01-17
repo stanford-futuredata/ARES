@@ -32,7 +32,7 @@ def calculate_accuracy(predictions, ground_truth):
 def few_shot_context_relevance_scoring(system_prompt: str, query: str, document: str, gpt_model: str, few_shot_examples=None):
     
     for _ in range(5):
-        try:
+        #try:
 
             user_prompt = ""
             if few_shot_examples is not None:
@@ -40,7 +40,7 @@ def few_shot_context_relevance_scoring(system_prompt: str, query: str, document:
                     user_prompt += "Question: " + few_shot_examples.iloc[row]['Query'] + "\n"
                     user_prompt += "Document: " + few_shot_examples.iloc[row]['Document'] + "\n"
                     current_label = few_shot_examples.iloc[row]['Context_Relevance_Label']
-                    user_prompt += "Label: " + current_label + "\n\n"
+                    user_prompt += "Label: " + str(current_label) + "\n\n"
             
             user_prompt += "Question: " + query + "\n"
             user_prompt += "Document: " + document + "\n"
@@ -70,16 +70,16 @@ def few_shot_context_relevance_scoring(system_prompt: str, query: str, document:
             else:
                 print("Didn't extract Yes or No!")
                 return 1
-        except:
-            print("Error with querying OpenAI! Trying again...")
-            time.sleep(60)
+        #except:
+        #    print("Error with querying OpenAI! Trying again...")
+        #    time.sleep(60)
     
 ####################################################################
 
 def few_shot_answer_faithfulness_scoring(system_prompt, query: str, document: str, answer: str, gpt_model: str, few_shot_examples=None):
 
     for _ in range(5):
-        try:
+        #try:
 
             user_prompt = ""
             if few_shot_examples is not None:
@@ -88,7 +88,7 @@ def few_shot_answer_faithfulness_scoring(system_prompt, query: str, document: st
                     user_prompt += "Document: " + few_shot_examples.iloc[row]['Document'] + "\n"
                     user_prompt += "Answer: " + few_shot_examples.iloc[row]['Answer'] + "\n"
                     current_label = few_shot_examples.iloc[row]['Answer_Faithfulness_Label']
-                    user_prompt += "Label: " + current_label + "\n\n"
+                    user_prompt += "Label: " + str(current_label) + "\n\n"
             
             user_prompt += "Question: " + query + "\n"
             user_prompt += "Document: " + document + "\n"
@@ -118,7 +118,7 @@ def few_shot_answer_faithfulness_scoring(system_prompt, query: str, document: st
             else:
                 print("Didn't extract Yes or No!")
                 return 1
-        except:
+        #except:
             print("Error with querying OpenAI! Trying again...")
             time.sleep(60)
     
@@ -127,7 +127,7 @@ def few_shot_answer_faithfulness_scoring(system_prompt, query: str, document: st
 def few_shot_answer_relevance_scoring(system_prompt: str, query: str, document: str, answer: str, gpt_model: str, few_shot_examples=None):
 
     for _ in range(5):
-        try:
+        #try:
 
             user_prompt = ""
             if few_shot_examples is not None:
@@ -136,7 +136,7 @@ def few_shot_answer_relevance_scoring(system_prompt: str, query: str, document: 
                     user_prompt += "Document: " + few_shot_examples.iloc[row]['Document'] + "\n"
                     user_prompt += "Answer: " + few_shot_examples.iloc[row]['Answer'] + "\n"
                     current_label = few_shot_examples.iloc[row]['Answer_Relevance_Label']
-                    user_prompt += "Label: " + current_label + "\n\n"
+                    user_prompt += "Label: " + str(current_label) + "\n\n"
 
             user_prompt += "Question: " + query + "\n"
             user_prompt += "Document: " + document + "\n"
@@ -167,7 +167,7 @@ def few_shot_answer_relevance_scoring(system_prompt: str, query: str, document: 
             else:
                 print("Didn't extract Yes or No!")
                 return 1
-        except:
+        #except:
             print("Error with querying OpenAI! Trying again...")
             time.sleep(60)
 
