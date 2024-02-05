@@ -69,7 +69,9 @@ positive_negative_ratios = [0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.
 for dataset_chosen in dataset_choices:
 
     # Get the KILT task datasets
-    kilt_dataset_total = load_dataset("kilt_tasks", name=dataset_chosen)
+    kilt_dataset_total = load_dataset("kilt_tasks", name="nq")
+    print("Printing kilt dataset total")
+    print(kilt_dataset_total)
 
     if dataset_chosen in ['nq', "fever", 'hotpotqa', "wow"]:
 
@@ -78,7 +80,7 @@ for dataset_chosen in dataset_choices:
             os.makedirs(folder_path)
 
         #for split in ['train', 'validation']:
-        for split in ['validation']:
+        for split in ['validation']:   
 
             print("Starting on " + split + " split")
 

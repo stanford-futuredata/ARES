@@ -19,6 +19,8 @@ import re
 
 def calculate_accuracy(predictions, ground_truth):
     if len(predictions) != len(ground_truth):
+        print(len(predictions))
+        print(len(ground_truth))
         raise ValueError("Input lists must have the same length")
 
     correct_count = sum(1 for pred, truth in zip(predictions, ground_truth) if pred == truth)
