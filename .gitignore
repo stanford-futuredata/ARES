@@ -26,6 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 checkpoints/
+checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_evaluation_datasets_670487.pt
 datasets_v2/
 
 # PyInstaller
