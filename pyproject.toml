@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ARES"
+version = "0.1.0"
+description = "ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
+utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
+the evaluation of context relevance, answer faithfulness, and answer relevance with minimal human annotations."
+readme = "README.md"
+authors = [
+    { name = "Jon Saad-Falcon", email = "your.email@example.com" }
+    { name = "Robby Manihani", email = "manihani@stanford.edu"}
+    { name = "Omar Khattab", email = "okhattab@stanford.edu"}
+    { name = "Christopher Potts", email = "cgpotts@stanford.edu"}
+    { name = "Matei Zaharia", email = "matei@berkeley.edu"}
+
+]
+license = { file="LICENSE" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3 :: Only",
+]
+keywords = "your, package, keywords"
+homepage = "https://github.com/stanford-futuredata/ARES/tree/main"
+
+[project.urls]
+documentation = "https://yourusername.github.io/YourPackageName/"
+repository = "https://github.com/yourusername/YourPackageName"
+changelog = "https://github.com/yourusername/YourPackageName/blob/main/CHANGELOG.md"
+
+[project.scripts]
+your-package-cli = "yourpackage:main_cli_function"
+
+[project.dependencies]
+requests = "^2.25.1"
+numpy = "^1.20.0"
+
+[project.optional-dependencies]
+dev = ["pytest", "mypy"]
+
+[tool.setuptools]
+packages = ["yourpackage"]
