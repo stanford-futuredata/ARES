@@ -1,15 +1,15 @@
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import load_model
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import load_documents
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import load_few_shot_prompt
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import generate_contradictory_answers
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import generate_few_shot_prompts
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import save_synthetic_queries
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import Generate_Synthetic_Queries_and_Answers
-from LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import print_synthetic_queries
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import load_model
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import load_documents
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import load_few_shot_prompt
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import generate_contradictory_answers
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import generate_few_shot_prompts
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import save_synthetic_queries
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import Generate_Synthetic_Answers
+from ares.LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import print_synthetic_queries
 
 def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename: str,
                                synthetic_queries_filename: str, documents_sampled: int,
-                               flan_approach: bool = True, clean_documents: bool = False,
+                               model_choice: str = "google/flan-t5-xxl", flan_approach: bool = True, clean_documents: bool = False,
                                regenerate_synth_questions: bool = True, 
                                percentiles: list = [0.05, 0.25, 0.5, 0.95], 
                                question_temperatures: list = [2.0, 1.5, 1.0, 0.5, 0.0],
@@ -29,7 +29,7 @@ def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename:
     if "wow" in document_filepath.lower():
         for_wow_dataset = True
 
-    model, model_choice, tokenizer, device = load_model(flan_approach)
+    model, tokenizer, device = load_model(flan_approach, model_choice)
 
     documents = load_documents(document_filepath, clean_documents, documents_sampled)
 
@@ -43,9 +43,10 @@ def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename:
     length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
     synthetic_query_prompt, synthetic_queries_filename, question_temperatures)
 
-    Generate_Synthetic_Queries_and_Answers(synthetic_queries_filename,
+    Generate_Synthetic_Answers(synthetic_queries_filename,
     regenerate_answers, flan_approach, answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, 
     device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
     few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio, lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings)
 
     print_synthetic_queries(synthetic_queries_filename)
+    
