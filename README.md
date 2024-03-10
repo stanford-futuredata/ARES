@@ -2,9 +2,9 @@
 
 Paper: [ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems](http://tiny.cc/ares_rag)
 
-<center><a target="_blank" href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM">
+<p align="center"> <a target="_blank" href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a></center>
+</a> </p>
 
 To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:
 ​
