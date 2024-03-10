@@ -350,7 +350,8 @@ def load_model(model_choice, number_of_labels, GPT_scoring, checkpoint):
 
     ############################################################
 
-def evaluate_model(test_set, label_column, text_column, device, GPT_scoring, tokenizer, model, assigned_batch_size, model_choice): 
+def evaluate_model(test_set, label_column, text_column, device, GPT_scoring, tokenizer, model, assigned_batch_size, model_choice, 
+context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt): 
 
     eval_dataloader = prepare_dataset_for_evaluation(test_set, label_column, text_column, assigned_batch_size, tokenizer)
 
@@ -456,7 +457,7 @@ def post_process_predictions(test_set, label_column, total_predictions, labels, 
     return test_set, Y_labeled_dataset, Y_labeled_dataloader, Y_labeled_predictions, Yhat_unlabeled_dataset, prediction_column
 
 def evaluate_and_scoring_data(test_set, Y_labeled_predictions, Y_labeled_dataset, Y_labeled_dataloader, Yhat_unlabeled_dataset, 
-alpha, num_trials, model, device, model_choice, swap_human_labels_for_gpt4_labels, context_relevance_system_prompt, few_shot_examples, metric, prediction_column, 
+alpha, num_trials, model, device, model_choice, swap_human_labels_for_gpt4_labels, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples, metric, prediction_column, 
 label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, ppi_confidence_intervals, accuracy_scores, results):
     progress_bar = tqdm(range(len(Y_labeled_dataloader)))
     model.eval()

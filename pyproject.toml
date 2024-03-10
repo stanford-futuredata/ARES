@@ -5,17 +5,18 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ARES"
 version = "0.1.0"
-description = "ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
+description = """ 
+ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
 utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
-the evaluation of context relevance, answer faithfulness, and answer relevance with minimal human annotations."
+the evaluation of context relevance, answer faithfulness, and answer relevance with minimal human annotations.
+"""
 readme = "README.md"
 authors = [
-    { name = "Jon Saad-Falcon", email = "your.email@example.com" }
-    { name = "Robby Manihani", email = "manihani@stanford.edu"}
-    { name = "Omar Khattab", email = "okhattab@stanford.edu"}
-    { name = "Christopher Potts", email = "cgpotts@stanford.edu"}
+    { name = "Jon Saad-Falcon", email = "jonsaadfalcon@stanford.edu" },
+    { name = "Robby Manihani", email = "manihani@stanford.edu"},
+    { name = "Omar Khattab", email = "okhattab@stanford.edu"},
+    { name = "Christopher Potts", email = "cgpotts@stanford.edu"},
     { name = "Matei Zaharia", email = "matei@berkeley.edu"}
-
 ]
 license = { file="LICENSE" }
 classifiers = [
@@ -24,24 +25,58 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10"
 ]
-keywords = "your, package, keywords"
-homepage = "https://github.com/stanford-futuredata/ARES/tree/main"
+keywords = ["RAG", "RAG Scoring", "RAG Systems", "Automated Evaluation Framework", "Retrieval-Augmented Generation Systems",
+"LLM Judges", "Natural Language Processing", "Machine Learning", "RAG Evaluation", "Context Relevance", "Answer Faithfulness",
+"Answer Relevance", "Synthetic Queries", "Synthetic Answers", "In-Domain Passages", "Key Performance Metrics", "Human Preference Validation Set"]
 
-[project.urls]
-documentation = "https://yourusername.github.io/YourPackageName/"
-repository = "https://github.com/stanford-futuredata/ARES/tree/main"
-changelog = "https://github.com/yourusername/YourPackageName/blob/main/CHANGELOG.md"
-
-[project.scripts]
-your-package-cli = "yourpackage:main_cli_function"
-
-[project.dependencies]
-requests = "^2.25.1"
-numpy = "^1.20.0"
+dependencies = [
+    "numpy >=1.20.0, <2.0.0",
+    "torch >=1.13.1, <2.0.0",
+    "Cython >=0.29.35, <0.30.0",
+    "pydantic >=1.10.7,<2.0.0",
+    "python-dateutil >=2.8.2,<3.0.0",
+    "pytz >=2023.3,<2024.0",
+    "PyYAML >=6.0,<7.0",
+    "requests >=2.25.1, <3.0.0",
+    "scikit-learn >=1.2.2,<1.3.0",
+    "scipy >=1.10.1,<1.11.0",
+]
 
 [project.optional-dependencies]
-dev = ["pytest", "mypy"]
+data_science = [
+    "pandas >=2.0.1,<3.0.0",
+    "matplotlib >=3.7.1, <4.0.0",
+    "matplotlib-inline >=0.1.6, <0.2.0",
+    "datasets >=2.18.0, <3.0.0",
+    "numexpr >=2.8.4, <3.0.0",
+    "joblib >=1.2.0, <2.0.0",
+    "spacy >=3.5.3,<4.0.0",
+]
+nlp_tools = [
+    "nltk >=3.8.1, <4.0.0",
+    "sentence-transformers >=2.2.2,<3.0.0",
+    "tokenizers >=0.13.3",
+    "transformers >=4.36.0",
+]
+acceleration = [
+    "accelerate >=0.21.0, <1.0.0",
+    "pytorch-ranger >=0.1.1,<0.2.0",
+]
+visualization = [
+    "ipywidgets >=8.0.6, <9.0.0",
+    "ipython >=8.12.2, <9.0.0",
+    "ipykernel >=6.23.1, <7.0.0",
+]
+
+[project.urls]
+documentation = "https://github.com/stanford-futuredata/ARES/tree/new-dev/docs"
+repository = "https://github.com/stanford-futuredata/ARES/tree/main"
+changelog = "https://github.com/stanford-futuredata/ARES/blob/new-dev/CHANGELOG.md"
+
+[project.scripts]
+ares-cli = "ares.cli:main"
 
 [tool.setuptools]
-packages = ["yourpackage"]
+packages = ["ares"]

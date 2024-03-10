@@ -25,10 +25,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-/data/checkpoints
-/data/example_checkpoints
-checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_evaluation_datasets_670487.pt
-datasets_v2/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -166,3 +162,8 @@ cython_debug/
 tests/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_375242.pt
 tests/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt
 tests/nohup.out
+/data/checkpoints
+/data/example_checkpoints
+checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_evaluation_datasets_670487.pt
+datasets_v2/
+/test.py
