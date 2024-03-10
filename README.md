@@ -2,6 +2,10 @@
 
 Paper: [ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems](http://tiny.cc/ares_rag)
 
+<a target="_blank" href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
 To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:
 ​
 - A **human preference validation set** of annotated query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.

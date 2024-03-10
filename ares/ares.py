@@ -1,7 +1,7 @@
-from ares.synthetic_generator import synthetic_generator_config
-from ares.binary_classifier import binary_classifer_config
-from ares.rag_scoring import rag_scoring_config
-from ares.ues_idp import ues_idp_config
+from .synthetic_generator import synthetic_generator_config
+from .binary_classifier import binary_classifer_config
+from .rag_scoring import rag_scoring_config
+from .ues_idp import ues_idp_config
 from typing import List
 import pandas as pd
 
