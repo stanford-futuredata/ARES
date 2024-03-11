@@ -45,6 +45,8 @@ np.random.seed(random_state)
 random.seed(random_state)
 torch.manual_seed(random_state)
 os.environ['PYTHONHASHSEED'] = str(random_state)
+os.environ["HUGGINGFACE_HUB_DISABLE_DOWNLOAD_PROGRESS"] = "1"
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 ############################################################
 
@@ -152,6 +154,9 @@ def tokenize_function(tokenizer, examples):
 ############################################################
 
 def prepare_dataset_for_evaluation(dataframe, label_column: str, text_column: str, assigned_batch_size, tokenizer):
+    from datasets.utils.logging import disable_progress_bar
+    disable_progress_bar()
+
     test_set_text = [dataframe.iloc[i][text_column] for i in range(len(dataframe))]
     test_set_label = [dataframe.iloc[i][label_column] for i in range(len(dataframe))]
 
@@ -161,7 +166,6 @@ def prepare_dataset_for_evaluation(dataframe, label_column: str, text_column: st
 
     classification_dataset = datasets.DatasetDict({'test' : test_dataset_arrow})
     tokenized_datasets = classification_dataset.map(lambda examples: tokenize_function(tokenizer, examples), batched=True)
-
     tokenized_datasets = tokenized_datasets.remove_columns(["text"])
     tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
     tokenized_datasets.set_format("torch")
@@ -174,27 +178,26 @@ def prepare_dataset_for_evaluation(dataframe, label_column: str, text_column: st
 def calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials):
 
     n_max = Y_labeled.shape[0]
-    #ns = np.linspace(100,n_max,20).astype(int)
-    ns = np.linspace(0,n_max,20).astype(int)
+    # ns = np.linspace(100,n_max,20).astype(int)
+    ns = np.linspace(0, n_max, 20).astype(int)
 
     # Imputed-only estimate
-    imputed_estimate = (Yhat_labeled.sum() + Yhat_unlabeled.sum())/(Yhat_labeled.shape[0] + Yhat_unlabeled.shape[0])
+    imputed_estimate = (Yhat_labeled.sum() + Yhat_unlabeled.sum()) / (Yhat_labeled.shape[0] + Yhat_unlabeled.shape[0])
 
     # Run prediction-powered inference and classical inference for many values of n
     ci = np.zeros((num_trials, ns.shape[0], 2))
     ci_classical = np.zeros((num_trials, ns.shape[0], 2))
-    for i in tqdm(range(ns.shape[0])):
-        for j in range(num_trials):
-            # Prediction-Powered Inference
-            n = ns[i]
-            rand_idx = np.random.permutation(n)
+
+    for j in tqdm(range(num_trials), desc="Trials"):  # Wrap the outer loop with tqdm for the progress bar
+        for i, n in enumerate(ns):  # Iterate over ns with an index
+            rand_idx = np.random.permutation(Y_labeled.shape[0])
             f = Yhat_labeled.astype(float)[rand_idx[:n]]
-            y = Y_labeled.astype(float)[rand_idx[:n]]    
-            output = pp_mean_iid_asymptotic(y,f,Yhat_unlabeled,alpha)
-            ci[j,i,:] = output
+            y = Y_labeled.astype(float)[rand_idx[:n]]
+            output = pp_mean_iid_asymptotic(y, f, Yhat_unlabeled, alpha)
+            ci[j, i, :] = output
             # Classical interval
             try:
-                ci_classical[j,i,:] = binomial_iid(n,alpha,y.mean())
+                ci_classical[j, i, :] = binomial_iid(n, alpha, y.mean())
             except:
                 avg_ci_classical = None
 
@@ -208,7 +211,7 @@ def calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials):
         avg_ci_classical = ci_classical.mean(axis=0)[-1]
     except:
         avg_ci_classical = None
-    
+
     return avg_ci, avg_ci_classical, ci_imputed
 
 ######################################################################
@@ -228,9 +231,9 @@ def begin(evaluation_datasets, checkpoints, labels, GPT_scoring, few_shot_exampl
 
     if few_shot_examples_filepath is not None:
         few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
-        print("few_shot_examples")
-        print(len(few_shot_examples))
-        print(few_shot_examples.head())
+        # print("few_shot_examples")
+        # print(len(few_shot_examples))
+        # print(few_shot_examples.head())
 
 ####################################################################
 
@@ -304,23 +307,22 @@ def preprocess_data(test_set_selection, label_column, labels):
         test_set[text_column] = [combine_query_document(test_set.iloc[i]['Query'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) for i in range(len(test_set))]
 
     test_set = test_set[test_set[text_column] != "Error"]
-    print("Example Text for " + label_column + " Scoring")
+    # print("Example Text for " + label_column + " Scoring")
     # print(test_set.iloc[10][text_column])
-    if len(test_set) > 10:
-        print("Example Text for " + label_column + " Scoring")
-        print(test_set.iloc[10][text_column])
-    else:
+    if len(test_set) < 10:
+        # print("Example Text for " + label_column + " Scoring")
+        # print(test_set.iloc[10][text_column])
         print("Dataset has fewer than 11 rows after filtering. Cannot display example for row 11.")
     
     return test_set, text_column
 
         ############################################################
 def load_model(model_choice, number_of_labels, GPT_scoring, checkpoint):
-    print(model_choice, number_of_labels, GPT_scoring, checkpoint)
+    # print(model_choice, number_of_labels, GPT_scoring, checkpoint)
     max_token_length = 2048
     tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
 
-    print(tokenizer)
+    # print(tokenizer)
 
     torch.cuda.empty_cache()
     device = "cuda:0"
@@ -341,10 +343,10 @@ def load_model(model_choice, number_of_labels, GPT_scoring, checkpoint):
         #test_set = test_set.sample(n=2000, random_state=43)
         test_set = test_set.sample(n=len(test_set), random_state=43)
     else:
-        print("Loading the Best Finetuned-LLM Checkpoint")
+        # print("Loading the Best Finetuned-LLM Checkpoint")
         model.load_state_dict(checkpoint)
 
-    print(f"This is the model, tokenizer, and device: {model} {tokenizer} {device}")
+    # print(f"This is the model, tokenizer, and device: {model} {tokenizer} {device}")
     
     return model, tokenizer, device
 
@@ -362,49 +364,48 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
     total_logits = torch.FloatTensor([]).to(device)
 
     if not GPT_scoring:
-
-        progress_bar = tqdm(range(len(eval_dataloader)))
         model.eval()
-        for batch in eval_dataloader:
+        with tqdm(eval_dataloader, desc="Evaluating", leave=False) as progress_bar:
+            for batch in progress_bar:
 
-            with torch.no_grad():
+                with torch.no_grad():
 
-                if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
-                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
-                else:
-                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
+                    if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
+                        new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
+                    else:
+                        new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
 
-                if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
-                    new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+                    if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
+                        new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
 
-                outputs = model(**new_batch)
+                    outputs = model(**new_batch)
 
-                logits = outputs
-                predictions = torch.argmax(logits, dim=-1)
-                metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+                    logits = outputs
+                    predictions = torch.argmax(logits, dim=-1)
+                    metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
 
-                total_predictions = torch.cat((total_predictions, predictions), 0)
-                total_references = torch.cat((total_references, batch['labels'].to(device)), 0)
-                total_logits = torch.cat((total_logits, logits), 0)
+                    total_predictions = torch.cat((total_predictions, predictions), 0)
+                    total_references = torch.cat((total_references, batch['labels'].to(device)), 0)
+                    total_logits = torch.cat((total_logits, logits), 0)
 
-                progress_bar.update(1)
+                    progress_bar.update(1)
 
     else:
-        print("Performing GPT scoring!")
-        print("Using gpt model: " + gpt_model)
+        # print("Performing GPT scoring!")
+        # print("Using gpt model: " + gpt_model)
         if perform_zero_shot:
-            print("Using zero-shot approach")
-            print("Setting few-shot example to None...")
+            # print("Using zero-shot approach")
+            # print("Setting few-shot example to None...")
             few_shot_examples = None
 
         if "Context_Relevance_Label" == label_column:
-            tqdm.pandas(desc="Generating context relevance scores...", total=test_set.shape[0])
+            # tqdm.pandas(desc="Generating context relevance scores...", total=test_set.shape[0])
             test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], gpt_model, few_shot_examples), axis=1)
         elif "Answer_Faithfulness_Label" == label_column:
-            tqdm.pandas(desc="Generating answer faithfulness scores...", total=test_set.shape[0])
+            # tqdm.pandas(desc="Generating answer faithfulness scores...", total=test_set.shape[0])
             test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
         if "Answer_Relevance_Label" == label_column:
-            tqdm.pandas(desc="Generating answer relevance scores...", total=test_set.shape[0])
+            # tqdm.pandas(desc="Generating answer relevance scores...", total=test_set.shape[0])
             test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
 
         total_predictions = test_set[label_column.replace("_Label", "_Prediction")]
@@ -434,7 +435,7 @@ def post_process_predictions(test_set, label_column, total_predictions, labels, 
         Y_labeled_predictions = None
     else:
 
-        print("Gathering ML predictions for Y_labeled_dataset in PPI!")
+        # print("Gathering ML predictions for Y_labeled_dataset in PPI!")
         number_of_rows_to_read = 227
         
         Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t", nrows=number_of_rows_to_read)
@@ -459,29 +460,30 @@ def post_process_predictions(test_set, label_column, total_predictions, labels, 
 def evaluate_and_scoring_data(test_set, Y_labeled_predictions, Y_labeled_dataset, Y_labeled_dataloader, Yhat_unlabeled_dataset, 
 alpha, num_trials, model, device, model_choice, swap_human_labels_for_gpt4_labels, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples, metric, prediction_column, 
 label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, ppi_confidence_intervals, accuracy_scores, results):
-    progress_bar = tqdm(range(len(Y_labeled_dataloader)))
+    # progress_bar = tqdm(range(len(Y_labeled_dataloader)))
     model.eval()
-    for batch in Y_labeled_dataloader:
+    with tqdm(Y_labeled_dataloader, desc="Scoring", leave=False) as progress_bar:
+        for batch in progress_bar:
 
-        with torch.no_grad():
+            with torch.no_grad():
 
-            if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
-                new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
-            else:
-                new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
+                if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
+                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
+                else:
+                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
 
-            if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
-                new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+                if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
+                    new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
 
-            outputs = model(**new_batch)
+                outputs = model(**new_batch)
 
-            logits = outputs
-            predictions = torch.argmax(logits, dim=-1)
-            metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+                logits = outputs
+                predictions = torch.argmax(logits, dim=-1)
+                metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
 
-            Y_labeled_predictions = torch.cat((Y_labeled_predictions, predictions), 0)
+                Y_labeled_predictions = torch.cat((Y_labeled_predictions, predictions), 0)
 
-            progress_bar.update(1)
+                progress_bar.update(1)
 
     Y_labeled_dataset[prediction_column] = Y_labeled_predictions.detach().cpu().numpy().tolist()
     
@@ -491,13 +493,10 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
 
     if swap_human_labels_for_gpt4_labels:
         if "Context_Relevance_Label" == label_column:
-            tqdm.pandas(desc="Generating context relevance labels using GPT...", total=Y_labeled_dataset.shape[0])
             Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], gpt_model, few_shot_examples), axis=1)
         elif "Answer_Faithfulness_Label" == label_column:
-            tqdm.pandas(desc="Generating answer faithfulness labels using GPT...", total=Y_labeled_dataset.shape[0])
             Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
         elif "Answer_Relevance_Label" == label_column:
-            tqdm.pandas(desc="Generating answer relevance labels using GPT...", total=Y_labeled_dataset.shape[0])
             Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
         else:
             print("Error! Could not generate GPT labels for PPI.")
@@ -507,19 +506,19 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     Yhat_labeled = Y_labeled_dataset[prediction_column].values.astype(int)
     Yhat_unlabeled = Yhat_unlabeled_dataset[prediction_column].values.astype(int)
     
-    print("Y_labeled, Yhat_labeled, Yhat_unlabeled for " + test_set_selection + " - " + label_column)
-    print(len(Y_labeled))
-    print(len(Yhat_labeled))
-    print(len(Yhat_unlabeled))
-    print("Y_labeled_dataset Label Distribution: ")
-    print(Y_labeled_dataset[label_column].tolist().count(1))
-    print(Y_labeled_dataset[label_column].tolist().count(0))
-    print("Y_labeled_dataset Prediction Distribution: ")
-    print(Y_labeled_dataset[prediction_column].tolist().count(1))
-    print(Y_labeled_dataset[prediction_column].tolist().count(0))
-    print("Yhat_unlabeled_dataset Prediction Distribution: ")
-    print(Yhat_unlabeled_dataset[prediction_column].tolist().count(1))
-    print(Yhat_unlabeled_dataset[prediction_column].tolist().count(0))
+    # print("Y_labeled, Yhat_labeled, Yhat_unlabeled for " + test_set_selection + " - " + label_column)
+    # print(len(Y_labeled))
+    # print(len(Yhat_labeled))
+    # print(len(Yhat_unlabeled))
+    # print("Y_labeled_dataset Label Distribution: ")
+    # print(Y_labeled_dataset[label_column].tolist().count(1))
+    # print(Y_labeled_dataset[label_column].tolist().count(0))
+    # print("Y_labeled_dataset Prediction Distribution: ")
+    # print(Y_labeled_dataset[prediction_column].tolist().count(1))
+    # print(Y_labeled_dataset[prediction_column].tolist().count(0))
+    # print("Yhat_unlabeled_dataset Prediction Distribution: ")
+    # print(Yhat_unlabeled_dataset[prediction_column].tolist().count(1))
+    # print(Yhat_unlabeled_dataset[prediction_column].tolist().count(0))
 
     ######################################################################
 
@@ -541,13 +540,12 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     print("--------------------------------------------------")
     print(label_column + " Scoring")
     print("ARES Ranking")
-    print(sorted_indices)
-    print("Avg. PPIs: " + str(LLM_judge_ratio_predictions))
-    print("PPI Confidence Intervals: " + str(ppi_confidence_intervals))
-    print("Evaluation Set Lengths: " + str(validation_set_lengths))
+    print("ARES Score" + str(LLM_judge_ratio_predictions))
+    print("ARES Confidence Intervals: " + str(ppi_confidence_intervals))
+    # print("Evaluation Set Lengths: " + str(validation_set_lengths))
     print("Evaluation Set Ratio: " + str(validation_set_ratios))
     print("Test Accuracy Scores: " + str(accuracy_scores))
-    print("Y-Labeled Example Count: " + str(len(Y_labeled)))
+    # print("Y-Labeled Example Count: " + str(len(Y_labeled)))
     print("--------------------------------------------------\n")
 
 if __name__ == '__main__':
