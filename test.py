@@ -12,11 +12,18 @@ ues_idp_config = {
     "model_choice" : "mistralai/Mistral-7B-Instruct-v0.2"
 }
 
+# synth_config = { 
+#     "document_filepaths": "datasets_v2/nq/ratio_0.5_reformatted_full_articles_False_validation_with_negatives.tsv",
+#     "few_shot_prompt_filename": "datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+#     "synthetic_queries_filename": "data/output/synthetic_queries_1.tsv",
+#     "documents_sampled": 6381
+# }
+
 synth_config = { 
-    "document_filepath": "datasets_v2/nq/ratio_0.5_reformatted_full_articles_False_validation_with_negatives.tsv",
-    "few_shot_prompt_filename": "datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
-    "synthetic_queries_filename": "output/synthetic_queries_1.tsv",
-    "documents_sampled": 6381
+    "document_filepaths": ["/future/u/manihani/ARES/data/datasets_v2/hotpotqa/ratio_0.6_reformatted_full_articles_False_validation_with_negatives.tsv", "/future/u/manihani/ARES/data/datasets_v2/wow/ratio_0.6_reformatted_full_articles_False_validation_with_negatives.tsv"],
+    "few_shot_prompt_filename": "/future/u/manihani/ARES/data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    "synthetic_queries_filenames": ["data/output/hotpotqa_synthetc_queries_1.tsv", "data/output/WoW_synthetic_queries_1.tsv"],
+    "documents_sampled": 10000
 }
 
 classifier_config = {
@@ -52,13 +59,13 @@ ppi_config = {
 # results = ares.ues_idp()
 # print(results)
 
-# ares = ARES(synthetic_query_generator=synth_config)
-# results = ares.generate_synthetic_data()
-# print(results)
-
-ares = ARES(classifier_model=classifier_config)
-results = ares.train_classifier()
+ares = ARES(synthetic_query_generator=synth_config)
+results = ares.generate_synthetic_data()
 print(results)
+
+# ares = ARES(classifier_model=classifier_config)
+# results = ares.train_classifier()
+# print(results)
 
 # ares = ARES(ppi=ppi_config)
 # results = ares.evaluate_RAG()

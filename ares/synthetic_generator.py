@@ -7,8 +7,8 @@ from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import sa
 from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import Generate_Synthetic_Answers
 from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import print_synthetic_queries
 
-def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename: str,
-                               synthetic_queries_filename: str, documents_sampled: int,
+def synthetic_generator_config(document_filepaths: list, few_shot_prompt_filename: str,
+                               synthetic_queries_filenames: list, documents_sampled: int,
                                model_choice: str = "google/flan-t5-xxl", flan_approach: bool = True, clean_documents: bool = False,
                                regenerate_synth_questions: bool = True, 
                                percentiles: list = [0.05, 0.25, 0.5, 0.95], 
@@ -22,31 +22,36 @@ def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename:
                                regenerate_embeddings: float = True, 
                                synthetic_query_prompt: str = "You are an expert question-answering system. You must create a question for the provided document. The question must be answerable within the context of the document.\n\n"
                                ): 
-    for_fever_dataset = False
-    if "fever" in document_filepath.lower():
-        for_fever_dataset = True
-    for_wow_dataset = False
-    if "wow" in document_filepath.lower():
-        for_wow_dataset = True
-
+    
     model, tokenizer, device = load_model(flan_approach, model_choice)
 
-    documents = load_documents(document_filepath, clean_documents, documents_sampled)
+    if len(document_filepaths) != len(synthetic_queries_filenames):
+        raise ValueError("document_filepaths and synthetic_queries_filenames lists must be of the same length.")
 
-    few_shot_examples, length_of_fewshot_prompt = load_few_shot_prompt(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset)
+    for document_filepath, synthetic_queries_filename in zip(document_filepaths, synthetic_queries_filenames):
+        for_fever_dataset = False
+        if "fever" in document_filepath.lower():
+            for_fever_dataset = True
+        for_wow_dataset = False
+        if "wow" in document_filepath.lower():
+            for_wow_dataset = True
 
-    few_shot_examples_for_contradictory_answers = generate_contradictory_answers(few_shot_prompt_filename,generate_contradictory_answers_with_flan,for_fever_dataset,for_wow_dataset)
+        documents = load_documents(document_filepath, clean_documents, documents_sampled)
 
-    answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen = generate_few_shot_prompts(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset)
+        few_shot_examples, length_of_fewshot_prompt = load_few_shot_prompt(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset)
 
-    save_synthetic_queries(documents, regenerate_synth_questions, flan_approach, few_shot_examples, 
-    length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
-    synthetic_query_prompt, synthetic_queries_filename, question_temperatures)
+        few_shot_examples_for_contradictory_answers = generate_contradictory_answers(few_shot_prompt_filename,generate_contradictory_answers_with_flan,for_fever_dataset,for_wow_dataset)
 
-    Generate_Synthetic_Answers(synthetic_queries_filename,
-    regenerate_answers, flan_approach, answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, 
-    device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
-    few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio, lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings)
+        answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen = generate_few_shot_prompts(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset)
 
-    print_synthetic_queries(synthetic_queries_filename)
+        save_synthetic_queries(documents, regenerate_synth_questions, flan_approach, few_shot_examples, 
+        length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
+        synthetic_query_prompt, synthetic_queries_filename, question_temperatures)
+
+        Generate_Synthetic_Answers(synthetic_queries_filename,
+        regenerate_answers, flan_approach, answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, 
+        device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
+        few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio, lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings)
+
+        print_synthetic_queries(synthetic_queries_filename)
     

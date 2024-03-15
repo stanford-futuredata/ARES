@@ -528,8 +528,8 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     LLM_judge_ratio_predictions.append(LLM_judge_prediction)
     validation_set_lengths.append(len(test_set))
     validation_set_ratios.append(round(Yhat_unlabeled_dataset[label_column].tolist().count(1) / len(Yhat_unlabeled_dataset), 3))
-    ppi_confidence_intervals.append(avg_ci.tolist())
-    accuracy_scores.append(results['accuracy'])
+    ppi_confidence_intervals.append([round(value, 3) for value in avg_ci])
+    accuracy_scores.append(results['accuracy'], 3)
 
     ######################################################################
 
@@ -540,12 +540,12 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     print("--------------------------------------------------")
     print(label_column + " Scoring")
     print("ARES Ranking")
-    print("ARES Score" + str(LLM_judge_ratio_predictions))
-    print("ARES Confidence Intervals: " + str(ppi_confidence_intervals))
-    # print("Evaluation Set Lengths: " + str(validation_set_lengths))
-    print("Evaluation Set Ratio: " + str(validation_set_ratios))
-    print("Test Accuracy Scores: " + str(accuracy_scores))
-    # print("Y-Labeled Example Count: " + str(len(Y_labeled)))
+    print("ARES Prediction: " + str(LLM_judge_ratio_predictions))
+    print("ARES Confidence Interval: " + str(ppi_confidence_intervals))
+    print("Number of Examples in Evaluation Set: " + str(validation_set_lengths))
+    print("Ground Truth Performance: " + str(validation_set_ratios))
+    print("ARES LLM Judge Accuracy on Ground Truth Labels: " + str(accuracy_scores))
+    print("Annotated Examples used for PPI: " + str(len(Y_labeled)))
     print("--------------------------------------------------\n")
 
 if __name__ == '__main__':

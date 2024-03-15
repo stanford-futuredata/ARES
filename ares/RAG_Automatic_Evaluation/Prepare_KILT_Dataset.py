@@ -57,7 +57,7 @@ print("Finished loading KILT wiki!")
 
 ####################################################################
 
-dataset_choices = ["nq"] #"nq", "hotpotqa", "wow", "fever", 
+dataset_choices = ["wow"] #"nq", "hotpotqa", "wow", "fever", 
 process_wikipedia = False
 gather_full_wikipedia_articles = False
 
@@ -69,7 +69,7 @@ positive_negative_ratios = [0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.
 for dataset_chosen in dataset_choices:
 
     # Get the KILT task datasets
-    kilt_dataset_total = load_dataset("kilt_tasks", name="nq")
+    kilt_dataset_total = load_dataset("kilt_tasks", name="wow")
     print("Printing kilt dataset total")
     print(kilt_dataset_total)
 

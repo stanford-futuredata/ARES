@@ -14,9 +14,9 @@ class ARES:
         },
 
         "synthetic_query_generator": {
-            "document_filepath": (str, None),  # Required parameter (No default)
+            "document_filepaths": (list, None),  # Required parameter (No default)
             "few_shot_prompt_filename": (str, None),  # Required parameter (No default)
-            "synthetic_queries_filename": (str, None),  # Required parameter (No default)
+            "synthetic_queries_filenames": (list, None),  # Required parameter (No default)
             "documents_sampled": (int, None),  # Required parameter (No default)
             "model_choice": (str, "google/flan-t5-xxl"),
             "flan_approach": (bool, True), 
@@ -35,7 +35,7 @@ class ARES:
         },
         
         "classifier_model": {
-            "classification_dataset": (str, None), # Required parameter (No default)
+            "classification_dataset": (list, None), # Required parameter (No default)
             "test_set_selection": (str, None), # Required parameter (No default)
             "label_column": (str, None), # Required parameter (No default)
             "num_epochs": (int, None), # Required parameter (No default)
