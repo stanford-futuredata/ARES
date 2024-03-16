@@ -134,13 +134,11 @@ print(results)
 For more details, refer to our [documentation](https://ares-ai.vercel.app/).
 
 ## Results Replication
-<hr>
 
 We include synthetic datasets for key experimental results in `synthetic_datasets`. The few-shot prompts used for generation and evaluation are included in `datasets`. We also include instructions for fine-tuning LLM judges in the paper itself. Please reach out to jonsaadfalcon@stanford.edu or manihani@stanford.edu if you have any further questions.
 
 ## Citation
 <a id="section4"></a>
-<hr>
 
 To cite our work, please use the following Bibtex:
 
@@ -156,8 +154,6 @@ To cite our work, please use the following Bibtex:
 ````
 
 # Appendix
-<hr>
-
 ### Machine requirements and setup when not using OpenAI API
 **Machine requirements**
 
