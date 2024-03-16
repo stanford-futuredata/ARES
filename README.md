@@ -5,7 +5,7 @@
   <a>
   <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.1.0-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
   </a>
-  
+
   <a>
   <img alt="Static Badge" src="https://img.shields.io/badge/Read-ARES%20Paper-blue?style=flat&link=https%3A%2F%2Farxiv.org%2Fabs%2F2311.09476">
   </a>
@@ -14,8 +14,9 @@
     <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
   </a>
 
-  <a><img alt="Static Badge" src="https://img.shields.io/badge/Made%20with-Python-red?style=flat&link=https%3A%2F%2Fpython.org%2F">
-</a>
+  <a>
+  <img alt="Static Badge" src="https://img.shields.io/badge/Made%20with-Python-red?style=flat&link=https%3A%2F%2Fpython.org%2F">
+  </a>
 
 </p>
 
