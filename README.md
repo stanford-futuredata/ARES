@@ -1,13 +1,15 @@
 <h2 align="center">ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems</h2>
 
 <p align="center">
-  <a href="http://tiny.cc/ares_rag" target="_blank">Read the ARES Paper</a>
+  <img alt="Static Badge" src="https://img.shields.io/badge/Read-ARES%20Paper-blue?style=flat&link=https%3A%2F%2Farxiv.org%2Fabs%2F2311.09476">
 </p>
 
 <p align="center">
   <a href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM" target="_blank">
     <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
   </a>
+  <a><img alt="Static Badge" src="https://img.shields.io/badge/Made%20with-Python-red?style=flat&link=https%3A%2F%2Fpython.org%2F">
+</a>
 </p>
 
 ---
@@ -73,7 +75,7 @@ ppi_config = {
     "evaluation_datasets": [<eval_dataset_filepath>],
     "few_shot_examples_filepath": <few_shot_filepath>,
     "checkpoints": [<checkpoint_filepath>],
-    "labels": [Context_Relevance_Label], 
+    "labels": [<labels>], 
     "GPT_scoring": <True or False>, 
     "gold_label_path": <gold_label_filepath>, 
     "swap_human_labels_for_gpt4_labels": False
