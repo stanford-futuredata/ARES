@@ -67,6 +67,7 @@ synth_config = {
     "document_filepaths": [<document_filepath>], 
     "few_shot_prompt_filename": <few_shot_filepath>, 
     "synthetic_queries_filenames": [<synthetic_queries_filepath>],
+    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
     "documents_sampled": 10000 
 }
 
@@ -74,6 +75,7 @@ classifier_config = {
     "classification_dataset": [<classification_dataset_filepath>],
     "test_set_selection": <test_set_selection_filepath>, 
     "label_column": [<labels>], 
+    "model_choice": "microsoft/deberta-v3-large", # Default model is "microsoft/deberta-v3-large"
     "num_epochs": 10, 
     "patience_value": 3, 
     "learning_rate": 5e-6
@@ -84,6 +86,7 @@ ppi_config = {
     "few_shot_examples_filepath": <few_shot_filepath>,
     "checkpoints": [<checkpoint_filepath>],
     "labels": [<labels>], 
+    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
     "GPT_scoring": <True or False>, 
     "gold_label_path": <gold_label_filepath>, 
     "swap_human_labels_for_gpt4_labels": False
