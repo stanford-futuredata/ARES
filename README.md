@@ -20,7 +20,7 @@
   </a>
 
   <a href="https://ares-ai.vercel.app/">
-    <img alt="Static Badge" src="https://img.shields.io/badge/read-documentation-purple?style=flat">
+    <img alt="Static Badge" src="https://img.shields.io/badge/Read-documentation-purple?style=flat">
   </a>
 
   <a href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM" target="_blank">
