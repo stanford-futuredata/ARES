@@ -43,11 +43,13 @@ ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation
 To install the necessary dependencies, run the following commands:
 ​
 ```python
+
 pip install ares-ai
 ```
 ​
 Optional: Initalize OpenAI or TogetherAI API key with the following command:
 ```python
+
 export OPENAI_API_KEY=<your key here>
 export TOGETHER_API_KEY=<your key here>
 ```
