@@ -1,0 +1,687 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../training_classifier/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.13">
+    
+    
+      
+        <title>RAG Evaluation - ARES Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e359304.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#configure-openai-api-key" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ARES Documentation" class="md-header__button md-logo" aria-label="ARES Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ARES Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              RAG Evaluation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ARES Documentation" class="md-nav__button md-logo" aria-label="ARES Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    ARES Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../synth_gen/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Generation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training_classifier/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Classifier
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    RAG Evaluation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    RAG Evaluation
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configure-openai-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure OpenAI API Key.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rag-evaluation-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAG Evaluation Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation Dataset(s)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#few-shot-prompt-file-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Few-Shot Prompt File Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoints-file-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Checkpoint(s) File Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Labels
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpt_scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      GPT_scoring
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gold-label-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Gold Label Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swapping-human-labels-for-gpt4-labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Swapping Human Labels for GPT4 Labels
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rag-evaluation-configuration-full-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAG Evaluation Configuration: Full Example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configure-openai-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure OpenAI API Key.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rag-evaluation-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAG Evaluation Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation Dataset(s)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#few-shot-prompt-file-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Few-Shot Prompt File Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoints-file-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Checkpoint(s) File Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Labels
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpt_scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      GPT_scoring
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gold-label-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Gold Label Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#swapping-human-labels-for-gpt4-labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Swapping Human Labels for GPT4 Labels
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rag-evaluation-configuration-full-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAG Evaluation Configuration: Full Example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>RAG Evaluation</h1>
+
+<h3>This page teaches you how to configure the RAG model evaluation with ARES to accurately evaluate your model's performance.</h3>
+
+<hr>
+
+<h2 id="configure-openai-api-key">Configure OpenAI API Key.</h2>
+<pre><code>export OPENAI_API_KEY=&lt;your key here&gt;
+</code></pre>
+<hr>
+
+<h2 id="rag-evaluation-configuration">RAG Evaluation Configuration</h2>
+<p>The synth_config dictionary is a configuration object that sets up ARES for generating synthetic queries based on a given dataset. Below is how the synthetic generation configuration style.</p>
+<pre><code class="language-python">from ares import ARES
+
+ppi_config = { 
+    &quot;evaluation_datasets&quot;: [&lt;eval_dataset_filepath&gt;],
+    &quot;few_shot_examples_filepath&quot;: &lt;few_shot_filepath&gt;,
+    &quot;checkpoints&quot;: [&lt;checkpoint_filepath&gt;],
+    &quot;labels&quot;: [&lt;labels&gt;], 
+    &quot;model_choice&quot;: &lt;model_choice&gt;, # Default model is &quot;microsoft/deberta-v3-large&quot;
+    &quot;GPT_scoring&quot;: &lt;True or False&gt;, 
+    &quot;gold_label_path&quot;: &lt;gold_label_filepath&gt;, 
+    &quot;swap_human_labels_for_gpt4_labels&quot;: False
+}
+
+ares_module = ARES(ppi=ppi_config)
+results = ares_module.evaluate_RAG()
+print(results)
+</code></pre>
+<hr>
+
+<h2 id="evaluation-datasets">Evaluation Dataset(s)</h2>
+<p>Input file paths to datasets for PPI evaluation, which should contain labeled data for validating classifier performance.</p>
+<pre><code class="language-python">    &quot;evaluation_datasets&quot;: [&quot;/data/datasets_v2/nq/nq_ratio_0.5_.tsv&quot;],
+</code></pre>
+<p>Link to <a href="https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets_v2/nq">ARES Github Repo</a> for evaluation dataset example file used. </p>
+<hr>
+
+<h2 id="few-shot-prompt-file-path">Few-Shot Prompt File Path</h2>
+<p>Specify the file path for a file with few-shot examples, which PPI uses to understand the labeling schema and guide the evaluation.</p>
+<pre><code class="language-python">    &quot;few_shot_prompt_filename&quot;: &quot;data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv&quot;,
+</code></pre>
+<p>Link to <a href="https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets">ARES Github Repo</a> for few-shot file example used. </p>
+<hr>
+
+<h2 id="checkpoints-file-path">Checkpoint(s) File Path</h2>
+<p>Generated from ARES <a href="../training_classifier/">Training Classifier</a>, provide file path(s) to model checkpoint file(s), representing the saved states of the trained classifiers used for evaluation.</p>
+<pre><code class="language-python">&quot;checkpoints&quot;: [&quot;output/checkpoint_generated_from_training_classifier&quot;],
+</code></pre>
+<hr>
+
+<h2 id="labels">Labels</h2>
+<p>List the names of label columns or individua label column in your dataset(s) that PPI will use for evaluation metrics.</p>
+<pre><code class="language-python">    &quot;labels&quot;: [&quot;Context_Relevance_Label&quot;], 
+</code></pre>
+<hr>
+
+<h2 id="gpt_scoring">GPT_scoring</h2>
+<p>Set this flag to True if you want to use a GPT model for scoring; False uses the trained classifiers' scores.</p>
+<pre><code class="language-python">    &quot;GPT_scoring&quot;: False,
+</code></pre>
+<hr>
+
+<h2 id="gold-label-path">Gold Label Path</h2>
+<pre><code class="language-python">    &quot;gold_label_path&quot;: &quot;/data/datasets_v2/nq/nq_ratio_0.6_.tsv&quot;
+</code></pre>
+<hr>
+
+<p>Link to <a href="https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets_v2/nq">ARES Github Repo</a> for gold label path file example used. </p>
+<h2 id="swapping-human-labels-for-gpt4-labels">Swapping Human Labels for GPT4 Labels</h2>
+<p>If True, PPI replaces human-provided labels with GPT-4's labels during evaluation; if False, it uses the original human labels.</p>
+<pre><code class="language-python">    &quot;swap_human_labels_for_gpt4_labels&quot;: False
+</code></pre>
+<hr>
+
+<h2 id="rag-evaluation-configuration-full-example">RAG Evaluation Configuration: Full Example</h2>
+<pre><code class="language-python">from ares import ARES
+
+ppi_config = { 
+    &quot;evaluation_datasets&quot;: ['../data/datasets_v2/nq/nq_ratio_0.6_.tsv'], 
+    &quot;few_shot_examples_filepath&quot;: &quot;../data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv&quot;,
+    &quot;checkpoints&quot;: [&quot;../data/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt&quot;, &quot;../data/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Answer_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt&quot;],
+    &quot;labels&quot;: [&quot;Context_Relevance_Label&quot;, &quot;Answer_Relevance_Label&quot;], 
+    &quot;GPT_scoring&quot;: False, 
+    &quot;gold_label_path&quot;: &quot;../data/datasets_v2/nq/nq_ratio_0.6_.tsv&quot;, 
+    &quot;swap_human_labels_for_gpt4_labels&quot;: False
+}
+
+ares_module = ARES(ppi=ppi_config)
+results = ares_module.evaluate_RAG()
+print(results)
+
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c8d2eff1.min.js"></script>
+      
+    
+  </body>
+</html>

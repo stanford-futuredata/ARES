@@ -35,7 +35,7 @@ print(results)
 ```
 
 ### Classification Dataset
-Generated from the ARES synthetic generator, here you should provide a list of file paths or an individual filepath to your labeled dataset used for training the classifier. The dataset should include text data and corresponding labels for supervised learning.
+Generated from the ARES [synthetic generator](synth_gen.md), here you should provide a list of file paths or an individual filepath to your labeled dataset used for training the classifier. The dataset should include text data and corresponding labels for supervised learning.
 
 ```python
 "classification_dataset": ["output/synthetic_queries_1.tsv"],
@@ -49,7 +49,7 @@ Provide the file path to your test set for evaluating the classifier's performan
 "test_set_selection": "/data/datasets_v2/nq/nq_ratio_0.6_.tsv"
 ```
 
-Link to [ARES Github Repo](https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets) for test set selection file example used. 
+Link to [ARES Github Repo](https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets_v2/nq) for test set selection file example used. 
 
 ### Label Column(s)
 
