@@ -115,7 +115,7 @@ print(results)
 
 ```
 ​
-Refer to [documentation](https://ares-ai.vercel.app/) to learn more!
+For more details, refer to our [documentation](https://ares-ai.vercel.app/).
 
 ## Results Replication
 
