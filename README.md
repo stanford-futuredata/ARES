@@ -41,6 +41,46 @@ ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation
 <hr>
 ​
 To install the necessary dependencies, run the following commands:
+
+```python
+
+from ares import ARES
+
+synth_config = { 
+    "document_filepaths": [<document_filepath>], 
+    "few_shot_prompt_filename": <few_shot_filepath>, 
+    "synthetic_queries_filenames": [<synthetic_queries_filepath>],
+    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
+    "documents_sampled": 10000 
+}
+
+classifier_config = {
+    "classification_dataset": [<classification_dataset_filepath>],
+    "test_set_selection": <test_set_selection_filepath>, 
+    "label_column": [<labels>], 
+    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
+    "num_epochs": 10, 
+    "patience_value": 3, 
+    "learning_rate": 5e-6
+}
+
+ppi_config = { 
+    "evaluation_datasets": [<eval_dataset_filepath>],
+    "few_shot_examples_filepath": <few_shot_filepath>,
+    "checkpoints": [<checkpoint_filepath>],
+    "labels": [<labels>], 
+    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
+    "GPT_scoring": <True or False>, 
+    "gold_label_path": <gold_label_filepath>, 
+    "swap_human_labels_for_gpt4_labels": False
+}
+
+ares_module = ARES(synthetic_query_generator=synth_config, 
+classifier_model=classifier_config, ppi=ppi_config)
+results = ares_module.run()
+print(results)
+
+```
 ​
 ```python
 
@@ -49,6 +89,7 @@ pip install ares-ai
 ```
 ​
 Optional: Initalize OpenAI or TogetherAI API key with the following command:
+
 ```python
 
 export OPENAI_API_KEY=<your key here>
