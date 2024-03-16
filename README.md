@@ -83,7 +83,7 @@ synth_config = {
     "document_filepaths": [<document_filepath>], 
     "few_shot_prompt_filename": <few_shot_filepath>, 
     "synthetic_queries_filenames": [<synthetic_queries_filepath>],
-    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
+    "model_choice": <model_choice>, # Default model is "google/flan-t5-xxl"
     "documents_sampled": 10000 
 }
 
