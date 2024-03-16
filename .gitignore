@@ -168,3 +168,5 @@ checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_Tr
 datasets_v2/
 /docs/new_env_test.ipynb
 test.py
+/ARES/data/output/hotpotqa_synthetc_queries_1.tsv
+/ARES/data/output/synthetic_queries_2.tsv
