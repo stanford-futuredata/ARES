@@ -109,6 +109,7 @@ lightgbm==3.3.5
 lit==16.0.6
 lxml==4.9.2
 lz4==4.3.2
+mkdocs
 markdown-it-py==3.0.0
 MarkupSafe==2.1.2
 marshmallow==3.19.0
