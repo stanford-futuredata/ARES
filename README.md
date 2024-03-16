@@ -49,101 +49,41 @@ export TOGETHER_API_KEY=<your key here>
 
 To get started with ARES, you'll need to set up your configuration. Below is is an example of how to structure your configuration for ARES.
 
-```
+```python
 
 from ares import ARES
 
 synth_config = { 
-    "document_filepaths": ["ARES/data/datasets_v2/nq/nq_ratio_0.5.tsv"],  # Path(s) to evaluation dataset files
-    "few_shot_prompt_filename": "ARES/data/datasets/few_shot_prompt__v1.tsv",  # Path to file containing few-shot examples
-    "synthetic_queries_filenames": ["data/synthetic_queries.tsv"], # Path to store synthetic queries
+    "document_filepaths": [<document_filepath>], 
+    "few_shot_prompt_filename": <few_shot_filepath>, 
+    "synthetic_queries_filenames": [<synthetic_queries_filepath>],
     "documents_sampled": 10000 
 }
 
 classifier_config = {
-    "classification_dataset": ["data/synthetic_queries.tsv"], # Path containing synthetic queries
-    "test_set_selection": "ARES/data/datasets_v2/nq/nq_ratio_0.6.tsv", # Path for test set selection
-    "label_column": [Context_Relevance_Label], 
+    "classification_dataset": [<classification_dataset_filepath>],
+    "test_set_selection": <test_set_selection_filepath>, 
+    "label_column": [<labels>], 
     "num_epochs": 10, 
     "patience_value": 3, 
     "learning_rate": 5e-6
 }
 
 ppi_config = { 
-    "evaluation_datasets": ["ARES/data/datasets_v2/nq/nq_ratio_0.6.tsv"], # Path to evaluation dataset(s)
-    "few_shot_examples_filepath": "ARES/data/datasets/few_shot_prompt__v1.tsv", # Path to file containing few-shot examples
-    "checkpoints": ["ARES/data/checkpoints/Context_Relevance_Label_ratio_0.6_.pt"], # Path to checkpoint file
+    "evaluation_datasets": [<eval_dataset_filepath>],
+    "few_shot_examples_filepath": <few_shot_filepath>,
+    "checkpoints": [<checkpoint_filepath>],
     "labels": [Context_Relevance_Label], 
-    "GPT_scoring": False, 
-    "gold_label_path": "ARES/data/gold_label_path.tsv", # Path to gold label path
+    "GPT_scoring": <True or False>, 
+    "gold_label_path": <gold_label_filepath>, 
     "swap_human_labels_for_gpt4_labels": False
 }
 
 ares_module = ARES(synthetic_query_generator=synth_config, classifier_model=classifier_config, ppi=ppi_config)
 results = ares_module.run()
 print(results)
+
 ```
-​
-## Step #1: Synthetic Data Generation
-​
-To generate synthetic training data, use `LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py`. Replace items in the following command with your dataset and configuration:
-​
-````
-python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
-       --document_filepath <document_filepath> \
-       --few_shot_prompt_filename <few_shot_prompt_filename> \
-       --synthetic_queries_filename <synthetic_queries_filename> \
-       --documents_sampled 10000
-````
-
-Example:
-````
-python LLM-as-a-Judge_Adaptation/Generate_Synthetic_Queries_and_Answers.py \
-       --document_filepath example_files/document_filepath.tsv \
-       --few_shot_prompt_filename example_files/few_shot_prompt_filename.tsv \
-       --synthetic_queries_filename output/synthetic_queries_1.tsv \
-       --documents_sampled 10000
-````
-
-This script will output a filepath to the generated synthetic queries for the next step.
-​
-
-Note: For examples files for `document_filepath` and `few_shot_prompt_filename`, please see `example_files`.
-​
-## Step #2: Fine-tune LLM-as-a-Judge
-​
-With the generated file under `synthetic_queries_filename` from the previous step, use `LLM-as-a-Judge_Adaptation/General_Binary_Classifier.py` to train your LLM-as-a-Judge with the following command:
-​
-````
-python General_Binary_Classifier.py \
-       --classification_dataset <synthetic queries file> \
-       --test_set_selection <test_set_selection> \
-       --label_column Context_Relevance_Label \
-       --num_epochs 10 \
-       --patience_value 3 \
-       --learning_rate 5e-6
-````
-
-For `document_filepath`, put the filepath of the synthetic queries generated in the previous step. For `test_set_selection`, put the filepath of the human annotated examples of your dataset; it should be formatted like the file `example_files/evaluation_datasets.tsv`.
-
-This script will output a model checkpoint path for the next step.
-
-
-## Step #3: Score RAG System with ARES
-​
-With the outputted model checkpoint from Step #2, you can now score your RAG system's configurations using ARES with following command in folder `RAG_Automatic_Evaluation/`:
-​
-````
-python LLMJudge_RAG_Compared_Scoring.py \
-       --alpha 0.05 \
-       --num_trials 1000 \
-       --evaluation_datasets <evaluation_datasets as list> \
-       --checkpoints <checkpoints as list> \
-       --labels <label columns as list> \
-       --GPT_scoring <True or False> \
-       --gold_label_path <gold_label_path>
-       --swap_human_labels_for_gpt_labels False
-````
 ​
 For `evaluation_datasets`, we expect a list of filepaths to query-passage-answer TSVs for each RAG configuration you wish to score.
 
