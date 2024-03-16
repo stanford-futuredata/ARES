@@ -1,5 +1,7 @@
 <h2 align="center">ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems</h2>
 
+**[Installation](#section1)**| **[Requirements](#section2)** | **(Quick Start)[#section3]** | **(Citation)[#section4]** |
+
 <p align="center">
 
   <a>
@@ -24,9 +26,14 @@
 
 </p>
 
+
+ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Precision-Performance Iteration (PPI), providing accurate evaluations with statistical confidence.
+
 ---
 ​
 ### ⚙️ Installation
+<a id="section1"></a>
+<hr>
 ​
 To install the necessary dependencies, run the following commands:
 ​
@@ -40,7 +47,19 @@ export OPENAI_API_KEY=<your key here>
 export TOGETHER_API_KEY=<your key here>
 ````
 
+### 📝 Requirements
+<a id="section2"></a>
+<hr>
+
+To implement ARES for scoring your RAG system and comparing to other RAG configurations, you need three components:​
+
+* A human preference validation set of annotated query, document, and answer triples for the evaluation criteria (e.g. context relevance, answer faithfulness, and/or answer relevance). There should be at least 50 examples but several hundred examples is ideal.
+* A set of few-shot examples for scoring context relevance, answer faithfulness, and/or answer relevance in your system
+* A much larger set of unlabeled query-document-answer triples outputted by your RAG system for scoring
+
 ### 🚀 Quick Start
+<a id="section3"></a>
+<hr>
 
 To get started with ARES, you'll need to set up your configuration. Below is is an example of how to structure your configuration for ARES.
 
@@ -60,7 +79,7 @@ classifier_config = {
     "classification_dataset": [<classification_dataset_filepath>],
     "test_set_selection": <test_set_selection_filepath>, 
     "label_column": [<labels>], 
-    "model_choice": "microsoft/deberta-v3-large", # Default model is "microsoft/deberta-v3-large"
+    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
     "num_epochs": 10, 
     "patience_value": 3, 
     "learning_rate": 5e-6
@@ -91,6 +110,7 @@ Refer to [documentation](https://ares-ai.vercel.app/) to learn more!
 We include synthetic datasets for key experimental results in `synthetic_datasets`. The few-shot prompts used for generation and evaluation are included in `datasets`. We also include instructions for fine-tuning LLM judges in the paper itself. Please reach out to jonsaadfalcon@stanford.edu or manihani@stanford.edu if you have any further questions.
 
 ## Citation
+<a id="section4"></a>
 
 To cite our work, please use the following Bibtex:
 
