@@ -35,6 +35,18 @@
 
 
 ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Precision-Performance Iteration (PPI), providing accurate evaluations with statistical confidence.
+
+
+### Mini Q&A
+
+What does ARES assess in RAG models?
+ARES conducts a comprehensive evaluation of Retrieval-Augmented Generation (RAG) models, assessing their context relevance, answer faithfulness, and answer relevance. This thorough assessment ensures a complete understanding of the performance of the RAG system.
+
+How does ARES automate the evaluation process?
+ARES minimizes the need for human labeling by leveraging fine-tuned classifiers and synthetic data. Its PPI component, Prediction-Powered inference, refines evaluations considering model response variability and provides statistical confidence in the results. By using finely-tuned classifiers and data from the synthetic generator, ARES cuts down on human labeling needs while providing accurate assessments. 
+
+Can ARES handle my custom RAG model?
+ARES is a model-agnostic tool that enables you to generate synthetic queries and answers from your documents. With ARES, you can evaluate these generated queries and answers using your RAG model.
 ​
 ### ⚙️ Installation
 <a id="section1"></a>
