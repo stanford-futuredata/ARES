@@ -166,4 +166,5 @@ tests/nohup.out
 /data/example_checkpoints
 checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_evaluation_datasets_670487.pt
 datasets_v2/
+/docs/new_env_test.ipynb
 test.py
