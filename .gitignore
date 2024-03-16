@@ -163,10 +163,11 @@ tests/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_F
 tests/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt
 tests/nohup.out
 /data/checkpoints
+datasets_v2/
 /data/example_checkpoints
 checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_evaluation_datasets_670487.pt
-datasets_v2/
 /docs/new_env_test.ipynb
 test.py
 /ARES/data/output/hotpotqa_synthetc_queries_1.tsv
+data/output/synthetic_queries_1.tsv
 /ARES/data/output/synthetic_queries_2.tsv

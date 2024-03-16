@@ -12,7 +12,7 @@ export OPENAI_API_KEY=<your key here>
 
 ## Synth Gen Configuration 
 
-The synth_config dictionary is a configuration object that sets up ARES for generating synthetic queries based on a given dataset. To utilize this configuration, first, import the ARES class from the ares module.
+The synth_config dictionary is a configuration object that sets up ARES for generating synthetic queries based on a given dataset. Below is how the synthetic generation configuration style.
 
 ```python 
 from ares import ARES
@@ -70,7 +70,7 @@ A list of file paths where the generated synthetic queries will be saved. These 
 
 ### Model Choice
 
-ARES gives flexibility to choose models of your choice. 
+Specifies the pre-trained language model to fine-tune for classification. By default, ARES uses "microsoft/deberta-v3-large". You can replace this with any Hugging Face model suitable for your task.
 
 ```python
  "model_choice": "google/flan-t5-xxl",

@@ -92,7 +92,8 @@ ppi_config = {
     "swap_human_labels_for_gpt4_labels": False
 }
 
-ares_module = ARES(synthetic_query_generator=synth_config, classifier_model=classifier_config, ppi=ppi_config)
+ares_module = ARES(synthetic_query_generator=synth_config, 
+classifier_model=classifier_config, ppi=ppi_config)
 results = ares_module.run()
 print(results)
 
