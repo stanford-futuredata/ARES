@@ -7,10 +7,10 @@
   </a>
 
   <a>
-  <img alt="Static Badge" src="https://img.shields.io/badge/read-documentation-purple?style=flat&link=https%3A%2F%2Fares-ai.vercel.app%2F">
+  <img alt="Static Badge" src="https://img.shields.io/badge/Read-ARES%20Paper-blue?style=flat&link=https%3A%2F%2Farxiv.org%2Fabs%2F2311.09476">
   </a>
 
-  <a href ="https://ares-ai.vercel.app/">
+  <a href="https://ares-ai.vercel.app/">
     <img alt="Static Badge" src="https://img.shields.io/badge/read-documentation-purple?style=plastic">
   </a>
 
