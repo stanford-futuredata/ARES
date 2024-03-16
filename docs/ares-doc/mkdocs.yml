@@ -7,3 +7,6 @@ nav:
     - RAG Evaluation: rag_eval.md
 theme:
   name: material
+  
+markdown_extensions:
+  - admonition
