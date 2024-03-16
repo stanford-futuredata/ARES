@@ -1,6 +1,14 @@
 <h2 align="center">ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems</h2>
 
-**[Installation](#section1)**| **[Requirements](#section2)** | **(Quick Start)[#section3]** | **(Citation)[#section4]** |
+
+<center>
+
+<center>
+Table of Contents
+</center>
+**[Installation](#section1)** | **[Requirements](#section2)** | **[Quick Start](#section3)** | **[Citation](#section4)**
+
+</center>
 
 <p align="center">
 
