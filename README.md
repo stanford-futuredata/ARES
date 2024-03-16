@@ -36,18 +36,15 @@
 
 ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Precision-Performance Iteration (PPI), providing accurate evaluations with statistical confidence.
 ​
----
-
 ### ⚙️ Installation
 <a id="section1"></a>
-
 <hr>
 ​
 To install the necessary dependencies, run the following commands:
 ​
 ```python
 pip install ares-ai
-```
+````
 ​
 Optional: Initalize OpenAI or TogetherAI API key with the following command:
 ````
