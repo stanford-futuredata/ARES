@@ -10,6 +10,10 @@
   <img alt="Static Badge" src="https://img.shields.io/badge/Read-ARES%20Paper-blue?style=flat&link=https%3A%2F%2Farxiv.org%2Fabs%2F2311.09476">
   </a>
 
+  <a>
+    <img alt="Static Badge" src="https://img.shields.io/badge/read-documentation-purple?style=flat&link=https%3A%2F%2Fares-ai.vercel.app%2F">
+  </a>
+
   <a href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM" target="_blank">
     <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
   </a>
