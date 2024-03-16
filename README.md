@@ -31,20 +31,58 @@ Follow these steps to prepare your RAG system for ARES scoring:
 
 Note: We also allow users to skip Steps #1 and #2 deploying a zero/few-shot LLM-as-a-Judge
 ​
-### Installation
+### ⚙️ Installation
 ​
 To install the necessary dependencies, run the following commands:
 ​
 ````
-conda create -n llm_judge python=3.10 --yes
-conda activate llm_judge
-pip install -r requirements.txt
+pip install ares-ai
 ````
 ​
-Additionally, you will need to initialize an OpenAI API key with the following command:
+Optional: Initalize OpenAI or TogetherAI API key with the following command:
 ````
 export OPENAI_API_KEY=<your key here>
+export TOGETHER_API_KEY=<your key here>
 ````
+
+### 🚀 Quick Start
+
+To get started with ARES, you'll need to set up your configuration. Below is is an example of how to structure your configuration for ARES.
+
+```
+
+from ares import ARES
+
+synth_config = { 
+    "document_filepaths": ["ARES/data/datasets_v2/nq/nq_ratio_0.5.tsv"],  # Path(s) to evaluation dataset files
+    "few_shot_prompt_filename": "ARES/data/datasets/few_shot_prompt__v1.tsv",  # Path to file containing few-shot examples
+    "synthetic_queries_filenames": ["data/synthetic_queries.tsv"], # Path to store synthetic queries
+    "documents_sampled": 10000 
+}
+
+classifier_config = {
+    "classification_dataset": ["data/synthetic_queries.tsv"], # Path containing synthetic queries
+    "test_set_selection": "ARES/data/datasets_v2/nq/nq_ratio_0.6.tsv", # Path for test set selection
+    "label_column": [Context_Relevance_Label], 
+    "num_epochs": 10, 
+    "patience_value": 3, 
+    "learning_rate": 5e-6
+}
+
+ppi_config = { 
+    "evaluation_datasets": ["ARES/data/datasets_v2/nq/nq_ratio_0.6.tsv"], # Path to evaluation dataset(s)
+    "few_shot_examples_filepath": "ARES/data/datasets/few_shot_prompt__v1.tsv", # Path to file containing few-shot examples
+    "checkpoints": ["ARES/data/checkpoints/Context_Relevance_Label_ratio_0.6_.pt"], # Path to checkpoint file
+    "labels": [Context_Relevance_Label], 
+    "GPT_scoring": False, 
+    "gold_label_path": "ARES/data/gold_label_path.tsv", # Path to gold label path
+    "swap_human_labels_for_gpt4_labels": False
+}
+
+ares_module = ARES(synthetic_query_generator=synth_config, classifier_model=classifier_config, ppi=ppi_config)
+results = ares_module.run()
+print(results)
+```
 ​
 ## Step #1: Synthetic Data Generation
 ​
