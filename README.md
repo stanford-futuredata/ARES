@@ -93,10 +93,14 @@ To get started with ARES, you'll need to set up your configuration. Below is an 
 
 Copy-paste each step to see ARES in action!
 
+<hr>
+
 Run the following to get the few-shot tsv file! 
 ```python 
 wget https://github.com/stanford-futuredata/ARES/blob/new-dev/data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv
 ```
+
+<hr>
 
 Run the following command to get the NQ dataset! (We use this for configuration)
 ```python
@@ -105,16 +109,19 @@ ares = ARES()
 ares.KILT_dataset("nq")
 ```
 
+<hr>
+
 Run the following to see GPT 3.5's accuracy on the nq 0.5 ratio dataset!
+
 ```python
 from ares import ARES
 
 ues_idp_config = {
     # Dataset for in-domain prompts
-    "in_domain_prompts_dataset": "../data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    "in_domain_prompts_dataset": "multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
     
     # Dataset for unlabeled evaluation
-    "unlabeled_evaluation_set": "../data/datasets_v2/nq/nq_ratio_0.5.tsv", 
+    "unlabeled_evaluation_set": "/datasets_v2/nq/nq_ratio_0.5.tsv", 
 
     "context_relevance_system_prompt": """You are an expert dialogue agent. Your task is to analyze the provided document and determine whether it 
     is relevant for responding to the dialogue. In your evaluation, you should consider the content of the document and how 
@@ -142,45 +149,66 @@ print(results)
 }
 ```
 
+<hr>
+
 Run the following to see ARES's synthetic generation in action!
 ```python
 
 from ares import ARES
 
 synth_config = { 
-    "document_filepaths": [<document_filepath>], 
-    "few_shot_prompt_filename": <few_shot_filepath>, 
-    "synthetic_queries_filenames": [<synthetic_queries_filepath>],
-    "model_choice": <model_choice>, # Default model is "google/flan-t5-xxl"
-    "documents_sampled": 10000 
+    "document_filepaths": "datasets_v2/nq/nq_ratio_0.6.tsv",
+    "few_shot_prompt_filename": "datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    "synthetic_queries_filename": "data/output/synthetic_queries_1.tsv",
+    "documents_sampled": 10000
 }
 
+ares_module = ARES(synthetic_query_generator=synth_config)
+results = ares_module.generate_synthetic_data()
+print(results)
+```
+
+<hr>
+
+Run the following to see ARES's training classifier in action!
+```python
+
+from ares import ARES
+
 classifier_config = {
-    "classification_dataset": [<classification_dataset_filepath>],
-    "test_set_selection": <test_set_selection_filepath>, 
-    "label_column": [<labels>], 
-    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
+    "classification_dataset": "output/synthetic_queries_1.tsv", 
+    "validation_set": "datasets_v2/nq/nq_ratio_0.6.tsv", 
+    "label_column": "Answer_Relevance_Label", 
     "num_epochs": 10, 
     "patience_value": 3, 
     "learning_rate": 5e-6
 }
 
+ares = ARES(classifier_model=classifier_config)
+results = ares.train_classifier()
+print(results)
+```
+
+<hr>
+
+Run the following to see ARES's PPI in action!
+```python
+
+from ares import ARES
+
 ppi_config = { 
-    "evaluation_datasets": [<eval_dataset_filepath>],
-    "few_shot_examples_filepath": <few_shot_filepath>,
-    "checkpoints": [<checkpoint_filepath>],
-    "labels": [<labels>], 
-    "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
-    "GPT_scoring": <True or False>, 
-    "gold_label_path": <gold_label_filepath>, 
+    "evaluation_datasets": ['/datasets_v2/nq/nq_ratio_0.6.tsv'], 
+    "few_shot_examples_filepath": "/future/u/manihani/ARES/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    "checkpoints": ["/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"],
+    "labels": ["Context_Relevance_Label"], 
+    "GPT_scoring": False, 
+    "gold_label_path": "/datasets_v2/nq/nq_ratio_0.5.tsv", 
     "swap_human_labels_for_gpt4_labels": False
 }
 
-ares_module = ARES(synthetic_query_generator=synth_config, 
-classifier_model=classifier_config, ppi=ppi_config)
-results = ares_module.run()
+ares = ARES(classifier_model=classifier_config)
+results = ares.train_classifier()
 print(results)
-
 ```
 ​
 For more details, refer to our [documentation](https://ares-ai.vercel.app/).
