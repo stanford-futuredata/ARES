@@ -89,7 +89,16 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 <a id="section3"></a>
 <hr>
 
-To get started with ARES, you'll need to set up your configuration. Below is is an example of how to structure your configuration for ARES.
+To get started with ARES, you'll need to set up your configuration. Below is an example of a configuration for ARES!
+
+Copy-paste each step to see ARES in action!
+
+Run the following command to get the NQ dataset! (We use this for configurattion)
+```python
+from ares import ARES
+ares = ARES() 
+ares.KILT_dataset("nq")
+```
 
 ```python
 
