@@ -93,13 +93,56 @@ To get started with ARES, you'll need to set up your configuration. Below is an 
 
 Copy-paste each step to see ARES in action!
 
-Run the following command to get the NQ dataset! (We use this for configurattion)
+Run the following to get the few-shot tsv file! 
+```python 
+wget https://github.com/stanford-futuredata/ARES/blob/new-dev/data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv
+```
+
+Run the following command to get the NQ dataset! (We use this for configuration)
 ```python
 from ares import ARES
 ares = ARES() 
 ares.KILT_dataset("nq")
 ```
 
+Run the following to see GPT 3.5's accuracy on the nq 0.5 ratio dataset!
+```python
+from ares import ARES
+
+ues_idp_config = {
+    # Dataset for in-domain prompts
+    "in_domain_prompts_dataset": "../data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    
+    # Dataset for unlabeled evaluation
+    "unlabeled_evaluation_set": "../data/datasets_v2/nq/nq_ratio_0.5.tsv", 
+
+    "context_relevance_system_prompt": """You are an expert dialogue agent. Your task is to analyze the provided document and determine whether it 
+    is relevant for responding to the dialogue. In your evaluation, you should consider the content of the document and how 
+    it relates to the provided dialogue. Output your final verdict by strictly following this format: \"[[Yes]]\" 
+    if the document is relevant and \"[[No]]\" if the document provided is not relevant. Do not provide any additional explanation for your decision.\n\n """,
+
+    "answer_relevance_system_prompt": """
+    Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant 
+    for the provided question. In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information 
+    from the document for answering the question. Output your final verdict by strictly following this format: \"[[Yes]]\" if the answer is relevant for the given question 
+    and \"[[No]]\" if the answer is not relevant for the given question. Do not provide any additional explanation for your decision.\n\n\ """,
+    
+    "answer_faithfulness_system_prompt": """ 
+    Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. 
+    The answer must not offer new information beyond the context provided in the document. The answer also must not contradict information provided in the document. 
+    Output your final verdict by strictly following this format: \"[[Yes]]\" if the answer is faithful to the document and \"[[No]]\" if the answer is not faithful to the document. 
+    Do not provide any additional explanation for your decision.\n\n\
+    """,
+
+    "model_choice" : "gpt-3.5-turbo-0125"
+
+ares = ARES(ues_idp=ues_idp_config)
+results = ares.ues_idp()
+print(results)
+}
+```
+
+Run the following to see ARES's synthetic generation in action!
 ```python
 
 from ares import ARES
