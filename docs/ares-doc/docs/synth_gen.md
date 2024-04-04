@@ -70,7 +70,7 @@ A list of file paths where the generated synthetic queries will be saved. These 
 
 ### Model Choice
 
-Specifies the pre-trained language model to fine-tune for classification. By default, ARES uses "microsoft/deberta-v3-large". You can replace this with any Hugging Face model suitable for your task.
+Specifies the pre-trained language model to create the synthetic data. By default, ARES uses "google/flan-t5-xxl". You can replace this with any Hugging Face model suitable for your task.
 
 ```python
  "model_choice": "google/flan-t5-xxl",
