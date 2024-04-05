@@ -145,11 +145,12 @@ ues_idp_config = {
     """,
 
     "model_choice" : "gpt-3.5-turbo-0125"
+} 
 
 ares = ARES(ues_idp=ues_idp_config)
 results = ares.ues_idp()
 print(results)
-}
+
 ```
 
 <hr>
