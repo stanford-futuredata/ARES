@@ -171,3 +171,8 @@ test.py
 /ARES/data/output/hotpotqa_synthetc_queries_1.tsv
 data/output/synthetic_queries_1.tsv
 /ARES/data/output/synthetic_queries_2.tsv
+/future/u/manihani/ARES/docs/ARES+Comparisons.ipynb
+docs/ARES+Comparisons.ipynb
+checkpoints/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt
+checkpoints/microsoft-deberta-v3-large/5e-06_1_True_Answer_Relevance_Label_nq_ratio_0.6_428380.pt
+5e-06_1_True_Answer_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt
