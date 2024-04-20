@@ -10,7 +10,11 @@ class ARES:
         "ues_idp": {
             "in_domain_prompts_dataset": (str, None), # Required parameter (No default)
             "unlabeled_evaluation_set" : (str, None), # Required parameter (No default)
-            "model_choice": (str, "gpt-3.5-turbo-1106"),
+            # original choice
+            # "model_choice": (str, "gpt-3.5-turbo-1106"),
+
+            # local mod
+            "model_choice": (str, "mistralai/Mistral-7B-Instruct-v0.2"),
         },
 
         "synthetic_query_generator": {
@@ -18,7 +22,10 @@ class ARES:
             "few_shot_prompt_filename": (str, None),  # Required parameter (No default)
             "synthetic_queries_filenames": (list, None),  # Required parameter (No default)
             "documents_sampled": (int, None),  # Required parameter (No default)
-            "model_choice": (str, "google/flan-t5-xxl"),
+            # original choice
+            #"model_choice": (str, "google/flan-t5-xxl"),
+            # local model
+            "model_choice": (str, "google/flan-t5-xl"),
             "flan_approach": (bool, True), 
             "clean_documents": (bool, False), 
             "regenerate_synth_questions": (bool, True), 
@@ -41,7 +48,10 @@ class ARES:
             "num_epochs": (int, None), # Required parameter (No default)
             "patience_value": (int, None), # Required parameter (No default)
             "learning_rate": (float, None), # Required parameter (No default)
-            "model_choice": (str, "microsoft/deberta-v3-large"), 
+            # original choice
+            #"model_choice": (str, "microsoft/deberta-v3-base"), 
+            # multilingual mod
+            "model_choice": (str, "microsoft/mdeberta-v3-base"), 
             "validation_set_scoring": (bool, True), 
             "assigned_batch_size": (int, 1), 
             "gradient_accumulation_multiplier": (int, 32), 
@@ -58,7 +68,10 @@ class ARES:
             "gold_label_path": (str, None), # Required parameter (No default)
             "swap_human_labels_for_gpt4_labels": (bool, None), # Required parameter (No default)
             "use_pseudo_human_labels": (bool, False),
-            "model_choice": (str, "microsoft/deberta-v3-large"), 
+            # original choice
+            #"model_choice": (str, "microsoft/deberta-v3-base"), 
+            # multilingual mod
+            "model_choice": (str, "microsoft/mdeberta-v3-base"), 
             "assigned_batch_size": (int, 1),
             "number_of_labels": (int, 2),
             "alpha": (int, 0.05),   
