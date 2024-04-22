@@ -179,3 +179,7 @@ checkpoints/microsoft-deberta-v3-large/5e-06_1_True_Answer_Relevance_Label_nq_ra
 datasets/example_checkpoints/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt
 datasets/example_checkpoints/Answer-Relevance-Validation-1867825.pt
 datasets/example_checkpoints/Context-Relevance-Label.pt
+datasets/synthetic_queries/NQ_Synthetic_Queries.tsv
+docs/ARES+Classifier+IDP+UES+PPI.ipynb
+docs/ARES+IDP+UES.ipynb
+test.py
