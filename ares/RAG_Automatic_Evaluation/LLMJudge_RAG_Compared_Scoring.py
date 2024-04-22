@@ -4,6 +4,7 @@ import torch.nn as nn
 from transformers import T5Tokenizer, T5EncoderModel, T5ForConditionalGeneration
 from transformers import BertModel, AutoTokenizer, AutoModel, GPT2Tokenizer
 #import tensorflow as tf
+import sys
 
 import pandas as pd
 import numpy as np
@@ -249,51 +250,54 @@ def clean_query(query: str):
     return cleaned_query
 
 #################################################
-def filter_dataset(evaluation_datasets):
-    if "wow" in evaluation_datasets[0].lower():
-        context_relevance_system_prompt = "You are an expert dialogue agent. "
-        context_relevance_system_prompt += "Given the following dialogue and document, you must analyze the provided document and determine whether it is relevant for responding to the dialogue. "
-        context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided dialogue. "
-        context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is relevant and "[[No]]" if the document provided is not relevant. '
-        context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    if "fever" in evaluation_datasets[0].lower():
-        context_relevance_system_prompt = "You are an expert fact-checking agent. "
-        context_relevance_system_prompt += "Given the following statement and document, you must analyze the provided document and determine whether it is sufficient for determining the statement's factuality. "
-        context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided statement's factuality. "
-        context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is sufficient and "[[No]]" if the document is not sufficient. '
-        context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    else:
+def filter_dataset(rag_type: str = "question_answering"):
+    if rag_type == "question_answering": 
         context_relevance_system_prompt = "Given the following question and document, you must analyze the provided document and determine whether it is sufficient for answering the question. "
         context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided question. "
         context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is sufficient and "[[No]]" if the document provided is not sufficient. '
         context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
     
-    if "wow" in evaluation_datasets[0].lower():
-        answer_faithfulness_system_prompt = "Given the following dialogue, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
-    if "fever" in evaluation_datasets[0].lower():
-        answer_faithfulness_system_prompt = "Given the following statement, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
-    else:
         answer_faithfulness_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
         answer_faithfulness_system_prompt += "The answer must not offer new information beyond the context provided in the document. "
         answer_faithfulness_system_prompt += "The answer also must not contradict information provided in the document. "
         answer_faithfulness_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is faithful to the document and "[[No]]" if the answer is not faithful to the document. '
         answer_faithfulness_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
 
-    if "wow" in evaluation_datasets[0].lower():
-        answer_relevance_system_prompt = "Given the following dialogue, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided dialogue. "
-        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the dialogue and provides only correct information from the document for responding to the dialogue. "
-        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given dialogue and "[[No]]" if the answer is not relevant for the given dialogue. '
-        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    if "fever" in evaluation_datasets[0].lower():
-        answer_relevance_system_prompt = "Given the following statement, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided statement. "
-        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the statement and provides only correct information from the document for answering the statement. "
-        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given statement and "[[No]]" if the answer is not relevant for the given statement. '
-        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    else:
         answer_relevance_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided question. "
         answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information from the document for answering the question. "
         answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given question and "[[No]]" if the answer is not relevant for the given question. '
         answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+
+    elif rag_type == "fact_checking": 
+        context_relevance_system_prompt = "You are an expert fact-checking agent. "
+        context_relevance_system_prompt += "Given the following statement and document, you must analyze the provided document and determine whether it is sufficient for determining the statement's factuality. "
+        context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided statement's factuality. "
+        context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is sufficient and "[[No]]" if the document is not sufficient. '
+        context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+
+        answer_faithfulness_system_prompt = "Given the following statement, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
+
+        answer_relevance_system_prompt = "Given the following statement, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided statement. "
+        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the statement and provides only correct information from the document for answering the statement. "
+        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given statement and "[[No]]" if the answer is not relevant for the given statement. '
+        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+
+    elif rag_type == "dialogue_agent":
+        context_relevance_system_prompt = "You are an expert dialogue agent. "
+        context_relevance_system_prompt += "Given the following dialogue and document, you must analyze the provided document and determine whether it is relevant for responding to the dialogue. "
+        context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided dialogue. "
+        context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is relevant and "[[No]]" if the document provided is not relevant. '
+        context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+
+        answer_faithfulness_system_prompt = "Given the following dialogue, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
+        
+        answer_relevance_system_prompt = "Given the following dialogue, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided dialogue. "
+        answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the dialogue and provides only correct information from the document for responding to the dialogue. "
+        answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given dialogue and "[[No]]" if the answer is not relevant for the given dialogue. '
+        answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
+    
+    else: 
+        sys.exit("Error: rag_type not specified, please specifiy in configuration with 'rag_type'")
     
     return context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt
 
@@ -529,7 +533,7 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     validation_set_lengths.append(len(test_set))
     validation_set_ratios.append(round(Yhat_unlabeled_dataset[label_column].tolist().count(1) / len(Yhat_unlabeled_dataset), 3))
     ppi_confidence_intervals.append([round(value, 3) for value in avg_ci])
-    accuracy_scores.append(results['accuracy'], 3)
+    accuracy_scores.append(round(results['accuracy'], 3))
 
     ######################################################################
 
@@ -548,68 +552,68 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     print("Annotated Examples used for PPI: " + str(len(Y_labeled)))
     print("--------------------------------------------------\n")
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+#     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--alpha", type=float, required=True)
-    parser.add_argument("--num_trials", type=int, required=True)
-    parser.add_argument("--evaluation_datasets", nargs='+', required=True)
-    parser.add_argument("--checkpoints", nargs='+', required=True)
-    parser.add_argument("--labels", nargs='+', required=True)
+#     parser.add_argument("--alpha", type=float, required=True)
+#     parser.add_argument("--num_trials", type=int, required=True)
+#     parser.add_argument("--evaluation_datasets", nargs='+', required=True)
+#     parser.add_argument("--checkpoints", nargs='+', required=True)
+#     parser.add_argument("--labels", nargs='+', required=True)
 
-    parser.add_argument("--GPT_scoring", type=str, default="False", required=True)
-    parser.add_argument("--gpt_model", type=str, default="gpt-3.5-turbo-16k", required=False)
-    parser.add_argument("--perform_zero_shot", type=str, default="False", required=False)
-    parser.add_argument("--few_shot_examples_filepath", type=str, required=True)
+#     parser.add_argument("--GPT_scoring", type=str, default="False", required=True)
+#     parser.add_argument("--gpt_model", type=str, default="gpt-3.5-turbo-16k", required=False)
+#     parser.add_argument("--perform_zero_shot", type=str, default="False", required=False)
+#     parser.add_argument("--few_shot_examples_filepath", type=str, required=True)
 
-    parser.add_argument("--Y_labeled_count", type=int, default=300, required=False)
-    parser.add_argument("--use_pseudo_human_labels", type=str, default="False", required=False)
-    parser.add_argument("--gold_label_path", type=str, required=False)
-    parser.add_argument("--swap_human_labels_for_gpt_labels", type=str, default="False", required=False)
+#     parser.add_argument("--Y_labeled_count", type=int, default=300, required=False)
+#     parser.add_argument("--use_pseudo_human_labels", type=str, default="False", required=False)
+#     parser.add_argument("--gold_label_path", type=str, required=False)
+#     parser.add_argument("--swap_human_labels_for_gpt_labels", type=str, default="False", required=False)
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
 
-    ### Instructions
+#     ### Instructions
 
-    # Settings for Human-labeled gold set for PPI
-    alpha = args.alpha
-    num_trials = args.num_trials
-    evaluation_datasets = args.evaluation_datasets
-    checkpoints = args.checkpoints
-    labels = args.labels
+#     # Settings for Human-labeled gold set for PPI
+#     alpha = args.alpha
+#     num_trials = args.num_trials
+#     evaluation_datasets = args.evaluation_datasets
+#     checkpoints = args.checkpoints
+#     labels = args.labels
     
-    # Settings for zero/few-shot GPT scoring
-    GPT_scoring = args.GPT_scoring
-    if GPT_scoring == "True":
-        GPT_scoring = True
-    else:
-        GPT_scoring = False
+#     # Settings for zero/few-shot GPT scoring
+#     GPT_scoring = args.GPT_scoring
+#     if GPT_scoring == "True":
+#         GPT_scoring = True
+#     else:
+#         GPT_scoring = False
     
-    gpt_model = args.gpt_model
-    perform_zero_shot = args.perform_zero_shot
-    if perform_zero_shot == "True":
-        perform_zero_shot = True
-    else:
-        perform_zero_shot = False
-    few_shot_examples_filepath = args.few_shot_examples_filepath
+#     gpt_model = args.gpt_model
+#     perform_zero_shot = args.perform_zero_shot
+#     if perform_zero_shot == "True":
+#         perform_zero_shot = True
+#     else:
+#         perform_zero_shot = False
+#     few_shot_examples_filepath = args.few_shot_examples_filepath
 
-    Y_labeled_count = args.Y_labeled_count
-    use_pseudo_human_labels = args.use_pseudo_human_labels
-    if use_pseudo_human_labels == "True":
-        use_pseudo_human_labels = True
-    else:
-        use_pseudo_human_labels = False
-    gold_label_path = args.gold_label_path
+#     Y_labeled_count = args.Y_labeled_count
+#     use_pseudo_human_labels = args.use_pseudo_human_labels
+#     if use_pseudo_human_labels == "True":
+#         use_pseudo_human_labels = True
+#     else:
+#         use_pseudo_human_labels = False
+#     gold_label_path = args.gold_label_path
     
-    swap_human_labels_for_gpt4_labels = args.swap_human_labels_for_gpt_labels
-    if swap_human_labels_for_gpt4_labels == "True":
-        swap_human_labels_for_gpt4_labels = True
-    else:
-        swap_human_labels_for_gpt4_labels = False
+#     swap_human_labels_for_gpt4_labels = args.swap_human_labels_for_gpt_labels
+#     if swap_human_labels_for_gpt4_labels == "True":
+#         swap_human_labels_for_gpt4_labels = True
+#     else:
+#         swap_human_labels_for_gpt4_labels = False
 
-    assigned_batch_size = 1
-    number_of_labels = 2
+#     assigned_batch_size = 1
+#     number_of_labels = 2
 
     ############################################################
 

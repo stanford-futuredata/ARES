@@ -40,6 +40,10 @@ def clean_document(document: str):
 
     # Load model for synthetic query generation 
 
+def validate_input_file(df, required_columns) -> bool: 
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        sys.exit(f"Error: The DataFrame is missing the following required column(s): {', '.join(missing_columns)}.")
 ############
 
 def load_model(flan_approach, model_choice):
@@ -60,6 +64,8 @@ def load_model(flan_approach, model_choice):
 # Load documents for synthetic query and answer generation
 def load_documents(document_filepath, clean_documents, documents_sampled):
     documents = []
+    required_columns = ['Query', 'Document', 'Answer']
+
     if "docs_aws" in document_filepath:
 
         with open(document_filepath, "r") as json_file:
@@ -73,9 +79,16 @@ def load_documents(document_filepath, clean_documents, documents_sampled):
         documents = pd.DataFrame(documents, columns=["document"])
 
     else:
-        documents = pd.read_csv(document_filepath, sep="\t")
-        documents.rename(columns={"Document": "document"}, inplace=True)
-        documents['document'] = documents['document'].str.strip()
+        if not document_filepath.endswith('.tsv'):
+            sys.exit(f"Error: The file {document_filepath} is not a TSV file.")
+        try:
+            documents = pd.read_csv(document_filepath, sep="\t")
+            validate_input_file(documents, required_columns)
+            documents.rename(columns={"Document": "document"}, inplace=True)
+            documents['document'] = documents['document'].str.strip()
+        except Exception as e:
+            sys.exit(f"Error reading the file {document_filepath}: {e}")
+
 
     initial_count = len(documents)
     documents = documents[documents['document'].str.split().apply(len) >= 50] # Filter documents w/ less than 50 words.
@@ -87,16 +100,21 @@ def load_documents(document_filepath, clean_documents, documents_sampled):
         sys.exit(f"All documents were less than 50 words, please provide dataset with documents containing more than 50 words")
 
     if documents_sampled > documents.shape[0]:
-        sys.exit(f"`--documents_sampled` ({documents_sampled}) cannot be higher than the number of documents in `--document_filepath` after filtering ({documents.shape[0]})")
+        sys.exit(f"({documents_sampled}) cannot be higher than the number of documents in `--document_filepath` after filtering ({documents.shape[0]})") 
+        # choice = input(f"Would you like to continbue synthetic generation on {documents.shape[0]} documents?\nY/N: ").upper()
+        # if choice == "N": 
+        #     sys.exit("Exited evaluation program")
+        
+
     documents = documents.sample(n=documents_sampled, random_state=43)
 
     if count > 0: 
         print(f"Filtered out {count} documents because they had less than 50 words.")
 
     #documents = documents[:10]
-    print("documents")
-    print(len(documents))
-    print(documents.head())
+    # print("documents") - CHANGED
+    # print(len(documents)) - CHANGED
+    # print(documents.head()) - CHANGED
     return documents
 
 ################
@@ -120,9 +138,9 @@ def load_few_shot_prompt(few_shot_prompt_filename,for_fever_dataset,for_wow_data
         else:
             few_shot_examples += "Question: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
 
-    print("Fewshot Prompt")
-    print(few_shot_examples)
-    print("Finished loading dataset + model")
+    # print("Fewshot Prompt") - CHANGED
+    # print(few_shot_examples) - CHANGED 
+    # print("Finished loading dataset + model") - CHANGED
     return few_shot_examples, length_of_fewshot_prompt
 
 #################################################
@@ -169,8 +187,8 @@ def generate_few_shot_prompts(few_shot_prompt_filename,for_fever_dataset,for_wow
             answer_gen_few_shot_examples += "Question: " + answer_gen_few_shot_prompt.iloc[row]['Query'] + "\n"
             answer_gen_few_shot_examples += "Answer: " + answer_gen_few_shot_prompt.iloc[row]['Answer'] + "\n\n"
 
-    print("answer_gen_few_shot_examples")
-    print(answer_gen_few_shot_examples)
+    # print("answer_gen_few_shot_examples") - CHANGED
+    # print(answer_gen_few_shot_examples) - CHANGED
     return answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen
 
 ##############################
@@ -180,9 +198,9 @@ def save_synthetic_queries(documents, regenerate_synth_questions, flan_approach,
     length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
     synthetic_query_prompt, synthetic_queries_filename, question_temperatures): 
 
-    print("documents")
-    print(len(documents))
-    print(documents.head())
+    # print("documents") - CHANGED 
+    # print(len(documents)) - CHANGED
+    # print(documents.head()) - CHANGED
 
     if regenerate_synth_questions:
         print("Beginning synthetic query generation!")

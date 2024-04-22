@@ -6,6 +6,7 @@ import ast
 import json
 import copy
 import openai
+from openai import OpenAI
 from tqdm import tqdm
 import csv
 from datasets import Dataset
@@ -16,6 +17,7 @@ import random
 import pdb
 
 #################################################
+client = OpenAI()
 
 def get_embedding(text, model="text-embedding-ada-002"):
     text = text.replace("\n", " ")
@@ -23,7 +25,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
         text = (" ").join(text.split(" ")[:50])
     for _ in range(5):
         try:
-            return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
+            return client.embeddings.create(input = [text], model=model).data[0].embedding
         except:
             print("Error generating embedding! Attempting again...")
             time.sleep(30)
@@ -31,7 +33,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
 def generate_index(dataframe):
    dataframe = dataframe.drop_duplicates(subset="document")
    tqdm.pandas(desc="Generating embeddings...", total=dataframe.shape[0])
-   dataframe['embeddings'] = dataframe["document"].progress_apply(lambda x: get_embedding(x, model='text-embedding-ada-002'))
+   dataframe['embeddings'] = dataframe["document"].progress_apply(lambda x: get_embedding(x, model='text-embedding-ada-002')) # model='text-embedding-ada-002'
    dataframe =  dataframe[dataframe['embeddings'].apply(lambda x: len(x)) == 1536]
    
    dataframe = Dataset.from_pandas(dataframe)

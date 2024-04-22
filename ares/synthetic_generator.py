@@ -53,5 +53,5 @@ def synthetic_generator_config(document_filepaths: list, few_shot_prompt_filenam
         device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
         few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio, lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings)
 
-        print_synthetic_queries(synthetic_queries_filename)
+        # print_synthetic_queries(synthetic_queries_filename)
     

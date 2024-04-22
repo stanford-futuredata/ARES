@@ -1,0 +1,3 @@
+recursive-include ares *
+prune docs
+prune data

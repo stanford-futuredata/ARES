@@ -33,6 +33,8 @@ import random
 
 import re
 import argparse
+
+from tqdm import tqdm, tqdm_pandas
 #############################################################
 
 def combine_query_document(query: str, document: str, answer=None):
@@ -50,6 +52,7 @@ def combine_query_document(query: str, document: str, answer=None):
         try:
             return query + " | " + cleaned_document + " | " + answer
         except:
+            breakpoint()
             print("Error with combine_query_document")
             print("Query: " + str(query))
             print("Cleaned Document: " + str(cleaned_document))
@@ -199,10 +202,9 @@ def load_model(model_choice):
 
 ########################################################
 
-def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate, 
-                classification_dataset, model_choice, 
+def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate, model_choice, 
                 number_of_runs, validation_set_scoring, 
-                label_column, test_set_selection, patience_value, 
+                label_column, validation_set, patience_value, 
                 num_epochs, num_warmup_steps, gradient_accumulation_multiplier, 
                 assigned_batch_size, tokenizer): 
 
@@ -214,14 +216,19 @@ def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate,
     from random import randrange
     random_int = randrange(1000000)
 
-    checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
-    checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(test_set_selection.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
+    checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
+
+    # checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
+    # checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
+
+    # checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
+    # checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
     
     execution_start = time.time()
 
     print("Dataset: " + dataset)
     print("Model: " + model_choice)
-    print("Test Set Selection: " + test_set_selection)
+    print("Test Set Selection: " + validation_set)
     print("Number of Runs: " + str(number_of_runs))
     print('Learning Rate: ' + str(chosen_learning_rate))
     print("Checkpoint Path: " + checkpoint_path)
@@ -229,6 +236,7 @@ def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate,
     print("Validation Set Choice: " + str(validation_set_scoring))
     print("Number of Epochs: " + str(num_epochs))
     print("Number of warmup steps: " + str(num_warmup_steps))
+    print("--------------------------------------------------------------------------")
 
     return checkpoint_path, patience_value
 
@@ -237,15 +245,16 @@ def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate,
 def analyze_and_report_data(dataset, label_column, tokenizer, max_token_length): 
 
     synth_queries = pd.read_csv(dataset, sep="\t")
+    
     if "nq_reformatted" in dataset:
         synth_queries['synthetic_query'] = synth_queries['Query']
         synth_queries['generated_answer'] = synth_queries['Answer']
         synth_queries['document'] = synth_queries['Document']
 
-    print("Positive and Negative Label Count")
-    print(synth_queries[label_column].tolist().count("Yes"))
-    print(synth_queries[label_column].tolist().count("No"))
-    print(set(synth_queries[label_column].tolist()))
+    # print("Positive and Negative Label Count")
+    # print(synth_queries[label_column].tolist().count("Yes"))
+    # print(synth_queries[label_column].tolist().count("No"))
+    # print(set(synth_queries[label_column].tolist()))
     
     synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
     synth_queries = synth_queries[synth_queries["synthetic_query"].notna()]
@@ -255,24 +264,24 @@ def analyze_and_report_data(dataset, label_column, tokenizer, max_token_length):
     synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
     #synth_queries = synth_queries[:40000]
 
-    print("Number of unique questions")
-    print(len(set(synth_queries['synthetic_query'].tolist())))
-    print("Positive and Negative Label Count")
-    print(synth_queries[label_column].tolist().count("Yes"))
-    print(synth_queries[label_column].tolist().count("No"))
-    print(set(synth_queries[label_column].tolist()))
+    # print("Number of unique questions")
+    # print(len(set(synth_queries['synthetic_query'].tolist())))
+    # print("Positive and Negative Label Count")
+    # print(synth_queries[label_column].tolist().count("Yes"))
+    # print(synth_queries[label_column].tolist().count("No"))
+    # print(set(synth_queries[label_column].tolist()))
     
     if "Context" in label_column:
         synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document']) for i in range(len(synth_queries))]
     else:
         synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer']) for i in range(len(synth_queries))]
-    synth_queries['token_length'] = [len(tokenizer.encode(synth_queries.iloc[i]['concat_text'], return_tensors='pt')[0]) for i in range(len(synth_queries))]
+    synth_queries['token_length'] = [len(tokenizer.encode(text, return_tensors='pt')[0]) for text in tqdm(synth_queries['concat_text'], desc="Tokenizing")]
     synth_queries = synth_queries.drop_duplicates(["concat_text"])
 
-    print("Max token length")
-    print(synth_queries['token_length'].max())
-    print("Total inputs over max token length set of " + str(max_token_length))
-    print(len(synth_queries[synth_queries['token_length'] > max_token_length]))
+    # print("Max token length")
+    # print(synth_queries['token_length'].max())
+    # print("Total inputs over max token length set of " + str(max_token_length))
+    # print(len(synth_queries[synth_queries['token_length'] > max_token_length]))
 
     synth_queries = synth_queries[synth_queries['token_length'] <= 2048]
 
@@ -280,17 +289,17 @@ def analyze_and_report_data(dataset, label_column, tokenizer, max_token_length):
 
 ########################################################
 
-def transform_data(synth_queries, test_set_selection, label_column):
+def transform_data(synth_queries, validation_set, label_column):
 
     train_df = synth_queries
 
-    test_set = pd.read_csv(test_set_selection, sep="\t")
+    test_set = pd.read_csv(validation_set, sep="\t")
     test_set['Question'] = test_set['Query']
     test_set['Document'] = test_set['Document'].str.strip()
     test_set = test_set[test_set["Document"].str.len() > 100]
     test_set = test_set[test_set[label_column].notna()]
 
-    train_df['document'] = train_df['document'].str.strip()
+    train_df['document'] = train_df['document'].astype(str).str.strip()
     train_df = train_df[train_df["document"].str.len() > 100]
     train_df = train_df[train_df[label_column].notna()]
 
@@ -332,23 +341,24 @@ def split_dataset(train_df, dataset, test_set, label_column):
     test_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
     test_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
 
-    print("Lengths of train, dev, and test")
-    print(len(train_set_text))
-    print(len(dev_set_text))
-    print(len(test_set_text))
-    print("Training example")
-    print(train_set_text[100])
     print('---------------------------------------------------')
-    print(train_set_label[100])
-    print('---------------------------------------------------')
+    # print("Lengths of train, dev, and test")
+    # print(len(train_set_text))
+    # print(len(dev_set_text))
+    # print(len(test_set_text))
+    # print("Training example")
+    # print(train_set_text[100])
+    # print('---------------------------------------------------')
+    # print(train_set_label[100])
+    # print('---------------------------------------------------')
 
     labels_list = sorted(list(set(train_set_label + dev_set_label + test_set_label)))
 
-    print("Label List")
-    print(labels_list)
-    print(set(train_set_label))
-    print(set(dev_set_label))
-    print(set(test_set_label))
+    # print("Label List")
+    # print(labels_list)
+    # print(set(train_set_label))
+    # print(set(dev_set_label))
+    # print(set(test_set_label))
 
     return train_set_text, train_set_label, dev_set_text, dev_set_label, test_set_text, test_set_label, labels_list
 

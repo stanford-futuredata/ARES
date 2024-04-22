@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 import openai
+import sys
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring 
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring
@@ -8,28 +9,45 @@ from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_local
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_local
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_local
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_claude 
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_claude
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_claude
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_vllm
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_vllm
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_vllm
+if 'ipykernel' in sys.modules:
+    # We are in a Jupyter notebook or similar (uses IPython kernel)
+    from tqdm.notebook import tqdm
+else:
+    # We are in a regular Python environment (e.g., terminal or script)
+    from tqdm import tqdm
 
-def ues_idp_config(in_domain_prompts_dataset: pd.DataFrame, unlabeled_evaluation_set: pd.DataFrame, model_choice: str) -> dict:
-    #####
-    context_relevance_system_prompt = "You are an expert dialogue agent."
-    context_relevance_system_prompt += "Your task is to analyze the provided document and determine whether it is relevant for responding to the dialogue. "
-    context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided dialogue. "
-    context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is relevant and "[[No]]" if the document provided is not relevant. '
-    context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    context_relevance_system_prompt = context_relevance_system_prompt
-    #####
-    answer_relevance_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided question. "
-    answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information from the document for answering the question. "
-    answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given question and "[[No]]" if the answer is not relevant for the given question. '
-    answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    answer_relevance_system_prompt = answer_relevance_system_prompt
-    #####
-    answer_faithfulness_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
-    answer_faithfulness_system_prompt += "The answer must not offer new information beyond the context provided in the document. "
-    answer_faithfulness_system_prompt += "The answer also must not contradict information provided in the document. "
-    answer_faithfulness_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is faithful to the document and "[[No]]" if the answer is not faithful to the document. '
-    answer_faithfulness_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
-    answer_faithfulness_system_prompt = answer_faithfulness_system_prompt
+def ues_idp_config(in_domain_prompts_dataset: str, unlabeled_evaluation_set: str, context_relevance_system_prompt: str, answer_relevance_system_prompt: str, answer_faithfulness_system_prompt: str, debug_mode: bool, documents: int, model_choice: str) -> dict:
+
+    if in_domain_prompts_dataset is not None:
+            in_domain_prompts_dataset = pd.read_csv(in_domain_prompts_dataset, sep='\t')
+    else:
+        in_domain_prompts_dataset = None 
+
+    if unlabeled_evaluation_set is not None:
+        unlabeled_evaluation_set = pd.read_csv(unlabeled_evaluation_set, sep='\t')
+    else:
+        unlabeled_evaluation_set = None
+    if in_domain_prompts_dataset is None and unlabeled_evaluation_set is None: 
+        print(f"Error: UES and IDP are not provided")
+        exit()
+    if in_domain_prompts_dataset is None: 
+        print(f"Error: IDP is not provided")
+        exit()
+    if unlabeled_evaluation_set is None: 
+        print(f"Error: UES is not provided")
+        exit()
+
+    if documents > len(unlabeled_evaluation_set): 
+        sys.exit("Error: documents size passed in is larger than documents present in unlabeled evaluation set")
+    
+    if documents == 0: 
+        documents = len(unlabeled_evaluation_set)
 
     context_relevance_answers = unlabeled_evaluation_set["Context_Relevance_Label"].tolist()
     answer_relevance_answers = unlabeled_evaluation_set["Answer_Relevance_Label"].tolist()
@@ -38,51 +56,148 @@ def ues_idp_config(in_domain_prompts_dataset: pd.DataFrame, unlabeled_evaluation
     answer_relevance_scores = []
     answer_faithfulness_scores = []
 
-    required_columns = ['Query', 'Document', 'Answer', 'Context_Relevance_Label', 'Answer_Relevance_Label', 'Answer_Faithfulness_Label']
+    gpt_models = [
+    "gpt-4-0125-preview",
+    "gpt-4-turbo-preview",
+    "gpt-4-1106-preview",
+    "gpt-4-vision-preview",
+    "gpt-4-1106-vision-preview",
+    "gpt-4",
+    "gpt-4-0613",
+    "gpt-4-32k",
+    "gpt-4-32k-0613",
+    "gpt-3.5-turbo-0125",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo-instruct",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-16k-0613"
+    ]
+
+    claude_models = [
+    "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229", 
+    "claude-3-haiku-20240307", 
+    ]
+
+    required_columns = ['Query', 'Document', 'Answer']
     missing_columns = [col for col in required_columns if col not in unlabeled_evaluation_set.columns]
     if missing_columns:
         print(f"Missing columns in the DataFrame: {missing_columns}")
 
-    if model_choice == "gpt-3.5-turbo-1106":
-        for index, row in unlabeled_evaluation_set.iterrows():
-            # Extract query, document, and answer from the row
-            query = row['Query']
-            document = row['Document']
-            answer = row['Answer']
 
-            # Scoring
-            context_score = few_shot_context_relevance_scoring(
-                context_relevance_system_prompt, query, document, model_choice, in_domain_prompts_dataset)
+    if model_choice in gpt_models:
+        with tqdm(total=documents, desc=f"Evaluating large subset with {model_choice}") as pbar:
+            for index, row in unlabeled_evaluation_set[:documents].iterrows():
+                # Extract query, document, and answer from the row
+                try:
+                    query = row['Query']
+                except KeyError:
+                    query = row['Question']
+                
+                try:
+                    _ = in_domain_prompts_dataset.iloc[0]['Query']
+                    query_id = "Query"
+                except KeyError:
+                    try:
+                        _ = in_domain_prompts_dataset.iloc[0]['Question']
+                        query_id = "Question"
+                    except KeyError:
+                        sys.exit("Both 'Query' and 'Question' keys are missing for the given row.")
 
-            answer_relevance_score = few_shot_answer_relevance_scoring(
-                answer_relevance_system_prompt, query, document, answer, model_choice, in_domain_prompts_dataset)
-            
-            answer_faithfulness_score = few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, query, document, answer, model_choice, in_domain_prompts_dataset)
+                document = row['Document']
+                answer = row['Answer']
+
+                # Scoring
+                context_score = few_shot_context_relevance_scoring(
+                    context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+
+                answer_relevance_score = few_shot_answer_relevance_scoring(
+                    answer_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+                
+                answer_faithfulness_score = few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+
+                    # Append scores to respective lists
+                context_relevance_scores.append(context_score)
+                answer_relevance_scores.append(answer_relevance_score)
+                answer_faithfulness_scores.append(answer_faithfulness_score)
+
+                pbar.update(1)
+    elif model_choice in claude_models:
+        with tqdm(total=documents, desc=f"Evaluating large subset with {model_choice}") as pbar:
+            for index, row in unlabeled_evaluation_set[:documents].iterrows():
+                # Extract query, document, and answer from the row
+                try:
+                    query = row['Query']
+                except KeyError:
+                    query = row['Question']
+                
+                try:
+                    _ = in_domain_prompts_dataset.iloc[0]['Query']
+                    query_id = "Query"
+                except KeyError:
+                    try:
+                        _ = in_domain_prompts_dataset.iloc[0]['Question']
+                        query_id = "Question"
+                    except KeyError:
+                        sys.exit("Both 'Query' and 'Question' keys are missing for the given row.")
+
+                document = row['Document']
+                answer = row['Answer']
+
+                # Scoring
+                context_score = few_shot_context_relevance_scoring_claude(
+                    context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+
+                answer_relevance_score = few_shot_answer_relevance_scoring_claude(
+                    answer_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+                
+                answer_faithfulness_score = few_shot_answer_faithfulness_scoring_claude(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+
+                    # Append scores to respective lists
+                context_relevance_scores.append(context_score)
+                answer_relevance_scores.append(answer_relevance_score)
+                answer_faithfulness_scores.append(answer_faithfulness_score)
+
+                pbar.update(1)
+    else: 
+        with tqdm(total=documents, desc=f"Evaluating large subset with {model_choice}") as pbar:
+            for index, row in unlabeled_evaluation_set[:documents].iterrows():
+                # Extract query, document, and answer from the row
+                try:
+                    query = row['Query']
+                except KeyError:
+                    query = row['Question']
+                
+                try:
+                    _ = in_domain_prompts_dataset.iloc[0]['Query']
+                    query_id = "Query"
+                except KeyError:
+                    try:
+                        _ = in_domain_prompts_dataset.iloc[0]['Question']
+                        query_id = "Question"
+                    except KeyError:
+                        sys.exit("Both 'Query' and 'Question' keys are missing for the given row.")
+
+                document = row['Document']
+                answer = row['Answer']
+
+                # Scoring
+                context_score = few_shot_context_relevance_scoring_local(
+                    context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+
+                answer_relevance_score = few_shot_answer_relevance_scoring_local(
+                    answer_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+                
+                answer_faithfulness_score = few_shot_answer_faithfulness_scoring_local(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
 
                 # Append scores to respective lists
-            context_relevance_scores.append(context_score)
-            answer_relevance_scores.append(answer_relevance_score)
-            answer_faithfulness_scores.append(answer_faithfulness_score)
-    else: 
-        for index, row in unlabeled_evaluation_set[:100].iterrows():
-            # Extract query, document, and answer from the row
-            query = row['Query']
-            document = row['Document']
-            answer = row['Answer']
+                context_relevance_scores.append(context_score)
+                answer_relevance_scores.append(answer_relevance_score)
+                answer_faithfulness_scores.append(answer_faithfulness_score)
 
-            # Scoring
-            context_score = few_shot_context_relevance_scoring_local(
-                context_relevance_system_prompt, query, document, model_choice, in_domain_prompts_dataset)
-
-            answer_relevance_score = few_shot_answer_relevance_scoring_local(
-                answer_relevance_system_prompt, query, document, answer, model_choice, in_domain_prompts_dataset)
-            
-            answer_faithfulness_score = few_shot_answer_faithfulness_scoring_local(answer_faithfulness_system_prompt, query, document, answer, model_choice, in_domain_prompts_dataset)
-
-            # Append scores to respective lists
-            context_relevance_scores.append(context_score)
-            answer_relevance_scores.append(answer_relevance_score)
-            answer_faithfulness_scores.append(answer_faithfulness_score)
+                pbar.update(1)
 
     # Compile results into a dictionary
     return {

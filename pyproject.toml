@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ares-ai"
-version = "0.1.0"
+version = "0.2.3"
 description = """ 
 ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
 utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
@@ -32,43 +32,36 @@ keywords = ["RAG", "RAG Scoring", "RAG Systems", "Automated Evaluation Framework
 "Answer Relevance", "Synthetic Queries", "Synthetic Answers", "In-Domain Passages", "Key Performance Metrics", "Human Preference Validation Set"]
 
 dependencies = [
+    "accelerate >=0.21.0, <1.0.0",
+    "anthropic == 0.23.1",
+    "Cython >=0.29.35",
+    "datasets >=2.12.0",
+    "ipywidgets >=8.0.6, <9.0.0",
+    "ipython >=8.12.2, <9.0.0",
+    "ipykernel >=6.23.1, <7.0.0",
+    "joblib >=1.2.0, <2.0.0",
+    "matplotlib >=3.7.1, <4.0.0",
+    "matplotlib-inline >=0.1.6, <0.2.0",
+    "nltk >=3.8.1, <4.0.0",
+    "numexpr >=2.8.4, <3.0.0",
     "numpy >=1.20.0, <2.0.0",
-    "openai >=1.13.3",
-    "torch >=1.13.1, <2.0.0",
-    "Cython >=0.29.35, <0.30.0",
+    "openai ==1.14.2",
+    "pandas >= 2.0.1",
+    "protobuf >= 4.21.10",
     "pydantic >=1.10.7,<2.0.0",
     "python-dateutil >=2.8.2,<3.0.0",
+    "pytorch-ranger >=0.1.1,<0.2.0",
     "pytz >=2023.3,<2024.0",
     "PyYAML >=6.0,<7.0",
     "requests >=2.25.1, <3.0.0",
     "scikit-learn >=1.2.2,<1.3.0",
     "scipy >=1.10.1,<1.11.0",
-]
-
-[project.optional-dependencies]
-data_science = [
-    "pandas >=2.0.1,<3.0.0",
-    "matplotlib >=3.7.1, <4.0.0",
-    "matplotlib-inline >=0.1.6, <0.2.0",
-    "datasets >=2.18.0, <3.0.0",
-    "numexpr >=2.8.4, <3.0.0",
-    "joblib >=1.2.0, <2.0.0",
-    "spacy >=3.5.3,<4.0.0",
-]
-nlp_tools = [
-    "nltk >=3.8.1, <4.0.0",
+    "sentencepiece==0.1.99",
     "sentence-transformers >=2.2.2,<3.0.0",
+    "spacy >=3.5.3,<4.0.0",
+    "torch ==1.13.1",
     "tokenizers >=0.13.3",
-    "transformers >=4.36.0",
-]
-acceleration = [
-    "accelerate >=0.21.0, <1.0.0",
-    "pytorch-ranger >=0.1.1,<0.2.0",
-]
-visualization = [
-    "ipywidgets >=8.0.6, <9.0.0",
-    "ipython >=8.12.2, <9.0.0",
-    "ipykernel >=6.23.1, <7.0.0",
+    "transformers ==4.36.0",
 ]
 
 [project.urls]
@@ -78,6 +71,3 @@ changelog = "https://github.com/stanford-futuredata/ARES/blob/new-dev/CHANGELOG.
 
 [project.scripts]
 ares-cli = "ares.cli:main"
-
-[tool.setuptools]
-packages = ["ares"]

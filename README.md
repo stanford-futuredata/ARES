@@ -85,7 +85,7 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 * A set of few-shot examples for scoring context relevance, answer faithfulness, and/or answer relevance in your system
 * A much larger set of unlabeled query-document-answer triples outputted by your RAG system for scoring
 
-### 🚀 Quick Start
+### 🚀 Quick Start - #1
 <a id="section3"></a>
 <hr>
 
@@ -95,54 +95,38 @@ Copy-paste each step to see ARES in action!
 
 <hr>
 
-Run the following to get the few-shot tsv file! 
+Run the following to get the files for quick-start! It includes a few_shot_prompt file, a labeled and unlabeled dataset!
 ```python 
-wget https://github.com/stanford-futuredata/ARES/blob/new-dev/data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets/nq_few_shot_prompt_v1.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_labeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_unlabeled_output.tsv
 ```
 
 <hr>
 
-Run the following command to get the NQ dataset! (We use this for configuration)
+*Note: You can run the following command to get the full NQ dataset! 
 ```python
 from ares import ARES
 ares = ARES() 
 ares.KILT_dataset("nq")
+
+# Fetches NQ datasets with ratios including 0.5, 0.6, 0.7, etc.
+# For purposes of our quick start guide, we rename nq_ratio_0.5 to nq_labeled_output and nq_ratio_0.6 to nq_unlabeled_output.
 ```
 
 <hr>
 
-Step 1) Run the following to see GPT 3.5's accuracy on the nq 0.5 ratio dataset!
+Step 1) Run the following to see GPT 3.5's accuracy on the NQ unlabeled dataset!
 
 ```python
 from ares import ARES
 
 ues_idp_config = {
     # Dataset for in-domain prompts
-    "in_domain_prompts_dataset": "multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    "in_domain_prompts_dataset": "nq_few_shot_prompt_v1.tsv",
     
     # Dataset for unlabeled evaluation
-    "unlabeled_evaluation_set": "/datasets_v2/nq/nq_ratio_0.5.tsv", 
-
-    # Default context relevance prompt
-    "context_relevance_system_prompt": """You are an expert dialogue agent. Your task is to analyze the provided document and determine whether it 
-    is relevant for responding to the dialogue. In your evaluation, you should consider the content of the document and how 
-    it relates to the provided dialogue. Output your final verdict by strictly following this format: \"[[Yes]]\" 
-    if the document is relevant and \"[[No]]\" if the document provided is not relevant. Do not provide any additional explanation for your decision.\n\n """,
-
-    # Default answer relevance prompt
-    "answer_relevance_system_prompt": """
-    Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant 
-    for the provided question. In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information 
-    from the document for answering the question. Output your final verdict by strictly following this format: \"[[Yes]]\" if the answer is relevant for the given question 
-    and \"[[No]]\" if the answer is not relevant for the given question. Do not provide any additional explanation for your decision.\n\n\ """,
-    
-    # Default answer faithfulness prompt
-    "answer_faithfulness_system_prompt": """ 
-    Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. 
-    The answer must not offer new information beyond the context provided in the document. The answer also must not contradict information provided in the document. 
-    Output your final verdict by strictly following this format: \"[[Yes]]\" if the answer is faithful to the document and \"[[No]]\" if the answer is not faithful to the document. 
-    Do not provide any additional explanation for your decision.\n\n\
-    """,
+    "unlabeled_evaluation_set": "nq_unlabeled_output.tsv", 
 
     "model_choice" : "gpt-3.5-turbo-0125"
 } 
@@ -150,6 +134,7 @@ ues_idp_config = {
 ares = ARES(ues_idp=ues_idp_config)
 results = ares.ues_idp()
 print(results)
+# {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
 
 ```
 
@@ -161,8 +146,8 @@ Step 2) Run the following to see ARES's synthetic generation in action!
 from ares import ARES
 
 synth_config = { 
-    "document_filepaths": "datasets_v2/nq/nq_ratio_0.6.tsv",
-    "few_shot_prompt_filename": "datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+    "document_filepaths": "nq_labeled_output.tsv",
+    "few_shot_prompt_filename": "nq_few_shot_prompt_v1.tsv",
     "synthetic_queries_filename": "data/output/synthetic_queries_1.tsv",
     "documents_sampled": 10000
 }
@@ -180,8 +165,8 @@ Step 3) Run the following to see ARES's training classifier in action!
 from ares import ARES
 
 classifier_config = {
-    "classification_dataset": "output/synthetic_queries_1.tsv", 
-    "validation_set": "datasets_v2/nq/nq_ratio_0.6.tsv", 
+    "training_dataset": "output/synthetic_queries_1.tsv", 
+    "validation_set": "nq_labeled_output.tsv", 
     "label_column": "Answer_Relevance_Label", 
     "num_epochs": 10, 
     "patience_value": 3, 
@@ -201,13 +186,11 @@ Step 4) Run the following to see ARES's PPI in action!
 from ares import ARES
 
 ppi_config = { 
-    "evaluation_datasets": ['/datasets_v2/nq/nq_ratio_0.6.tsv'], 
-    "few_shot_examples_filepath": "/future/u/manihani/ARES/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
-    "checkpoints": ["/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"],
+    "evaluation_datasets": ['nq_labeled_output.tsv'], 
+    "few_shot_examples_filepath": "nq_few_shot_prompt_v1.tsv",
+    "checkpoints": ["/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"], # CHANGE THIS
     "labels": ["Context_Relevance_Label"], 
-    "GPT_scoring": False, 
-    "gold_label_path": "/datasets_v2/nq/nq_ratio_0.5.tsv", 
-    "swap_human_labels_for_gpt4_labels": False
+    "gold_label_path": "nq_unlabeled_output.tsv", 
 }
 
 ares = ARES(classifier_model=classifier_config)
@@ -216,6 +199,50 @@ print(results)
 ```
 ​
 For more details, refer to our [documentation](https://ares-ai.vercel.app/).
+
+<br>
+
+### 🚀 Quick Start - #2
+
+To get started with ARES's PPI, you'll need to set up your configuration. Below is an example of a configuration for ARES!
+
+Just copy-paste and you'll be good to go!
+
+
+Step 1) Download necessary datasets
+```
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets/nq_few_shot_prompt_v1.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_labeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_unlabeled_output.tsv
+```
+
+Step 2) Run the following to retrive the UES/IDP scores with GPT3.5!
+
+```python
+from ares import ARES
+
+ues_idp_config = {
+    # Dataset for in-domain prompts
+    "in_domain_prompts_dataset": "nq_few_shot_prompt_v1.tsv",
+    
+    # Dataset for unlabeled evaluation
+    "unlabeled_evaluation_set": "nq_unlabeled_output.tsv", 
+
+    "model_choice" : "gpt-3.5-turbo-0125"
+} 
+
+ares = ARES(ues_idp=ues_idp_config)
+results = ares.ues_idp()
+print(results)
+# {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
+```
+
+Step 3) Run the following to retrive ARES's PPI scores with GPT3.5!
+
+
+```python
+
+```
 
 ## Results Replication
 
