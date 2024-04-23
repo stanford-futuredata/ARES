@@ -193,8 +193,8 @@ ppi_config = {
     "gold_label_path": "nq_unlabeled_output.tsv", 
 }
 
-ares = ARES(classifier_model=classifier_config)
-results = ares.train_classifier()
+ares = ARES(ppi=ppi_config)
+results = ares.evaluate_RAG()
 print(results)
 ```
 ​
