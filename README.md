@@ -95,16 +95,17 @@ Copy-paste each step to see ARES in action!
 
 <hr>
 
-Run the following to get the files for quick-start! It includes a few_shot_prompt file, a labeled and unlabeled dataset!
+Run the following to get the files for quick-start #1! It includes a few_shot_prompt file for scoring, another few_shot_prompt file for synthetic query generation, a labeled and unlabeled dataset!
 ```python 
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets/nq_few_shot_prompt_v1.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_labeled_output.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_unlabeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_judge_scoring.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_synthetic_query_generation.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_labeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_unlabeled_output.tsv
 ```
 
 <hr>
 
-*Note: You can run the following command to get the full NQ dataset! 
+*Note: You can run the following command to get the full NQ dataset (37.9 Gb)! 
 ```python
 from ares import ARES
 ares = ARES() 
@@ -116,14 +117,14 @@ ares.KILT_dataset("nq")
 
 <hr>
 
-Step 1) Run the following to see GPT 3.5's accuracy on the NQ unlabeled dataset!
+Step 1) Run the following to see GPT 3.5's accuracy on the NQ unlabeled dataset! In this step we will use the few_shot_prompt file for scoring.
 
 ```python
 from ares import ARES
 
 ues_idp_config = {
     # Dataset for in-domain prompts
-    "in_domain_prompts_dataset": "nq_few_shot_prompt_v1.tsv",
+    "in_domain_prompts_dataset": "nq_few_shot_prompt_for_judge_scoring.tsv",
     
     # Dataset for unlabeled evaluation
     "unlabeled_evaluation_set": "nq_unlabeled_output.tsv", 
@@ -146,10 +147,10 @@ Step 2) Run the following to see ARES's synthetic generation in action!
 from ares import ARES
 
 synth_config = { 
-    "document_filepaths": "nq_labeled_output.tsv",
-    "few_shot_prompt_filename": "nq_few_shot_prompt_v1.tsv",
-    "synthetic_queries_filename": "data/output/synthetic_queries_1.tsv",
-    "documents_sampled": 10000
+    "document_filepaths": ["nq_labeled_output.tsv"],
+    "few_shot_prompt_filename": "nq_few_shot_prompt_for_synthetic_query_generation.tsv",
+    "synthetic_queries_filenames": ["data/output/synthetic_queries_1.tsv"],
+    "documents_sampled": 200
 }
 
 ares_module = ARES(synthetic_query_generator=synth_config)
@@ -165,9 +166,9 @@ Step 3) Run the following to see ARES's training classifier in action!
 from ares import ARES
 
 classifier_config = {
-    "training_dataset": "output/synthetic_queries_1.tsv", 
-    "validation_set": "nq_labeled_output.tsv", 
-    "label_column": "Answer_Relevance_Label", 
+    "training_dataset": ["data/output/synthetic_queries_1.tsv"], 
+    "validation_set": ["nq_labeled_output.tsv"], 
+    "label_column": ["Answer_Relevance_Label"], 
     "num_epochs": 10, 
     "patience_value": 3, 
     "learning_rate": 5e-6
@@ -187,8 +188,8 @@ from ares import ARES
 
 ppi_config = { 
     "evaluation_datasets": ['nq_labeled_output.tsv'], 
-    "few_shot_examples_filepath": "nq_few_shot_prompt_v1.tsv",
-    "checkpoints": ["/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"], # CHANGE THIS
+    "few_shot_examples_filepath": "nq_few_shot_prompt_v1.tsv", # CHANGE THIS - Which file should be used?
+    "checkpoints": ["checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"], # CHANGE THIS
     "labels": ["Context_Relevance_Label"], 
     "gold_label_path": "nq_unlabeled_output.tsv", 
 }
