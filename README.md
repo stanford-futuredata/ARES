@@ -96,6 +96,8 @@ Copy-paste each step to see ARES in action!
 
 ### 📥 Download datasets
 
+<hr>
+
 Use the following command to quickly obtain the necessary files for getting started! This includes the 'few_shot_prompt' file for judge scoring and synthetic query generation, as well as both labeled and unlabeled datasets.
 ```python 
 wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_judge_scoring.tsv
@@ -116,6 +118,8 @@ ares.KILT_dataset("nq")
 <hr>
 
 ### 🚀 Quick Start - #1
+
+<hr>
 
 To get started with ARES's PPI, you'll need to set up your configuration. Below is an example of a configuration for ARES!
 
