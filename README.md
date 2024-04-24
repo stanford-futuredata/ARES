@@ -220,11 +220,11 @@ classifier_config = {
 ares = ARES(classifier_model=classifier_config)
 results = ares.train_classifier()
 print(results)
-
-# Note: This code creates a checkpoint for the trained classifier.
-# Training may take some time. You can download the checkpoint here:
-# [Download Checkpoint](https://drive.google.com/file/d/1dsUzL01a53ictjMaUI6RqEvHY5vColcL/view?usp=sharing)
 ```
+
+Note: This code creates a checkpoint for the trained classifier.
+Training may take some time. You can download the checkpoint here:
+[Download Checkpoint](https://drive.google.com/file/d/1dsUzL01a53ictjMaUI6RqEvHY5vColcL/view?usp=sharing)
 
 <hr>
 
