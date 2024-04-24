@@ -96,10 +96,10 @@ Copy-paste each step to see ARES in action!
 
 Use the following command to quickly obtain the necessary files for getting started! This includes the 'few_shot_prompt' file for judge scoring and synthetic query generation, as well as both labeled and unlabeled datasets.
 ```python 
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/data/datasets_v2/nq/nq_few_shot_prompt_for_judge_scoring.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_judge_scoring.tsv
 wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_synthetic_query_generation.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/data/datasets_v2/nq/nq_labeled_output.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/data/datasets_v2/nq/nq_unlabeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_labeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_unlabeled_output.tsv
 ```
 
 OPTIONAL: You can run the following command to get the full NQ dataset! (347 MB)
@@ -111,6 +111,7 @@ ares.KILT_dataset("nq")
 # Fetches NQ datasets with ratios including 0.5, 0.6, 0.7, etc.
 # For purposes of our quick start guide, we rename nq_ratio_0.5 to nq_unlabeled_output and nq_ratio_0.6 to nq_labeled_output.
 ```
+<hr>
 
 ### 🚀 Quick Start - #1
 
