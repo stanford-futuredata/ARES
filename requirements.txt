@@ -4,6 +4,7 @@ torchaudio==0.13.1
 torchmetrics==0.11.3
 torchtext==0.14.1
 torchvision==0.14.1
+together == 1.1.2
 accelerate==0.21.0
 aiohttp==3.9.0
 aiosignal==1.3.1

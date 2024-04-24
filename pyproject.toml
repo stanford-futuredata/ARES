@@ -60,6 +60,7 @@ dependencies = [
     "sentence-transformers >=2.2.2,<3.0.0",
     "spacy >=3.5.3,<4.0.0",
     "torch ==1.13.1",
+    "together >= 1.1.0",
     "tokenizers >=0.13.3",
     "transformers ==4.36.0",
 ]
