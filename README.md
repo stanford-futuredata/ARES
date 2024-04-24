@@ -12,7 +12,7 @@
 <p align="center">
 
   <a>
-  <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.1.0-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
+  <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.2.4-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
   </a>
 
   <a>
@@ -85,7 +85,6 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 * A set of few-shot examples for scoring context relevance, answer faithfulness, and/or answer relevance in your system
 * A much larger set of unlabeled query-document-answer triples outputted by your RAG system for scoring
 
-### 🚀 Quick Start - #1
 <a id="section3"></a>
 <hr>
 
@@ -95,24 +94,67 @@ Copy-paste each step to see ARES in action!
 
 <hr>
 
-Run the following to get the files for quick-start! It includes a few_shot_prompt file, a labeled and unlabeled dataset!
+Use the following command to quickly obtain the necessary files for getting started! This includes the 'few_shot_prompt' file for judge scoring and synthetic query generation, as well as both labeled and unlabeled datasets.
 ```python 
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets/nq_few_shot_prompt_v1.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_labeled_output.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_unlabeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/data/datasets_v2/nq/nq_few_shot_prompt_for_judge_scoring.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_synthetic_query_generation.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/data/datasets_v2/nq/nq_labeled_output.tsv
+wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/data/datasets_v2/nq/nq_unlabeled_output.tsv
 ```
 
-<hr>
-
-*Note: You can run the following command to get the full NQ dataset! 
+OPTIONAL: You can run the following command to get the full NQ dataset! (347 MB)
 ```python
 from ares import ARES
 ares = ARES() 
 ares.KILT_dataset("nq")
 
 # Fetches NQ datasets with ratios including 0.5, 0.6, 0.7, etc.
-# For purposes of our quick start guide, we rename nq_ratio_0.5 to nq_labeled_output and nq_ratio_0.6 to nq_unlabeled_output.
+# For purposes of our quick start guide, we rename nq_ratio_0.5 to nq_unlabeled_output and nq_ratio_0.6 to nq_labeled_output.
 ```
+
+### 🚀 Quick Start - #1
+
+To get started with ARES's PPI, you'll need to set up your configuration. Below is an example of a configuration for ARES!
+
+Just copy-paste as you go to see ARES in action!
+
+Step 1) Run the following to retrive the UES/IDP scores with GPT3.5!
+
+```python
+from ares import ARES
+
+ues_idp_config = {
+    "in_domain_prompts_dataset": "nq_few_shot_prompt_for_judge_scoring.tsv",
+    "unlabeled_evaluation_set": "nq_unlabeled_output.tsv", 
+    "model_choice" : "gpt-3.5-turbo-0125"
+} 
+
+ares = ARES(ues_idp=ues_idp_config)
+results = ares.ues_idp()
+print(results)
+# {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
+```
+
+Step 2) Run the following to retrive ARES's PPI scores with GPT3.5!
+
+
+```python
+ppi_config = { 
+    "evaluation_datasets": ['nq_unlabeled_output.tsv'], 
+    "few_shot_examples_filepath": "nq_few_shot_prompt_for_judge_scoring.tsv",
+    "llm_judge": "gpt-3.5-turbo-1106",
+    "labels": ["Context_Relevance_Label"], 
+    "gold_label_path": "nq_labeled_output.tsv", 
+}
+
+ares = ARES(ppi=ppi_config)
+results = ares.evaluate_RAG()
+print(results)
+```
+
+<hr>
+
+### 🚀 Quick Start - #2
 
 <hr>
 
@@ -122,12 +164,8 @@ Step 1) Run the following to see GPT 3.5's accuracy on the NQ unlabeled dataset!
 from ares import ARES
 
 ues_idp_config = {
-    # Dataset for in-domain prompts
-    "in_domain_prompts_dataset": "nq_few_shot_prompt_v1.tsv",
-    
-    # Dataset for unlabeled evaluation
+    "in_domain_prompts_dataset": "nq_few_shot_prompt_for_judge_scoring.tsv",
     "unlabeled_evaluation_set": "nq_unlabeled_output.tsv", 
-
     "model_choice" : "gpt-3.5-turbo-0125"
 } 
 
@@ -135,10 +173,7 @@ ares = ARES(ues_idp=ues_idp_config)
 results = ares.ues_idp()
 print(results)
 # {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
-
 ```
-
-<hr>
 
 Step 2) Run the following to see ARES's synthetic generation in action! 
 ```python
@@ -146,9 +181,9 @@ Step 2) Run the following to see ARES's synthetic generation in action!
 from ares import ARES
 
 synth_config = { 
-    "document_filepaths": "nq_labeled_output.tsv",
-    "few_shot_prompt_filename": "nq_few_shot_prompt_v1.tsv",
-    "synthetic_queries_filename": "data/output/synthetic_queries_1.tsv",
+    "document_filepaths": ["nq_labeled_output.tsv"] ,
+    "few_shot_prompt_filename": "nq_few_shot_prompt_for_synthetic_query_generation.tsv",
+    "synthetic_queries_filenames": ["data/output/synthetic_queries_1.tsv"], 
     "documents_sampled": 10000
 }
 
@@ -165,17 +200,23 @@ Step 3) Run the following to see ARES's training classifier in action!
 from ares import ARES
 
 classifier_config = {
-    "training_dataset": "output/synthetic_queries_1.tsv", 
-    "validation_set": "nq_labeled_output.tsv", 
-    "label_column": "Answer_Relevance_Label", 
+    "training_dataset": ["data/output/synthetic_queries_1.tsv"], 
+    "validation_set": ["nq_labeled_output.tsv"], 
+    "label_column": ["Context_Relevance_Label"], 
     "num_epochs": 10, 
     "patience_value": 3, 
-    "learning_rate": 5e-6
+    "learning_rate": 5e-6,
+    "assigned_batch_size": 1,  
+    "gradient_accumulation_multiplier": 32,  
 }
 
 ares = ARES(classifier_model=classifier_config)
 results = ares.train_classifier()
 print(results)
+
+# Note: This code creates a checkpoint for the trained classifier.
+# Training may take some time. You can download the checkpoint here:
+# [Download Checkpoint](https://drive.google.com/file/d/1dsUzL01a53ictjMaUI6RqEvHY5vColcL/view?usp=sharing)
 ```
 
 <hr>
@@ -186,63 +227,22 @@ Step 4) Run the following to see ARES's PPI in action!
 from ares import ARES
 
 ppi_config = { 
-    "evaluation_datasets": ['nq_labeled_output.tsv'], 
-    "few_shot_examples_filepath": "nq_few_shot_prompt_v1.tsv",
-    "checkpoints": ["/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"], # CHANGE THIS
+    "evaluation_datasets": ['nq_unlabeled_output.tsv'], 
+    "few_shot_examples_filepath": "nq_few_shot_prompt_for_judge_scoring.tsv",
+    "checkpoints": ["Context_Relevance_Label_nq_labeled_output_date_time.pt"], 
+    "rag_type": "question_answering", 
     "labels": ["Context_Relevance_Label"], 
-    "gold_label_path": "nq_unlabeled_output.tsv", 
+    "gold_label_path": "nq_labeled_output.tsv", 
 }
 
-ares = ARES(classifier_model=classifier_config)
-results = ares.train_classifier()
+ares = ARES(ppi=ppi_config)
+results = ares.evaluate_RAG()
 print(results)
 ```
 ​
 For more details, refer to our [documentation](https://ares-ai.vercel.app/).
 
 <br>
-
-### 🚀 Quick Start - #2
-
-To get started with ARES's PPI, you'll need to set up your configuration. Below is an example of a configuration for ARES!
-
-Just copy-paste and you'll be good to go!
-
-
-Step 1) Download necessary datasets
-```
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets/nq_few_shot_prompt_v1.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_labeled_output.tsv
-wget https://raw.githubusercontent.com/stanford-futuredata/ARES/new-dev/data/datasets_v2/nq/nq_unlabeled_output.tsv
-```
-
-Step 2) Run the following to retrive the UES/IDP scores with GPT3.5!
-
-```python
-from ares import ARES
-
-ues_idp_config = {
-    # Dataset for in-domain prompts
-    "in_domain_prompts_dataset": "nq_few_shot_prompt_v1.tsv",
-    
-    # Dataset for unlabeled evaluation
-    "unlabeled_evaluation_set": "nq_unlabeled_output.tsv", 
-
-    "model_choice" : "gpt-3.5-turbo-0125"
-} 
-
-ares = ARES(ues_idp=ues_idp_config)
-results = ares.ues_idp()
-print(results)
-# {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
-```
-
-Step 3) Run the following to retrive ARES's PPI scores with GPT3.5!
-
-
-```python
-
-```
 
 ## Results Replication
 
