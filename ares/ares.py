@@ -85,13 +85,14 @@ class ARES:
         "ppi": {
             "evaluation_datasets": (list, None), # Required parameter (No default)
             "few_shot_examples_filepath": (str, None), # Required parameter (No default)
-            "checkpoints": (list, None), # Required parameter (No default)
             "labels": (list, None), # Required parameter (No default)
             "gold_label_path": (str, None), # Required parameter (No default)
+            "checkpoints": (list, []), # Required parameter (No default)
             "rag_type": (str, "question_answering"), 
             "annotated_datapoints_filepath": (bool, False), 
             "GPT_scoring":(bool, False), 
-            "model_choice": (str, "microsoft/deberta-v3-large"), 
+            "model_choice":(str, "microsoft/deberta-v3-large"),
+            "llm_judge": (str, "None"), 
             "assigned_batch_size": (int, 1),
             "number_of_labels": (int, 2),
             "alpha": (int, 0.05),   

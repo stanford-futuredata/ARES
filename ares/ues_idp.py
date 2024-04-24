@@ -6,9 +6,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring 
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring
-from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_local
-from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_local
-from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_local
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_togetherai
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_togetherai
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_togetherai
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_claude 
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_claude
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_claude
@@ -184,13 +184,13 @@ def ues_idp_config(in_domain_prompts_dataset: str, unlabeled_evaluation_set: str
                 answer = row['Answer']
 
                 # Scoring
-                context_score = few_shot_context_relevance_scoring_local(
+                context_score = few_shot_context_relevance_scoring_togetherai(
                     context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
 
-                answer_relevance_score = few_shot_answer_relevance_scoring_local(
+                answer_relevance_score = few_shot_answer_relevance_scoring_togetherai(
                     answer_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
                 
-                answer_faithfulness_score = few_shot_answer_faithfulness_scoring_local(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
+                answer_faithfulness_score = few_shot_answer_faithfulness_scoring_togetherai(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, in_domain_prompts_dataset)
 
                 # Append scores to respective lists
                 context_relevance_scores.append(context_score)

@@ -34,9 +34,20 @@ import re
 import scipy.stats as stats
 import argparse
 
+import subprocess
+import json
+
+import openai
+
+from tqdm import tqdm
+tqdm.pandas()
+
+
 from ares.RAG_Automatic_Evaluation.ppi import clt_iid, binomial_iid, pp_mean_iid_asymptotic
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import calculate_accuracy, few_shot_context_relevance_scoring
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring, few_shot_answer_relevance_scoring
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_togetherai, few_shot_answer_faithfulness_scoring_togetherai, few_shot_answer_relevance_scoring_togetherai
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_claude, few_shot_answer_faithfulness_scoring_claude, few_shot_answer_relevance_scoring_claude
 
 #############################################################
 
@@ -222,19 +233,19 @@ def begin(evaluation_datasets, checkpoints, labels, GPT_scoring, few_shot_exampl
     print("Evaluation Sets: " + str(evaluation_datasets))
     print("Checkpoints: " + str(checkpoints))
     print("Labels: "  + str(labels))
-    print("GPT Scoring: " + str(GPT_scoring))
     print("--------------------------------------------------------")
 
     ######################################################################
 
-    if GPT_scoring:
-        checkpoint = ["" for _ in range(len(labels))]
+    # if GPT_scoring:
+    #     checkpoint = ["" for _ in range(len(labels))]
 
     if few_shot_examples_filepath is not None:
         few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
         # print("few_shot_examples")
         # print(len(few_shot_examples))
         # print(few_shot_examples.head())
+    return few_shot_examples
 
 ####################################################################
 
@@ -316,50 +327,76 @@ def preprocess_data(test_set_selection, label_column, labels):
     if len(test_set) < 10:
         # print("Example Text for " + label_column + " Scoring")
         # print(test_set.iloc[10][text_column])
-        print("Dataset has fewer than 11 rows after filtering. Cannot display example for row 11.")
+        raise ValueError("Insufficient Data: Dataset has fewer than 10 rows after filtering!")
     
     return test_set, text_column
 
         ############################################################
-def load_model(model_choice, number_of_labels, GPT_scoring, checkpoint):
-    # print(model_choice, number_of_labels, GPT_scoring, checkpoint)
-    max_token_length = 2048
-    tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
 
-    # print(tokenizer)
+def togetherai_list_models():
+    try:
+        # Running the command to list models
+        result = subprocess.run(['together', 'models', 'list'], capture_output=True, text=True, check=True)
+        lines = result.stdout.split('\n')
+        models = []
+        for line in lines[3:]:
+            if '|' in line:
+                parts = line.split('|')
+                if len(parts) > 1:
+                    model_name = parts[1].strip()  
+                    models.append(model_name)
+        return models
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e.stderr}")
+        return ["N/A"]  
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return ["N/A"]
 
+def load_model(model_identifier, number_of_labels, checkpoint=None):
+    check = False
+    tokenizer = None
+    together_models = togetherai_list_models()
+    if "gpt" in model_identifier:
+        check = True
+    elif "claude" in model_identifier: 
+        check = True
+    elif model_identifier in together_models: 
+        check = True 
+    else: 
+        check = False
+    
+    if check == False:
+        max_token_length = 2048
+        tokenizer = AutoTokenizer.from_pretrained(model_identifier, model_max_length=max_token_length)
+
+    # Prepare device setup
     torch.cuda.empty_cache()
-    device = "cuda:0"
-    device = torch.device(device)
+    device = torch.device("cuda:0")
 
-    if not GPT_scoring:
-        model = CustomBERTModel(number_of_labels, model_choice)
+    if check is False: 
+        # Initialize model
+        model = CustomBERTModel(number_of_labels, model_identifier)
         model.to(device)
+    else: 
+        model = model_identifier
 
-    ############################################################
-
-    checkpoint = torch.load(checkpoint)
-
-    if "encoderModel.embeddings.position_ids" in checkpoint:
-        del checkpoint["encoderModel.embeddings.position_ids"]
-
-    if GPT_scoring:
-        #test_set = test_set.sample(n=2000, random_state=43)
-        test_set = test_set.sample(n=len(test_set), random_state=43)
+    # Load the model from a checkpoint if provided
+    if checkpoint:
+        checkpoint_dict = torch.load(checkpoint)
+        if "encoderModel.embeddings.position_ids" in checkpoint_dict:
+            del checkpoint_dict["encoderModel.embeddings.position_ids"]
+        model.load_state_dict(checkpoint_dict)
+        print("Loaded model from checkpoint:", checkpoint)
     else:
-        # print("Loading the Best Finetuned-LLM Checkpoint")
-        model.load_state_dict(checkpoint)
-
-    # print(f"This is the model, tokenizer, and device: {model} {tokenizer} {device}")
+        print("Loaded model based on model identifier:", model_identifier)
     
     return model, tokenizer, device
 
     ############################################################
 
-def evaluate_model(test_set, label_column, text_column, device, GPT_scoring, tokenizer, model, assigned_batch_size, model_choice, 
-context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt): 
-
-    eval_dataloader = prepare_dataset_for_evaluation(test_set, label_column, text_column, assigned_batch_size, tokenizer)
+def evaluate_model(test_set, label_column, text_column, device, checkpoint, tokenizer, model, assigned_batch_size, model_choice, 
+context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples_filepath, llm_judge): 
 
     metric = load_metric("accuracy")
 
@@ -367,7 +404,8 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
     total_references = torch.FloatTensor([]).to(device)
     total_logits = torch.FloatTensor([]).to(device)
 
-    if not GPT_scoring:
+    if checkpoint:
+        eval_dataloader = prepare_dataset_for_evaluation(test_set, label_column, text_column, assigned_batch_size, tokenizer)
         model.eval()
         with tqdm(eval_dataloader, desc="Evaluating", leave=False) as progress_bar:
             for batch in progress_bar:
@@ -395,22 +433,24 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
                     progress_bar.update(1)
 
     else:
-        # print("Performing GPT scoring!")
+        print("Performing Model scoring!")
         # print("Using gpt model: " + gpt_model)
-        if perform_zero_shot:
-            # print("Using zero-shot approach")
-            # print("Setting few-shot example to None...")
-            few_shot_examples = None
+        # if perform_zero_shot:
+        #     # print("Using zero-shot approach")
+        #     # print("Setting few-shot example to None...")
+        #     few_shot_examples = None
+
+        debug_mode = False
 
         if "Context_Relevance_Label" == label_column:
             # tqdm.pandas(desc="Generating context relevance scores...", total=test_set.shape[0])
-            test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], gpt_model, few_shot_examples), axis=1)
+            test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], model, debug_mode, few_shot_examples_filepath), axis=1)
         elif "Answer_Faithfulness_Label" == label_column:
             # tqdm.pandas(desc="Generating answer faithfulness scores...", total=test_set.shape[0])
-            test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
+            test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, debug_mode, few_shot_examples_filepath), axis=1)
         if "Answer_Relevance_Label" == label_column:
             # tqdm.pandas(desc="Generating answer relevance scores...", total=test_set.shape[0])
-            test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
+            test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, debug_mode, few_shot_examples_filepath), axis=1)
 
         total_predictions = test_set[label_column.replace("_Label", "_Prediction")]
         total_references = test_set[label_column]
@@ -420,7 +460,7 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
     return total_predictions, total_references, results, metric
 
         ########################################################################
-def post_process_predictions(test_set, label_column, total_predictions, labels, use_pseudo_human_labels, gold_label_path, tokenizer, assigned_batch_size, device): 
+def post_process_predictions(checkpoint, test_set, label_column, total_predictions, labels, gold_label_path, tokenizer, assigned_batch_size, device): 
     prediction_column = label_column + "_Model_Predictions"
     test_set[prediction_column] = total_predictions.tolist()
     test_set = test_set[test_set[label_column].notna()]
@@ -428,21 +468,9 @@ def post_process_predictions(test_set, label_column, total_predictions, labels, 
         if label != label_column:
             test_set = test_set[test_set[label] != 0]
 
-    ############################################################
-
-    if use_pseudo_human_labels:
-        y_labeled_ratio = Y_labeled_count / len(test_set)
-        Yhat_unlabeled_dataset, Y_labeled_dataset = train_test_split(test_set, test_size=y_labeled_ratio, random_state=42)
-        Yhat_unlabeled_dataset = test_set
-        Y_labeled_dataset = None 
-        Y_labeled_dataloader = None 
-        Y_labeled_predictions = None
-    else:
-
         # print("Gathering ML predictions for Y_labeled_dataset in PPI!")
-        number_of_rows_to_read = 227
-        
-        Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t", nrows=number_of_rows_to_read)
+
+        Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t")
         
         text_column = 'concat_text'
         Y_labeled_dataset = Y_labeled_dataset[Y_labeled_dataset[label_column].notna()]
@@ -452,59 +480,222 @@ def post_process_predictions(test_set, label_column, total_predictions, labels, 
             Y_labeled_dataset[text_column] = [combine_query_document(Y_labeled_dataset.iloc[i]['Query'], Y_labeled_dataset.iloc[i]['Document'], Y_labeled_dataset.iloc[i]['Answer']) for i in range(len(Y_labeled_dataset))]
 
         Y_labeled_dataset = Y_labeled_dataset[Y_labeled_dataset[text_column] != "Error"]
-        Y_labeled_dataloader = prepare_dataset_for_evaluation(Y_labeled_dataset, label_column, text_column, assigned_batch_size, tokenizer)
-
-        Yhat_unlabeled_dataset = None
-        ####################################
-
+        
+        if checkpoint:
+            Y_labeled_dataloader = prepare_dataset_for_evaluation(Y_labeled_dataset, label_column, text_column, assigned_batch_size, tokenizer)
+        else: 
+            Y_labeled_dataloader = None
+            
         Y_labeled_predictions = torch.FloatTensor([]).to(device)
+
+        Yhat_unlabeled_dataset = test_set
+        ####################################
 
     return test_set, Y_labeled_dataset, Y_labeled_dataloader, Y_labeled_predictions, Yhat_unlabeled_dataset, prediction_column
 
 def evaluate_and_scoring_data(test_set, Y_labeled_predictions, Y_labeled_dataset, Y_labeled_dataloader, Yhat_unlabeled_dataset, 
 alpha, num_trials, model, device, model_choice, swap_human_labels_for_gpt4_labels, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples, metric, prediction_column, 
-label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, ppi_confidence_intervals, accuracy_scores, results):
+label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, ppi_confidence_intervals, accuracy_scores, results, checkpoint, llm_judge):
     # progress_bar = tqdm(range(len(Y_labeled_dataloader)))
-    model.eval()
-    with tqdm(Y_labeled_dataloader, desc="Scoring", leave=False) as progress_bar:
-        for batch in progress_bar:
 
-            with torch.no_grad():
+    if checkpoint:
+        model.eval()
+        with tqdm(Y_labeled_dataloader, desc="Scoring", leave=False) as progress_bar:
+            for batch in progress_bar:
 
-                if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
-                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
-                else:
-                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
+                with torch.no_grad():
 
-                if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
-                    new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+                    if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
+                        new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
+                    else:
+                        new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
 
-                outputs = model(**new_batch)
+                    if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
+                        new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
 
-                logits = outputs
-                predictions = torch.argmax(logits, dim=-1)
-                metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+                    outputs = model(**new_batch)
 
-                Y_labeled_predictions = torch.cat((Y_labeled_predictions, predictions), 0)
+                    logits = outputs
+                    predictions = torch.argmax(logits, dim=-1)
+                    metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
 
-                progress_bar.update(1)
+                    Y_labeled_predictions = torch.cat((Y_labeled_predictions, predictions), 0)
 
-    Y_labeled_dataset[prediction_column] = Y_labeled_predictions.detach().cpu().numpy().tolist()
-    
-    Yhat_unlabeled_dataset = test_set
+                    progress_bar.update(1)
+
+        Y_labeled_dataset[prediction_column] = Y_labeled_predictions.detach().cpu().numpy().tolist()
+        
+        Yhat_unlabeled_dataset = test_set
 
     ############################################################
 
-    if swap_human_labels_for_gpt4_labels:
-        if "Context_Relevance_Label" == label_column:
-            Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], gpt_model, few_shot_examples), axis=1)
-        elif "Answer_Faithfulness_Label" == label_column:
-            Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
-        elif "Answer_Relevance_Label" == label_column:
-            Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
-        else:
-            print("Error! Could not generate GPT labels for PPI.")
-            assert False 
+    else:
+        gpt_models = [
+        "gpt-4-0125-preview",
+        "gpt-4-turbo-preview",
+        "gpt-4-1106-preview",
+        "gpt-4-vision-preview",
+        "gpt-4-1106-vision-preview",
+        "gpt-4",
+        "gpt-4-0613",
+        "gpt-4-32k",
+        "gpt-4-32k-0613",
+        "gpt-3.5-turbo-0125",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo-instruct",
+        "gpt-3.5-turbo-16k",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-16k-0613"
+        ]
+
+        claude_models = [
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229", 
+        "claude-3-haiku-20240307", 
+        ]
+
+        if llm_judge is "None":
+            sys.exit("Error: No llm_judge provided")
+        
+        elif "gpt" in llm_judge:
+            Y_labeled_predictions = []
+            debug_mode = False # Hard coded - FIX
+
+            # Few Shot Dataset Edge Check: Query ID 
+            try:
+                    _ = few_shot_examples.iloc[0]['Query']
+                    query_id = "Query"
+            except KeyError:
+                try:
+                    _ = few_shot_examples.iloc[0]['Question']
+                    query_id = "Question"
+                except KeyError:
+                    sys.exit("Both 'Query' and 'Question' keys are missing for the given row in few shot dataset.")
+
+            # Labeled Dataset Edge Check: Query ID 
+            try:
+                    _ = Y_labeled_dataset.iloc[0]['Query']
+                    query_labeled_id = "Query"
+            except KeyError:
+                try:
+                    _ = Y_labeled_dataset.iloc[0]['Question']
+                    query_labeled_id = "Question"
+                except KeyError:
+                    sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
+            with tqdm(total=len(Y_labeled_dataset), desc="Evaluating", leave=False) as progress_bar:
+                for _, row in Y_labeled_dataset.iterrows():
+                    query = row[query_labeled_id]
+                    document = row["Document"]
+                    answer = row["Answer"]
+                    if "Context_Relevance_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(query), document, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+                    elif "Answer_Faithfulness_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                    elif "Answer_Relevance_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+            Y_labeled_predictions_np = np.array(Y_labeled_predictions)
+            Y_labeled_dataset[prediction_column] = Y_labeled_predictions_np.tolist()
+
+        elif "claude" in llm_judge: 
+            Y_labeled_predictions = []
+            debug_mode = False # Hard coded - FIX
+
+            # Few Shot Dataset Edge Check: Query ID 
+            try:
+                    _ = few_shot_examples.iloc[0]['Query']
+                    query_id = "Query"
+            except KeyError:
+                try:
+                    _ = few_shot_examples.iloc[0]['Question']
+                    query_id = "Question"
+                except KeyError:
+                    sys.exit("Both 'Query' and 'Question' keys are missing for the given row in few shot dataset.")
+
+            # Labeled Dataset Edge Check: Query ID 
+            try:
+                    _ = Y_labeled_dataset.iloc[0]['Query']
+                    query_labeled_id = "Query"
+            except KeyError:
+                try:
+                    _ = Y_labeled_dataset.iloc[0]['Question']
+                    query_labeled_id = "Question"
+                except KeyError:
+                    sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
+            breakpoint()
+            with tqdm(total=len(Y_labeled_dataset), desc="Evaluating", leave=False) as progress_bar:
+                for _, row in Y_labeled_dataset.iterrows():
+                    query = row[query_labeled_id]
+                    document = row["Document"]
+                    answer = row["Answer"]
+                    if "Context_Relevance_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_context_relevance_scoring_claude(context_relevance_system_prompt, clean_query(query), document, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+                    elif "Answer_Faithfulness_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_answer_faithfulness_scoring_claude(answer_faithfulness_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+                    elif "Answer_Relevance_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_answer_relevance_scoring_claude(answer_relevance_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+            Y_labeled_predictions_np = np.array(Y_labeled_predictions)
+            Y_labeled_dataset[prediction_column] = Y_labeled_predictions_np.tolist()
+        
+        else: 
+            Y_labeled_predictions = []
+            debug_mode = False # Hard coded - FIX
+
+            # Few Shot Dataset Edge Check: Query ID 
+            try:
+                    _ = few_shot_examples.iloc[0]['Query']
+                    query_id = "Query"
+            except KeyError:
+                try:
+                    _ = few_shot_examples.iloc[0]['Question']
+                    query_id = "Question"
+                except KeyError:
+                    sys.exit("Both 'Query' and 'Question' keys are missing for the given row in few shot dataset.")
+
+            # Labeled Dataset Edge Check: Query ID 
+            try:
+                    _ = Y_labeled_dataset.iloc[0]['Query']
+                    query_labeled_id = "Query"
+            except KeyError:
+                try:
+                    _ = Y_labeled_dataset.iloc[0]['Question']
+                    query_labeled_id = "Question"
+                except KeyError:
+                    sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
+            breakpoint()
+            with tqdm(total=len(Y_labeled_dataset), desc="Evaluating", leave=False) as progress_bar:
+                for _, row in Y_labeled_dataset.iterrows():
+                    query = row[query_labeled_id]
+                    document = row["Document"]
+                    answer = row["Answer"]
+                    if "Context_Relevance_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_context_relevance_scoring_togetherai(context_relevance_system_prompt, clean_query(query), document, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+                    elif "Answer_Faithfulness_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_answer_faithfulness_scoring_togetherai(answer_faithfulness_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+                    elif "Answer_Relevance_Label" == label_column:
+                        Y_labeled_predictions.append(few_shot_answer_relevance_scoring_togetherai(answer_relevance_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
+            Y_labeled_predictions_np = np.array(Y_labeled_predictions)
+            Y_labeled_dataset[prediction_column] = Y_labeled_predictions_np.tolist()
+
+    ############################################################
+
+    # if swap_human_labels_for_gpt4_labels:
+    #     if "Context_Relevance_Label" == label_column:
+    #         Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], gpt_model, few_shot_examples), axis=1)
+    #     elif "Answer_Faithfulness_Label" == label_column:
+    #         Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
+    #     elif "Answer_Relevance_Label" == label_column:
+    #         Y_labeled_dataset[label_column] = Y_labeled_dataset.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], gpt_model, few_shot_examples), axis=1)
+    #     else:
+    #         print("Error! Could not generate GPT labels for PPI.")
+    #         assert False 
         
     Y_labeled = Y_labeled_dataset[label_column].values.astype(int)
     Yhat_labeled = Y_labeled_dataset[prediction_column].values.astype(int)

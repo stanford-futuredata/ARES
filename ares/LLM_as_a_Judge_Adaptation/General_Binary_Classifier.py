@@ -212,11 +212,11 @@ def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate,
     print("Starting new learning rate: " + str(chosen_learning_rate))
     print("--------------------------------------------------------------------------")
 
-        
-    from random import randrange
-    random_int = randrange(1000000)
+    import datetime
 
-    checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
+    current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+    checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + current_datetime + ".pt"
 
     # checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
     # checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"

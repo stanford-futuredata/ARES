@@ -199,7 +199,7 @@ def few_shot_answer_relevance_scoring(system_prompt: str, query: str, document: 
 
 ##############################TOGETHERAI CUSTOM MODELS (NOT OPENAI)######################################
             
-def few_shot_context_relevance_scoring_local(system_prompt: str, query: str, document: str, model_choice, query_id: str, debug_mode: bool, few_shot_examples=None):
+def few_shot_context_relevance_scoring_togetherai(system_prompt: str, query: str, document: str, model_choice, query_id: str, debug_mode: bool, few_shot_examples=None):
     TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
     if not TOGETHER_API_KEY:
@@ -256,7 +256,7 @@ def few_shot_context_relevance_scoring_local(system_prompt: str, query: str, doc
     #     print(f"HTTP Request failed: {e}")
     #     return -1
 
-def few_shot_answer_faithfulness_scoring_local(system_prompt: str, query: str, document: str, answer: str, model_choice, query_id: str, debug_mode: bool, few_shot_examples=None):
+def few_shot_answer_faithfulness_scoring_togetherai(system_prompt: str, query: str, document: str, answer: str, model_choice, query_id: str, debug_mode: bool, few_shot_examples=None):
     TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
     if not TOGETHER_API_KEY:
@@ -315,7 +315,7 @@ def few_shot_answer_faithfulness_scoring_local(system_prompt: str, query: str, d
     #     print(f"HTTP Request failed: {e}")
     #     return -1
 
-def few_shot_answer_relevance_scoring_local(system_prompt: str, query: str, document: str, answer: str, model_choice, query_id: str, debug_mode: bool, few_shot_examples=None):
+def few_shot_answer_relevance_scoring_togetherai(system_prompt: str, query: str, document: str, answer: str, model_choice, query_id: str, debug_mode: bool, few_shot_examples=None):
     TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
     if not TOGETHER_API_KEY:
