@@ -94,6 +94,8 @@ Copy-paste each step to see ARES in action!
 
 <hr>
 
+### 📥 Download datasets
+
 Use the following command to quickly obtain the necessary files for getting started! This includes the 'few_shot_prompt' file for judge scoring and synthetic query generation, as well as both labeled and unlabeled datasets.
 ```python 
 wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_few_shot_prompt_for_judge_scoring.tsv
