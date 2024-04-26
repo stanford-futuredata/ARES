@@ -333,7 +333,9 @@ def preprocess_data(test_set_selection, label_column, labels):
 
         ############################################################
 
-def togetherai_list_models():
+def togetherai_list_models(api_key):
+    if not api_key:
+        return []
     try:
         # Running the command to list models
         result = subprocess.run(['together', 'models', 'list'], capture_output=True, text=True, check=True)
@@ -356,7 +358,9 @@ def togetherai_list_models():
 def load_model(model_identifier, number_of_labels, checkpoint=None):
     check = False
     tokenizer = None
-    together_models = togetherai_list_models()
+    api_key = os.getenv("TOGETHER_API_KEY")
+    
+    together_models = togetherai_list_models(api_key)
     if "gpt" in model_identifier:
         check = True
     elif "claude" in model_identifier: 
@@ -400,11 +404,10 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
 
     metric = load_metric("accuracy")
 
-    total_predictions = torch.FloatTensor([]).to(device)
-    total_references = torch.FloatTensor([]).to(device)
-    total_logits = torch.FloatTensor([]).to(device)
-
     if checkpoint:
+        total_predictions = torch.FloatTensor([]).to(device)
+        total_references = torch.FloatTensor([]).to(device)
+        total_logits = torch.FloatTensor([]).to(device)
         eval_dataloader = prepare_dataset_for_evaluation(test_set, label_column, text_column, assigned_batch_size, tokenizer)
         model.eval()
         with tqdm(eval_dataloader, desc="Evaluating", leave=False) as progress_bar:
@@ -442,19 +445,41 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
 
         debug_mode = False
 
+        few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
+        # Few Shot Dataset Edge Check: Query ID 
+        try:
+                _ = few_shot_examples.iloc[0]['Query']
+                query_id = "Query"
+        except KeyError:
+            try:
+                _ = few_shot_examples.iloc[0]['Question']
+                query_id = "Question"
+            except KeyError:
+                sys.exit("Both 'Query' and 'Question' keys are missing for the given row in few shot dataset.")
+        # # Labeled Dataset Edge Check: Query ID 
+        # try:
+        #         _ = Y_labeled_dataset.iloc[0]['Query']
+        #         query_labeled_id = "Query"
+        # except KeyError:
+        #     try:
+        #         _ = Y_labeled_dataset.iloc[0]['Question']
+        #         query_labeled_id = "Question"
+        #     except KeyError:
+        #         sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
+
         if "Context_Relevance_Label" == label_column:
             # tqdm.pandas(desc="Generating context relevance scores...", total=test_set.shape[0])
-            test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], model, debug_mode, few_shot_examples_filepath), axis=1)
+            test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], model, query_id, debug_mode, few_shot_examples), axis=1)
         elif "Answer_Faithfulness_Label" == label_column:
             # tqdm.pandas(desc="Generating answer faithfulness scores...", total=test_set.shape[0])
-            test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, debug_mode, few_shot_examples_filepath), axis=1)
+            test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, query_id, debug_mode, few_shot_examples), axis=1)
         if "Answer_Relevance_Label" == label_column:
             # tqdm.pandas(desc="Generating answer relevance scores...", total=test_set.shape[0])
-            test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, debug_mode, few_shot_examples_filepath), axis=1)
+            test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, query_id, debug_mode, few_shot_examples), axis=1)
 
-        total_predictions = test_set[label_column.replace("_Label", "_Prediction")]
-        total_references = test_set[label_column]
-
+        total_predictions = test_set[label_column.replace("_Label", "_Prediction")].to_numpy()
+        total_references = test_set[label_column].to_numpy()
+     
     results = metric.compute(references=total_references, predictions=total_predictions)
 
     return total_predictions, total_references, results, metric
@@ -471,9 +496,10 @@ def post_process_predictions(checkpoint, test_set, label_column, total_predictio
         # print("Gathering ML predictions for Y_labeled_dataset in PPI!")
 
         Y_labeled_dataset = pd.read_csv(gold_label_path, sep="\t")
-        
-        text_column = 'concat_text'
         Y_labeled_dataset = Y_labeled_dataset[Y_labeled_dataset[label_column].notna()]
+        Y_labeled_dataset = Y_labeled_dataset.head(300)
+
+        text_column = 'concat_text'
         if "Context" in label_column:
             Y_labeled_dataset[text_column] = [combine_query_document(Y_labeled_dataset.iloc[i]['Query'], Y_labeled_dataset.iloc[i]['Document']) for i in range(len(Y_labeled_dataset))]
         else:
@@ -530,32 +556,7 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     ############################################################
 
     else:
-        gpt_models = [
-        "gpt-4-0125-preview",
-        "gpt-4-turbo-preview",
-        "gpt-4-1106-preview",
-        "gpt-4-vision-preview",
-        "gpt-4-1106-vision-preview",
-        "gpt-4",
-        "gpt-4-0613",
-        "gpt-4-32k",
-        "gpt-4-32k-0613",
-        "gpt-3.5-turbo-0125",
-        "gpt-3.5-turbo",
-        "gpt-3.5-turbo-1106",
-        "gpt-3.5-turbo-instruct",
-        "gpt-3.5-turbo-16k",
-        "gpt-3.5-turbo-0613",
-        "gpt-3.5-turbo-16k-0613"
-        ]
-
-        claude_models = [
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229", 
-        "claude-3-haiku-20240307", 
-        ]
-
-        if llm_judge is "None":
+        if llm_judge == "None":
             sys.exit("Error: No llm_judge provided")
         
         elif "gpt" in llm_judge:
@@ -597,7 +598,6 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
                         Y_labeled_predictions.append(few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
             Y_labeled_predictions_np = np.array(Y_labeled_predictions)
             Y_labeled_dataset[prediction_column] = Y_labeled_predictions_np.tolist()
-
         elif "claude" in llm_judge: 
             Y_labeled_predictions = []
             debug_mode = False # Hard coded - FIX
@@ -623,7 +623,6 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
                     query_labeled_id = "Question"
                 except KeyError:
                     sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
-            breakpoint()
             with tqdm(total=len(Y_labeled_dataset), desc="Evaluating", leave=False) as progress_bar:
                 for _, row in Y_labeled_dataset.iterrows():
                     query = row[query_labeled_id]
@@ -666,7 +665,6 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
                     query_labeled_id = "Question"
                 except KeyError:
                     sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
-            breakpoint()
             with tqdm(total=len(Y_labeled_dataset), desc="Evaluating", leave=False) as progress_bar:
                 for _, row in Y_labeled_dataset.iterrows():
                     query = row[query_labeled_id]

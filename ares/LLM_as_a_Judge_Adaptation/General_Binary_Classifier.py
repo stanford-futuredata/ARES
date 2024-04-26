@@ -35,6 +35,9 @@ import re
 import argparse
 
 from tqdm import tqdm, tqdm_pandas
+
+import warnings
+warnings.filterwarnings("ignore", message="The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers.")
 #############################################################
 
 def combine_query_document(query: str, document: str, answer=None):
@@ -429,7 +432,7 @@ def train_and_evaluate_model(number_of_runs, tokenized_datasets, assigned_batch_
         validation_dataloader = DataLoader(tokenized_datasets['validation'], batch_size=assigned_batch_size)
         eval_dataloader = DataLoader(tokenized_datasets['test'], batch_size=assigned_batch_size)
 
-        print("Number of labels: " + str(len(set(train_set_label))))
+        # print("Number of labels: " + str(len(set(train_set_label))))
 
         ############################################################
 
@@ -622,7 +625,7 @@ def print_and_save_model(total_predictions, total_references, checkpoint_path, m
         results = metric.compute(references=total_references, predictions=total_predictions)
         print("Accuracy for Test Set: " + str(results['accuracy']))
 
-        f_1_metric = load_metric("f1")
+        f_1_metric = load_metric("f1", trust_remote_code=True)
         macro_f_1_results = f_1_metric.compute(average='macro', references=total_references, predictions=total_predictions)
         print("Macro F1 for Test Set: " + str(macro_f_1_results['f1'] * 100))
         micro_f_1_results = f_1_metric.compute(average='micro', references=total_references, predictions=total_predictions)

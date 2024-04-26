@@ -293,8 +293,8 @@ def generate_contradictory_answer_examples(queries_dataset, number_of_contradict
     queries_dataset_copy['generated_answer'] = contradictory_answers
     queries_dataset_copy['Answer_Relevance_Label'] = contradictory_labels
 
-    print("Contradictory Answers Added using Contradiction Generation")
-    print(len(queries_dataset_copy))
+    # print("Contradictory Answers Added using Contradiction Generation")
+    # print(len(queries_dataset_copy))
 
     #################################################
 
@@ -318,8 +318,8 @@ def generate_contradictory_answer_examples(queries_dataset, number_of_contradict
     queries_dataset_copy_2['generated_answer'] = contradictory_answers_2
     queries_dataset_copy_2['Answer_Relevance_Label'] = contradictory_labels_2
 
-    print("Contradictory Answers Added using Answer Randomization")
-    print(len(queries_dataset_copy_2))
+    # print("Contradictory Answers Added using Answer Randomization")
+    # print(len(queries_dataset_copy_2))
 
     #################################################
 

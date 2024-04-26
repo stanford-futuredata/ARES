@@ -16,6 +16,7 @@ import re
 import argparse
 import pdb
 import sys
+import warnings
 
 from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import generate_synthetic_query_openai_approach, generate_answer_from_context, generate_contradictory_answer_from_context
 from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import check_generated_answer, generate_contradictory_answer_examples, generate_synthetic_query_llm_approach, generate_answer_llm_approach
@@ -99,17 +100,15 @@ def load_documents(document_filepath, clean_documents, documents_sampled):
     if(after_filter_count == 0): 
         sys.exit(f"All documents were less than 50 words, please provide dataset with documents containing more than 50 words")
 
-    if documents_sampled > documents.shape[0]:
-        sys.exit(f"({documents_sampled}) cannot be higher than the number of documents in `--document_filepath` after filtering ({documents.shape[0]})") 
-        # choice = input(f"Would you like to continbue synthetic generation on {documents.shape[0]} documents?\nY/N: ").upper()
-        # if choice == "N": 
-        #     sys.exit("Exited evaluation program")
-        
-
-    documents = documents.sample(n=documents_sampled, random_state=43)
+    if documents_sampled > initial_count:
+        print(f"\nThe `documents_sampled` parameter ({documents_sampled}) exceeds the available number of documents ({initial_count}). Sampling will be adjusted to the maximum available documents ({initial_count}).\n")
+        documents_sampled = initial_count
 
     if count > 0: 
-        print(f"Filtered out {count} documents because they had less than 50 words.")
+        print(f"Filtered out {count} documents because they had less than 50 words. Sampling will be be adjusted to {after_filter_count} documents\n")
+        documents_sampled = after_filter_count
+
+    documents = documents.sample(n=documents_sampled, random_state=43)
 
     #documents = documents[:10]
     # print("documents") - CHANGED
@@ -230,10 +229,10 @@ def Generate_Synthetic_Answers(synthetic_queries_filename,
     few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio,
     lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings): 
     synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
-    print("Filtered synth queries")
-    print(len(synth_queries))
+    # print("Filtered synth queries")
+    # print(len(synth_queries))
     synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
-    print(len(synth_queries))
+    # print(len(synth_queries))
 
     if regenerate_answers:
         print("Beginning answer generation!")
@@ -259,8 +258,8 @@ def Generate_Synthetic_Answers(synthetic_queries_filename,
             synth_queries = generate_contradictory_answer_examples(synth_queries, int(len(synth_queries) * number_of_contradictory_answers_added_ratio), few_shot_examples_for_contradictory_answers=few_shot_examples_for_contradictory_answers, device=device, tokenizer=tokenizer, model=model, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset)
         else:
             synth_queries = generate_contradictory_answer_examples(synth_queries, int(len(synth_queries) * number_of_contradictory_answers_added_ratio))
-        print(synth_queries.columns)  # List all column names to understand the structure
-        print(synth_queries.head()) 
+        # print(synth_queries.columns)  # List all column names to understand the structure
+        # print(synth_queries.head()) 
         synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
         print("Saved answers to: " + synthetic_queries_filename)
 
@@ -269,9 +268,9 @@ def Generate_Synthetic_Answers(synthetic_queries_filename,
     synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
     synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
 
-    print("synth_queries")
-    print(len(synth_queries))
-    print(synth_queries.head())
+    # print("synth_queries")
+    # print(len(synth_queries))
+    # print(synth_queries.head())
     
 
     if regenerate_embeddings:
@@ -289,38 +288,38 @@ def Generate_Synthetic_Answers(synthetic_queries_filename,
     #Shuffle queries
     synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
 
-    print("Label Sets for each Metric")
-    print(set(synth_queries['Context_Relevance_Label'].tolist()))
-    print(set(synth_queries['Answer_Faithfulness_Label'].tolist()))
-    print(set(synth_queries['Answer_Relevance_Label'].tolist()))
+    # print("Label Sets for each Metric")
+    # print(set(synth_queries['Context_Relevance_Label'].tolist()))
+    # print(set(synth_queries['Answer_Faithfulness_Label'].tolist()))
+    # print(set(synth_queries['Answer_Relevance_Label'].tolist()))
 
-    print("synth_queries filtered")
-    print(len(synth_queries))
-    print(synth_queries.head())
+    # print("synth_queries filtered")
+    # print(len(synth_queries))
+    # print(synth_queries.head())
 
-    print("Positive and Negative Counts")
-    print("Context Relevance")
-    print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "Yes"]))
-    print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "No"]))
-    print("Answer Faithfulness")
-    print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "Yes"]))
-    print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "No"]))
-    print("Answer Relevance")
-    print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "Yes"]))
-    print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "No"]))
+    # print("Positive and Negative Counts")
+    # print("Context Relevance")
+    # print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "Yes"]))
+    # print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "No"]))
+    # print("Answer Faithfulness")
+    # print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "Yes"]))
+    # print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "No"]))
+    # print("Answer Relevance")
+    # print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "Yes"]))
+    # print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "No"]))
 
     synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
     print("Completed synthetic generation!")
     print("Saved synthetic queries file to: " + synthetic_queries_filename)
 
-def print_synthetic_queries(filename): 
-    queries = pd.read_csv(filename,sep='\t')
+# def print_synthetic_queries(filename): 
+#     queries = pd.read_csv(filename,sep='\t')
     
-    for index, row in queries.head(6).iterrows(): 
-        print(f"Document {index}: {row['document']}")
-        print(f"Synthetic Query: {row['synthetic_query']}")
-        print(f"Answer: {row['generated_answer']}")
-        print("-" * 50)
+#     for index, row in queries.head(6).iterrows(): 
+#         print(f"Document {index}: {row['document']}")
+#         print(f"Synthetic Query: {row['synthetic_query']}")
+#         print(f"Answer: {row['generated_answer']}")
+#         print("-" * 50)
 
 # def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename: str,
 #                                synthetic_queries_filename: str, documents_sampled: int,

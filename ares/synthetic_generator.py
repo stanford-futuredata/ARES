@@ -5,7 +5,7 @@ from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import ge
 from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import generate_few_shot_prompts
 from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import save_synthetic_queries
 from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import Generate_Synthetic_Answers
-from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import print_synthetic_queries
+# from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import print_synthetic_queries
 
 def synthetic_generator_config(document_filepaths: list, few_shot_prompt_filename: str,
                                synthetic_queries_filenames: list, documents_sampled: int,
