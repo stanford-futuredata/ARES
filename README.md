@@ -12,7 +12,7 @@
 <p align="center">
 
   <a>
-  <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.2.4-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
+  <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.5.5-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
   </a>
 
   <a>
@@ -113,7 +113,7 @@ ares = ARES()
 ares.KILT_dataset("nq")
 
 # Fetches NQ datasets with ratios including 0.5, 0.6, 0.7, etc.
-# For purposes of our quick start guide, we rename nq_ratio_0.5 to nq_unlabeled_output and nq_ratio_0.6 to nq_labeled_output.
+# For purposes of our quick start guide, we rename nq_ratio_0.5 to nq_unlabeled_output and nq_labeled_output.
 ```
 <hr>
 
@@ -190,8 +190,8 @@ from ares import ARES
 synth_config = { 
     "document_filepaths": ["nq_labeled_output.tsv"] ,
     "few_shot_prompt_filename": "nq_few_shot_prompt_for_synthetic_query_generation.tsv",
-    "synthetic_queries_filenames": ["data/output/synthetic_queries_1.tsv"], 
-    "documents_sampled": 10000
+    "synthetic_queries_filenames": ["synthetic_queries_1.tsv"], 
+    "documents_sampled": 6189
 }
 
 ares_module = ARES(synthetic_query_generator=synth_config)
@@ -207,7 +207,7 @@ Step 3) Run the following to see ARES's training classifier in action!
 from ares import ARES
 
 classifier_config = {
-    "training_dataset": ["data/output/synthetic_queries_1.tsv"], 
+    "training_dataset": ["synthetic_queries_1.tsv"], 
     "validation_set": ["nq_labeled_output.tsv"], 
     "label_column": ["Context_Relevance_Label"], 
     "num_epochs": 10, 
