@@ -219,6 +219,13 @@ def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate,
 
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
+    parent_dir = "checkpoints/" + model_choice.replace("/", "-")
+
+    if not os.path.exists(parent_dir):
+        print(f"Creating parent checkpoint directory: {parent_dir}")
+        print("--------------------------------------------------------------------------")
+        os.makedirs(parent_dir)
+
     checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + current_datetime + ".pt"
 
     # checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
