@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ares-ai"
-version = "0.2.3"
+version = "0.5.6"
 description = """ 
 ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
 utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
@@ -25,7 +25,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10"
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
 ]
 keywords = ["RAG", "RAG Scoring", "RAG Systems", "Automated Evaluation Framework", "Retrieval-Augmented Generation Systems",
 "LLM Judges", "Natural Language Processing", "Machine Learning", "RAG Evaluation", "Context Relevance", "Answer Faithfulness",
@@ -36,6 +37,8 @@ dependencies = [
     "anthropic == 0.23.1",
     "Cython >=0.29.35",
     "datasets >=2.12.0",
+    "fastapi == 0.110.2",
+    "faiss-cpu >= 1.8.0", 
     "ipywidgets >=8.0.6, <9.0.0",
     "ipython >=8.12.2, <9.0.0",
     "ipykernel >=6.23.1, <7.0.0",
@@ -47,8 +50,6 @@ dependencies = [
     "numpy >=1.20.0, <2.0.0",
     "openai ==1.14.2",
     "pandas >= 2.0.1",
-    "protobuf >= 4.21.10",
-    "pydantic >=1.10.7,<2.0.0",
     "python-dateutil >=2.8.2,<3.0.0",
     "pytorch-ranger >=0.1.1,<0.2.0",
     "pytz >=2023.3,<2024.0",
@@ -59,10 +60,11 @@ dependencies = [
     "sentencepiece==0.1.99",
     "sentence-transformers >=2.2.2,<3.0.0",
     "spacy >=3.5.3,<4.0.0",
-    "torch ==1.13.1",
+    "torch >= 2.2.1",
     "together >= 1.1.0",
     "tokenizers >=0.13.3",
-    "transformers ==4.36.0",
+    "transformers == 4.40.1",
+    "vllm == 0.4.1",
 ]
 
 [project.urls]

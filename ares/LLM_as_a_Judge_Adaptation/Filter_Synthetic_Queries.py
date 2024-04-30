@@ -15,6 +15,9 @@ import torch
 import numpy as np
 import random
 import pdb
+import warnings
+from pandas.errors import SettingWithCopyWarning
+
 
 #################################################
 client = OpenAI()
@@ -31,14 +34,15 @@ def get_embedding(text, model="text-embedding-ada-002"):
             time.sleep(30)
 
 def generate_index(dataframe):
-   dataframe = dataframe.drop_duplicates(subset="document")
-   tqdm.pandas(desc="Generating embeddings...", total=dataframe.shape[0])
-   dataframe['embeddings'] = dataframe["document"].progress_apply(lambda x: get_embedding(x, model='text-embedding-ada-002')) # model='text-embedding-ada-002'
-   dataframe =  dataframe[dataframe['embeddings'].apply(lambda x: len(x)) == 1536]
-   
-   dataframe = Dataset.from_pandas(dataframe)
-   dataframe.add_faiss_index(column="embeddings")
-   return dataframe
+    warnings.simplefilter("ignore", SettingWithCopyWarning)
+    dataframe = dataframe.drop_duplicates(subset="document")
+    tqdm.pandas(desc="Generating embeddings...", total=dataframe.shape[0])
+    dataframe['embeddings'] = dataframe["document"].progress_apply(lambda x: get_embedding(x, model='text-embedding-ada-002')) # model='text-embedding-ada-002'
+    dataframe =  dataframe[dataframe['embeddings'].apply(lambda x: len(x)) == 1536]
+    
+    dataframe = Dataset.from_pandas(dataframe)
+    dataframe.add_faiss_index(column="embeddings")
+    return dataframe
 
 def filter_synthetic_queries(queries_dataset, document_index):
     
@@ -67,11 +71,11 @@ def filter_synthetic_queries(queries_dataset, document_index):
     queries_dataset = queries_dataset.to_pandas()
     queries_dataset['Context_Relevance_Label'] = total_labels
     
-    print("Before filter")
-    print(len(queries_dataset))
-    print("After filter")
-    print(len(queries_dataset[queries_dataset['Context_Relevance_Label'] == "Yes"]))
-    print(len(queries_dataset[queries_dataset['Context_Relevance_Label'] == "No"]))
+    # print("Before filter")
+    # print(len(queries_dataset))
+    # print("After filter")
+    # print(len(queries_dataset[queries_dataset['Context_Relevance_Label'] == "Yes"]))
+    # print(len(queries_dataset[queries_dataset['Context_Relevance_Label'] == "No"]))
 
     return queries_dataset
 
@@ -92,14 +96,13 @@ def generate_additional_negatives(queries_dataset, document_index, number_of_neg
             "embeddings", question_embedding, k=100
         )
         # if len(samples["document"]) <= 98:
-        print(f"Number of samples: {len(samples['document'])}")
+        # print(f"Number of samples: {len(samples['document'])}")
         #    raise ValueError('Less than 100 documents in dataset! Please add more documents for retrieval.')
         random_negative_sample = random.randint(lower_bound_for_negatives, len(samples["document"]) - 1)
         negative_sample_retrieved.append(random_negative_sample)
         try:
             negative_documents.append(samples["document"][random_negative_sample])
         except:
-            breakpoint()
             negative_documents.append(samples["document"][0])
         negative_labels.append("No")
 
@@ -108,8 +111,8 @@ def generate_additional_negatives(queries_dataset, document_index, number_of_neg
     queries_dataset_copy['Context_Relevance_Label'] = negative_labels
     queries_dataset_copy['negative_sample_retrieved'] = negative_sample_retrieved
 
-    print("Negatives Added")
-    print(len(queries_dataset_copy))
+    # print("Negatives Added")
+    # print(len(queries_dataset_copy))
     
     # Shuffle dataframe
     queries_dataset_copy = queries_dataset_copy.sample(n=len(queries_dataset_copy), random_state=42)
@@ -146,8 +149,8 @@ def generate_additional_positives(queries_dataset, document_index, number_of_pos
     queries_dataset_copy['generated_answer'] = ["" for j in range(len(queries_dataset_copy))]
     queries_dataset_copy['additional_positive_added'] = [True for j in range(len(queries_dataset_copy))]
 
-    print("Positives Added")
-    print(len(queries_dataset_copy))
+    # print("Positives Added")
+    # print(len(queries_dataset_copy))
 
     # Shuffle dataframe
     queries_dataset_copy = queries_dataset_copy.sample(n=len(queries_dataset_copy), random_state=42)
