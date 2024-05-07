@@ -125,7 +125,7 @@ To get started with ARES's PPI, you'll need to set up your configuration. Below 
 
 Just copy-paste as you go to see ARES in action!
 
-Step 1) Run the following to retrive the UES/IDP scores with GPT3.5!
+#### Step 1) Run the following to retrive the UES/IDP scores with GPT3.5!
 
 ```python
 from ares import ARES
@@ -142,7 +142,7 @@ print(results)
 # {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
 ```
 
-Step 2) Run the following to retrive ARES's PPI scores with GPT3.5!
+#### Step 2) Run the following to retrive ARES's PPI scores with GPT3.5!
 
 
 ```python
@@ -165,7 +165,7 @@ print(results)
 
 <hr>
 
-Step 1) Run the following to see GPT 3.5's accuracy on the NQ unlabeled dataset!
+#### Step 1) Run the following to see GPT 3.5's accuracy on the NQ unlabeled dataset!
 
 ```python
 from ares import ARES
@@ -182,7 +182,7 @@ print(results)
 # {'Context Relevance Scores': [Score], 'Answer Faithfulness Scores': [Score], 'Answer Relevance Scores': [Score]}
 ```
 
-Step 2) Run the following to see ARES's synthetic generation in action! 
+#### Step 2) Run the following to see ARES's synthetic generation in action! 
 ```python
 
 from ares import ARES
@@ -201,7 +201,7 @@ print(results)
 
 <hr>
 
-Step 3) Run the following to see ARES's training classifier in action!
+#### Step 3) Run the following to see ARES's training classifier in action!
 ```python
 
 from ares import ARES
@@ -228,7 +228,7 @@ Training may take some time. You can download the checkpoint here:
 
 <hr>
 
-Step 4) Run the following to see ARES's PPI in action!
+#### Step 4) Run the following to see ARES's PPI in action!
 ```python
 
 from ares import ARES
@@ -253,7 +253,7 @@ print(results)
 
 ARES supports [vLLM](https://github.com/vllm-project/vllm), allowing for local execution of LLM models, offering enhanced privacy and the ability to operate ARES offline. Below are steps to vLLM for ARES's UES/IDP and PPI!
 
-#### 1) ES/IDP w/ vLLM
+#### 1) UES/IDP w/ vLLM
 
 ```python
 from ares import ARES
