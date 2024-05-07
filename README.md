@@ -253,7 +253,7 @@ print(results)
 
 ARES supports [vLLM](https://github.com/vllm-project/vllm), allowing for local execution of LLM models, offering enhanced privacy and the ability to operate ARES offline. Below are steps to vLLM for ARES's UES/IDP and PPI!
 
-# 1) UES/IDP w/ vLLM
+# UES/IDP w/ vLLM
 
 ```python
 from ares import ARES
@@ -273,7 +273,7 @@ print(results)
 
 <hr>
 
-# 2) PPI w/ vLLM
+2) PPI w/ vLLM
 
 ```python
 from ares import ARES
