@@ -20,6 +20,7 @@ import os
 ####################################################################
 
 def superGlue(dataset):
+    chosen = dataset 
 
     dataset_choices = [dataset] #"record", "rte", "boolq", "multirc"
 
@@ -126,7 +127,8 @@ def superGlue(dataset):
                     print(str(ratio))
                     print(len(dataset) / (len(dataset) + len(dataset_1[:negatives_to_add])))
 
-                    file_path = folder_path + "multirc_" + "ratio_" + str(ratio) + ".tsv"
+                    file_path = folder_path + chosen + "_" + "ratio_" + str(ratio) + ".tsv"
+
                     kilt_dataset_combined.to_csv(file_path, sep="\t", index=False)
                     print("Saved file to: " + file_path)
                     print("-------------------------------------------------------")
@@ -140,7 +142,7 @@ def superGlue(dataset):
                 kilt_dataset_combined = pd.concat([dataset, dataset_1, dataset_2], axis=0, ignore_index=True)
                 kilt_dataset_combined = kilt_dataset_combined.sample(n=len(kilt_dataset_combined), random_state=42) #Shuffled
 
-                file_path = folder_path + "multirc_" + "ratio_" + str(ratio) + ".tsv"
+                file_path = folder_path + chosen + "_" + "ratio_" + str(ratio) + ".tsv"
                 kilt_dataset_combined.to_csv(file_path, sep="\t", index=False)
                 print("Saved file to: " + file_path)
                 print("-------------------------------------------------------")
