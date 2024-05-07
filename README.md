@@ -12,7 +12,7 @@
 <p align="center">
 
   <a>
-  <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.5.5-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
+  <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.5.7-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
   </a>
 
   <a>
