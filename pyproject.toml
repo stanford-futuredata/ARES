@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ares-ai"
-version = "0.5.6"
+version = "0.5.7"
 description = """ 
 ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
 utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
@@ -34,7 +34,7 @@ keywords = ["RAG", "RAG Scoring", "RAG Systems", "Automated Evaluation Framework
 
 dependencies = [
     "accelerate >=0.21.0, <1.0.0",
-    "anthropic == 0.23.1",
+    "anthropic >= 0.25.7",
     "Cython >=0.29.35",
     "datasets >=2.12.0",
     "fastapi == 0.110.2",
