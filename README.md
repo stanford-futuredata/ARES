@@ -11,7 +11,7 @@
 
 <p align="center">
 
-  <a>
+  <a href="https://pypi.org/project/ares-ai/">
   <img alt="Static Badge" src="https://img.shields.io/badge/release-v0.5.7-blue?style=flat&link=https%3A%2F%2Fpython.org%2F">
   </a>
 
