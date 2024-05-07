@@ -8,22 +8,22 @@ from typing import List
 import pandas as pd
 
 context_relevance_system_prompt = "You are an expert dialogue agent."
-context_relevance_system_prompt += "Your task is to analyze the provided document and determine whether it is relevant for responding to the dialogue. "
-context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided dialogue. "
-context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is relevant and "[[No]]" if the document provided is not relevant. '
+context_relevance_system_prompt += "Your task is to analyze the provided document and determine whether it is relevant for responding to the dialogue."
+context_relevance_system_prompt += "In your evaluation, you should consider the content of the document and how it relates to the provided dialogue."
+context_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the document is relevant and "[[No]]" if the document provided is not relevant.'
 context_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
 context_relevance_system_prompt = context_relevance_system_prompt
 
-answer_relevance_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided question. "
-answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information from the document for answering the question. "
-answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given question and "[[No]]" if the answer is not relevant for the given question. '
+answer_relevance_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and document before determining whether the answer is relevant for the provided question."
+answer_relevance_system_prompt += "In your evaluation, you should consider whether the answer addresses all aspects of the question and provides only correct information from the document for answering the question."
+answer_relevance_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is relevant for the given question and "[[No]]" if the answer is not relevant for the given question.'
 answer_relevance_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
 answer_relevance_system_prompt = answer_relevance_system_prompt
 
-answer_faithfulness_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document. "
-answer_faithfulness_system_prompt += "The answer must not offer new information beyond the context provided in the document. "
-answer_faithfulness_system_prompt += "The answer also must not contradict information provided in the document. "
-answer_faithfulness_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is faithful to the document and "[[No]]" if the answer is not faithful to the document. '
+answer_faithfulness_system_prompt = "Given the following question, document, and answer, you must analyze the provided answer and determine whether it is faithful to the contents of the document."
+answer_faithfulness_system_prompt += "The answer must not offer new information beyond the context provided in the document."
+answer_faithfulness_system_prompt += "The answer also must not contradict information provided in the document."
+answer_faithfulness_system_prompt += 'Output your final verdict by strictly following this format: "[[Yes]]" if the answer is faithful to the document and "[[No]]" if the answer is not faithful to the document.'
 answer_faithfulness_system_prompt += "Do not provide any additional explanation for your decision.\n\n"
 answer_faithfulness_system_prompt = answer_faithfulness_system_prompt
 
@@ -39,7 +39,10 @@ class ARES:
             "answer_faithfulness_system_prompt": (str, answer_faithfulness_system_prompt),
             "debug_mode": (bool, False),
             "documents": (int, 0),
-            "model_choice": (str, "gpt-3.5-turbo-1106")
+            "model_choice": (str, "gpt-3.5-turbo-1106"),
+            "request_delay": (int, 0),
+            "vllm": (bool, False),
+            "host_url": (str, "http://0.0.0.0:8000/v1")
         },
 
         "synthetic_query_generator": {
@@ -96,7 +99,11 @@ class ARES:
             "assigned_batch_size": (int, 1),
             "number_of_labels": (int, 2),
             "alpha": (int, 0.05),   
-            "num_trials": (int, 1000)
+            "num_trials": (int, 1000),
+            "vllm": (bool, False),
+            "host_url": (str, "http://0.0.0.0:8000/v1"),
+            "request_delay": (int, 0),
+            "debug_mode": (bool, False)
         }
     }
 

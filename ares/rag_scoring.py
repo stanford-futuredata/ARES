@@ -7,14 +7,14 @@ from ares.RAG_Automatic_Evaluation.LLMJudge_RAG_Compared_Scoring import post_pro
 from ares.RAG_Automatic_Evaluation.LLMJudge_RAG_Compared_Scoring import evaluate_and_scoring_data
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
-GPT_scoring, annotated_datapoints_filepath, model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_path, rag_type):
+GPT_scoring, annotated_datapoints_filepath, model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_path, rag_type, vllm, host_url, request_delay, debug_mode):
     # Validate inputs and determine model loading strategy
     if checkpoints:
         if llm_judge and llm_judge != "None":
             print("Warning: Both checkpoint and llm_judge were provided. Using checkpoints.")
         model_loader = lambda chk: load_model(model_choice, number_of_labels, chk)
     elif llm_judge and llm_judge != "None":
-        model_loader = lambda _: load_model(llm_judge, number_of_labels, None)
+        model_loader = lambda _: load_model(llm_judge, number_of_labels, vllm, None)
     else:
         raise ValueError("No valid model or checkpoint provided.")
 
@@ -42,7 +42,7 @@ GPT_scoring, annotated_datapoints_filepath, model_choice, llm_judge, assigned_ba
 
             model, tokenizer, device = model_loader(checkpoint)
 
-            total_predictions, total_references, results, metric = evaluate_model(test_set, label_column, text_column, device, checkpoint, tokenizer, model, assigned_batch_size, model_choice, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples_filepath, llm_judge)
+            total_predictions, total_references, results, metric = evaluate_model(test_set, label_column, text_column, device, checkpoint, tokenizer, model, assigned_batch_size, model_choice, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples_filepath, llm_judge, vllm, host_url, request_delay, debug_mode)
 
             test_set, Y_labeled_dataset, Y_labeled_dataloader, Y_labeled_predictions, Yhat_unlabeled_dataset, prediction_column = post_process_predictions(checkpoint, test_set, label_column, total_predictions, labels, gold_label_path, tokenizer, assigned_batch_size, device) 
 
@@ -50,7 +50,7 @@ GPT_scoring, annotated_datapoints_filepath, model_choice, llm_judge, assigned_ba
             annotated_datapoints_filepath, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt,
             few_shot_examples, metric, prediction_column, label_column, test_set_selection, 
             LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, 
-            ppi_confidence_intervals, accuracy_scores, results, checkpoint, llm_judge)
+            ppi_confidence_intervals, accuracy_scores, results, checkpoint, llm_judge, vllm, host_url, request_delay, debug_mode)
 
 # if not checkpoints and not llm_judge:
 #         raise ValueError("Either checkpoints or an llm_model must be provided.")

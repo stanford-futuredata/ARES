@@ -48,7 +48,9 @@ from ares.RAG_Automatic_Evaluation.Evaluation_Functions import calculate_accurac
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring, few_shot_answer_relevance_scoring
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_togetherai, few_shot_answer_faithfulness_scoring_togetherai, few_shot_answer_relevance_scoring_togetherai
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_claude, few_shot_answer_faithfulness_scoring_claude, few_shot_answer_relevance_scoring_claude
-
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_vllm
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_vllm
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_vllm
 #############################################################
 
 random_state = 44
@@ -355,7 +357,7 @@ def togetherai_list_models(api_key):
         print(f"An unexpected error occurred: {e}")
         return ["N/A"]
 
-def load_model(model_identifier, number_of_labels, checkpoint=None):
+def load_model(model_identifier, number_of_labels, vllm, checkpoint=None):
     check = False
     tokenizer = None
     api_key = os.getenv("TOGETHER_API_KEY")
@@ -367,6 +369,8 @@ def load_model(model_identifier, number_of_labels, checkpoint=None):
         check = True
     elif model_identifier in together_models: 
         check = True 
+    elif vllm: 
+        check = True
     else: 
         check = False
     
@@ -400,8 +404,8 @@ def load_model(model_identifier, number_of_labels, checkpoint=None):
     ############################################################
 
 def evaluate_model(test_set, label_column, text_column, device, checkpoint, tokenizer, model, assigned_batch_size, model_choice, 
-context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples_filepath, llm_judge): 
-
+context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples_filepath, llm_judge, vllm, host_url, request_delay, debug_mode):
+     
     metric = load_metric("accuracy")
 
     if checkpoint:
@@ -443,8 +447,6 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
         #     # print("Setting few-shot example to None...")
         #     few_shot_examples = None
 
-        debug_mode = False
-
         few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
         # Few Shot Dataset Edge Check: Query ID 
         try:
@@ -468,14 +470,20 @@ context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relev
         #         sys.exit("Both 'Query' and 'Question' keys are missing in labeled dataset.")
 
         if "Context_Relevance_Label" == label_column:
+            if vllm: 
+                test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, clean_query(x[query_id]), x["Document"], llm_judge, query_id, debug_mode, host_url, request_delay, few_shot_examples), axis=1)
             # tqdm.pandas(desc="Generating context relevance scores...", total=test_set.shape[0])
-            test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x["Query"]), x["Document"], model, query_id, debug_mode, few_shot_examples), axis=1)
+            test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(x[query_id]), x["Document"], llm_judge, query_id, debug_mode, few_shot_examples), axis=1)
         elif "Answer_Faithfulness_Label" == label_column:
+            if vllm: 
+                test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring_vllm(answer_faithfulness_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, host_url, request_delay, few_shot_examples), axis=1)
             # tqdm.pandas(desc="Generating answer faithfulness scores...", total=test_set.shape[0])
-            test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, query_id, debug_mode, few_shot_examples), axis=1)
+            test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, few_shot_examples), axis=1)
         if "Answer_Relevance_Label" == label_column:
+            if vllm: 
+                test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring_vllm(answer_relevance_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, host_url, request_delay, few_shot_examples), axis=1)
             # tqdm.pandas(desc="Generating answer relevance scores...", total=test_set.shape[0])
-            test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x["Query"]), x["Document"], x["Answer"], model, query_id, debug_mode, few_shot_examples), axis=1)
+            test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, few_shot_examples), axis=1)
 
         total_predictions = test_set[label_column.replace("_Label", "_Prediction")].to_numpy()
         total_references = test_set[label_column].to_numpy()
@@ -521,7 +529,7 @@ def post_process_predictions(checkpoint, test_set, label_column, total_predictio
 
 def evaluate_and_scoring_data(test_set, Y_labeled_predictions, Y_labeled_dataset, Y_labeled_dataloader, Yhat_unlabeled_dataset, 
 alpha, num_trials, model, device, model_choice, swap_human_labels_for_gpt4_labels, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt, few_shot_examples, metric, prediction_column, 
-label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, ppi_confidence_intervals, accuracy_scores, results, checkpoint, llm_judge):
+label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, ppi_confidence_intervals, accuracy_scores, results, checkpoint, llm_judge, vllm, host_url, request_delay, debug_mode):
     # progress_bar = tqdm(range(len(Y_labeled_dataloader)))
 
     if checkpoint:
@@ -561,7 +569,6 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
         
         elif "gpt" in llm_judge:
             Y_labeled_predictions = []
-            debug_mode = False # Hard coded - FIX
 
             # Few Shot Dataset Edge Check: Query ID 
             try:
@@ -590,17 +597,27 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
                     document = row["Document"]
                     answer = row["Answer"]
                     if "Context_Relevance_Label" == label_column:
+                        if vllm: # Check if vLLM host
+                            Y_labeled_predictions.append(few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, few_shot_examples))
+                            progress_bar.update(1)
                         Y_labeled_predictions.append(few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(query), document, model, query_id, debug_mode, few_shot_examples))
                         progress_bar.update(1)
                     elif "Answer_Faithfulness_Label" == label_column:
+                        if vllm:
+                            Y_labeled_predictions.append(few_shot_answer_faithfulness_scoring_vllm(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, host_url, request_delay, few_shot_examples))
+                            progress_bar.update(1)
                         Y_labeled_predictions.append(few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
                     elif "Answer_Relevance_Label" == label_column:
+                        if vllm:
+                            Y_labeled_predictions.append(few_shot_answer_relevance_scoring_vllm(context_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, host_url, request_delay, few_shot_examples))
+                            progress_bar.update(1)
                         Y_labeled_predictions.append(few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
+                        progress_bar.update(1)
             Y_labeled_predictions_np = np.array(Y_labeled_predictions)
             Y_labeled_dataset[prediction_column] = Y_labeled_predictions_np.tolist()
         elif "claude" in llm_judge: 
             Y_labeled_predictions = []
-            debug_mode = False # Hard coded - FIX
 
             # Few Shot Dataset Edge Check: Query ID 
             try:
@@ -639,10 +656,8 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
                         progress_bar.update(1)
             Y_labeled_predictions_np = np.array(Y_labeled_predictions)
             Y_labeled_dataset[prediction_column] = Y_labeled_predictions_np.tolist()
-        
         else: 
             Y_labeled_predictions = []
-            debug_mode = False # Hard coded - FIX
 
             # Few Shot Dataset Edge Check: Query ID 
             try:
@@ -671,12 +686,21 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
                     document = row["Document"]
                     answer = row["Answer"]
                     if "Context_Relevance_Label" == label_column:
+                        if vllm: # Check if vLLM host
+                            Y_labeled_predictions.append(few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, few_shot_examples))
+                            progress_bar.update(1)
                         Y_labeled_predictions.append(few_shot_context_relevance_scoring_togetherai(context_relevance_system_prompt, clean_query(query), document, model, query_id, debug_mode, few_shot_examples))
                         progress_bar.update(1)
                     elif "Answer_Faithfulness_Label" == label_column:
+                        if vllm: # Check if vLLM host
+                            Y_labeled_predictions.append(few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, few_shot_examples))
+                            progress_bar.update(1)
                         Y_labeled_predictions.append(few_shot_answer_faithfulness_scoring_togetherai(answer_faithfulness_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
                         progress_bar.update(1)
                     elif "Answer_Relevance_Label" == label_column:
+                        if vllm: # Check if vLLM host
+                            Y_labeled_predictions.append(few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, few_shot_examples))
+                            progress_bar.update(1)
                         Y_labeled_predictions.append(few_shot_answer_relevance_scoring_togetherai(answer_relevance_system_prompt, clean_query(query), document, answer, model, query_id, debug_mode, few_shot_examples))
                         progress_bar.update(1)
             Y_labeled_predictions_np = np.array(Y_labeled_predictions)
@@ -717,12 +741,18 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
 
     avg_ci, avg_ci_classical, ci_imputed = calculate_ppi(Y_labeled,  Yhat_labeled, Yhat_unlabeled, alpha, num_trials)
     LLM_judge_prediction = sum(avg_ci) / len(avg_ci)
-
     LLM_judge_ratio_predictions.append(LLM_judge_prediction)
     validation_set_lengths.append(len(test_set))
-    validation_set_ratios.append(round(Yhat_unlabeled_dataset[label_column].tolist().count(1) / len(Yhat_unlabeled_dataset), 3))
     ppi_confidence_intervals.append([round(value, 3) for value in avg_ci])
     accuracy_scores.append(round(results['accuracy'], 3))
+
+    # Check if the ground truth label column exists and has any non-null values
+    if label_column in Yhat_unlabeled_dataset.columns and not Yhat_unlabeled_dataset[label_column].isnull().all():
+        # Calculate the ground truth ratio only if the column is valid and not entirely null
+        validation_set_ratios.append(round(Yhat_unlabeled_dataset[label_column].tolist().count(1) / len(Yhat_unlabeled_dataset), 3))
+        ground_truth_available = True
+    else:
+        ground_truth_available = False
 
     ######################################################################
 
@@ -736,7 +766,8 @@ label_column, test_set_selection, LLM_judge_ratio_predictions, validation_set_le
     print("ARES Prediction: " + str(LLM_judge_ratio_predictions))
     print("ARES Confidence Interval: " + str(ppi_confidence_intervals))
     print("Number of Examples in Evaluation Set: " + str(validation_set_lengths))
-    print("Ground Truth Performance: " + str(validation_set_ratios))
+    if ground_truth_available: 
+        print("Ground Truth Performance: " + str(validation_set_ratios))
     print("ARES LLM Judge Accuracy on Ground Truth Labels: " + str(accuracy_scores))
     print("Annotated Examples used for PPI: " + str(len(Y_labeled)))
     print("--------------------------------------------------\n")
