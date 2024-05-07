@@ -261,7 +261,7 @@ from ares import ARES
 ues_idp_config = {
     "in_domain_prompts_dataset": "nq_few_shot_prompt_for_judge_scoring.tsv",
     "unlabeled_evaluation_set": "nq_unalebed_output.tsv", 
-    "model_choice": "facebook/opt-125m", # Specify vLLM model
+    "model_choice": "meta-llama/Llama-2-13b-hf", # Specify vLLM model
     "vllm": True, # Toggle vLLM to True 
     "host_url": "http://0.0.0.0:8000/v1" # Replace with server hosting model followed by "/v1"
 } 
