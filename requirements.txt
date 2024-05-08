@@ -249,7 +249,7 @@ tomli==2.0.1
 tornado==6.3.3
 tqdm==4.65.0
 traitlets==5.9.0
-transformers==4.36.0
+transformers==4.38.0
 trec-car-tools==2.6
 triton==2.0.0.dev20221103
 trl==0.4.4

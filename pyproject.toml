@@ -63,7 +63,7 @@ dependencies = [
     "torch >= 2.2.1",
     "together >= 1.1.0",
     "tokenizers >=0.13.3",
-    "transformers == 4.40.1",
+    "transformers == 4.38.0",
     "vllm == 0.4.1",
 ]
 
