@@ -102,7 +102,7 @@ jupyterlab-pygments==0.2.2
 jupyterlab-server==2.22.1
 jupyterlab-widgets==3.0.7
 kiwisolver==1.4.4
-langchain==0.0.329
+langchain==0.1.0
 langchainplus-sdk==0.0.16
 langcodes==3.3.0
 lightgbm==3.3.5
