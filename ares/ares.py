@@ -42,7 +42,7 @@ class ARES:
             "model_choice": (str, "gpt-3.5-turbo-1106"),
             "request_delay": (int, 0),
             "vllm": (bool, False),
-            "host_url": (str, "http://0.0.0.0:8000/v1")
+            "host_url": (str, "None")
         },
 
         "synthetic_query_generator": {
