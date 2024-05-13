@@ -226,6 +226,10 @@ Note: This code creates a checkpoint for the trained classifier.
 Training may take some time. You can download our jointly trained checkpoint on context relevance here!:
 [Download Checkpoint](https://drive.google.com/file/d/15poFyeoqdnaNZVjl41HllL2213DKyZjH/view?usp=sharing)
 
+Alternatively, you can download our jointly trained checkpoint on answer relevance here! Be sure to change the parameters in the config to match the label "Answer_Relevance_Label"
+[Download Checkpoint](https://drive.google.com/file/d/1wGcgELBfnCGqXlPEbpPmf7LJ53DPWVXI/view?usp=sharing)
+
+
 <hr>
 
 #### Step 4) Run the following to see ARES's PPI in action!
