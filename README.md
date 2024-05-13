@@ -223,8 +223,8 @@ print(results)
 ```
 
 Note: This code creates a checkpoint for the trained classifier.
-Training may take some time. You can download the checkpoint here:
-[Download Checkpoint](https://drive.google.com/file/d/1dsUzL01a53ictjMaUI6RqEvHY5vColcL/view?usp=sharing)
+Training may take some time. You can download our jointly trained checkpoint on context relevance here!:
+[Download Checkpoint](https://drive.google.com/file/d/15poFyeoqdnaNZVjl41HllL2213DKyZjH/view?usp=sharing)
 
 <hr>
 
