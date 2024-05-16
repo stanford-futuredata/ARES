@@ -1,12 +1,6 @@
-<h3>This page shows you how to automatically create synthetic datasets that closely mimic real-world scenarios for robust RAG testing.</h3>
-
 <hr>
 
-## Configure OpenAI API Key. 
-
-```
-export OPENAI_API_KEY=<your key here>
-```
+<h3>This page shows you how to automatically create synthetic datasets that closely mimic real-world scenarios for robust RAG testing.</h3>
 
 <hr>
 

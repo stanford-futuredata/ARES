@@ -2,11 +2,43 @@ site_name: ARES Documentation
 nav:
     - Home: index.md
     - Installation: installation.md
-    - Synthetic Generation: synth_gen.md
-    - Training Classifier: training_classifier.md
-    - RAG Evaluation: rag_eval.md
+    - Quick Start Guide:
+        - Setup: setup.md
+        - "Quick Start: Guide A": quick_start_guide_1.md
+        - "Quick Start: Guide B": quick_start_guide_2.md
+        - Local Model Execution: quick_local_model_execution.md
+    - Synthetic Generation: 
+        - Synthetic Generation Starter Guide: synth_gen.md
+        - Capabilities and Parameters: synth_gen_params.md
+    - Training Classifier: 
+        - Training Classifier Starter Guide: training_classifier.md
+        - Capabilities and Parameters: training_classifier_params.md
+    - RAG Evaluation: 
+        - RAG Evaluation Starter Guide: rag_eval.md
+        - Capabilities and Parameters: rag_eval_params.md
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github 
+  palette:
+    scheme: default
+    primary: black
+    
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github 
+  
+  font:
+    text: 
+      size: 20
+      style: normal
+    code: 
+      size: 14
+      style: italic
   
 markdown_extensions:
   - admonition
+
+repo_url: https://github.com/stanford-futuredata/ARES
+repo_name: stanford-futuredata/ARES

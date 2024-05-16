@@ -2,10 +2,12 @@
 
 <hr>
 
-## Configure OpenAI API Key. 
+## Configure API Key. 
 
 ```
 export OPENAI_API_KEY=<your key here>
+export TOGETHER_API_KEY=<your key here>
+export ANTHROPIC_API_KEY=<your key here>
 ```
 
 <hr>
@@ -23,9 +25,7 @@ ppi_config = {
     "checkpoints": [<checkpoint_filepath>],
     "labels": [<labels>], 
     "model_choice": <model_choice>, # Default model is "microsoft/deberta-v3-large"
-    "GPT_scoring": <True or False>, 
-    "gold_label_path": <gold_label_filepath>, 
-    "swap_human_labels_for_gpt4_labels": False
+    "gold_label_path": <gold_label_filepath>
 }
 
 ares_module = ARES(ppi=ppi_config)
@@ -40,10 +40,10 @@ print(results)
 Input file paths to datasets for PPI evaluation, which should contain labeled data for validating classifier performance.
 
 ```python
-    "evaluation_datasets": ["/data/datasets_v2/nq/nq_ratio_0.5_.tsv"],
+"evaluation_datasets": ["nq_unlabeled_output.tsv"],
 ```
 
-Link to [ARES Github Repo](https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets_v2/nq) for evaluation dataset example file used. 
+Link to [ARES Setup](setup.md) for evaluation dataset example file used. 
 
 <hr>
 
@@ -52,10 +52,10 @@ Link to [ARES Github Repo](https://github.com/stanford-futuredata/ARES/tree/new-
 Specify the file path for a file with few-shot examples, which PPI uses to understand the labeling schema and guide the evaluation.
 
 ```python
-    "few_shot_prompt_filename": "data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
+"few_shot_prompt_filename": "data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
 ```
 
-Link to [ARES Github Repo](https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets) for few-shot file example used. 
+Link to [ARES Setup](setup.md) for few-shot file example used. 
 
 <hr>
 
@@ -72,20 +72,10 @@ Generated from ARES [Training Classifier](training_classifier.md), provide file 
 
 ## Labels
 
-List the names of label columns or individua label column in your dataset(s) that PPI will use for evaluation metrics.
+List the names of label columns or individual label column in your dataset(s) that PPI will use for evaluation metrics.
 
 ```python
-    "labels": ["Context_Relevance_Label"], 
-```
-
-<hr>
-
-## GPT_scoring
-
-Set this flag to True if you want to use a GPT model for scoring; False uses the trained classifiers' scores.
-
-```python
-    "GPT_scoring": False,
+"labels": ["Context_Relevance_Label"], 
 ```
 
 <hr>
@@ -94,22 +84,13 @@ Set this flag to True if you want to use a GPT model for scoring; False uses the
 ## Gold Label Path
 
 ```python
-    "gold_label_path": "/data/datasets_v2/nq/nq_ratio_0.6_.tsv"
+"gold_label_path": "nq_labeled_output.tsv"
 ```
 
 <hr>
 
 
-Link to [ARES Github Repo](https://github.com/stanford-futuredata/ARES/tree/new-dev/data/datasets_v2/nq) for gold label path file example used. 
-
-## Swapping Human Labels for GPT4 Labels
-
-If True, PPI replaces human-provided labels with GPT-4's labels during evaluation; if False, it uses the original human labels.
-
-```python
-    "swap_human_labels_for_gpt4_labels": False
-```
-<hr>
+Link to [ARES Setup](setup.md) for gold label path file example used. 
 
 
 ## RAG Evaluation Configuration: Full Example
@@ -118,17 +99,18 @@ If True, PPI replaces human-provided labels with GPT-4's labels during evaluatio
 from ares import ARES
 
 ppi_config = { 
-    "evaluation_datasets": ['../data/datasets_v2/nq/nq_ratio_0.6_.tsv'], 
-    "few_shot_examples_filepath": "../data/datasets/multirc_few_shot_prompt_for_synthetic_query_generation_v1.tsv",
-    "checkpoints": ["../data/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Context_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt", "../data/checkpoints/microsoft-deberta-v3-large/output-synthetic_queries_1.tsv/5e-06_1_True_Answer_Relevance_Label_ratio_0.6_reformatted_full_articles_False_validation_with_negatives_428380.pt"],
-    "labels": ["Context_Relevance_Label", "Answer_Relevance_Label"], 
-    "GPT_scoring": False, 
-    "gold_label_path": "../data/datasets_v2/nq/nq_ratio_0.6_.tsv", 
-    "swap_human_labels_for_gpt4_labels": False
+    "evaluation_datasets": ['nq_ratio_0.6.tsv'], 
+    "few_shot_examples_filepath": "nq_few_shot_prompt_for_judge_scoring.tsv",
+    "checkpoints": ["/future/u/manihani/ARES/checkpoints/microsoft-deberta-v3-large/Context_Relevance_Label_joint_datasets_2024-04-30_01:01:01.pt"], 
+    "labels": ["Context_Relevance_Label"], 
+    "gold_label_path": "nq_labeled_output.tsv"
 }
 
-ares_module = ARES(ppi=ppi_config)
-results = ares_module.evaluate_RAG()
+ares = ARES(ppi=ppi_config)
+results = ares.evaluate_RAG()
 print(results)
 
 ```
+
+Download the necessary files for this example [here](setup.md)!
+

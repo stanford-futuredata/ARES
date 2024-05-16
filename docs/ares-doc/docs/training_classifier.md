@@ -2,14 +2,6 @@
 
 <hr>
 
-## Configure OpenAI API Key. 
-
-```
-export OPENAI_API_KEY=<your key here>
-```
-
-<hr>
-
 ## Training Classifier Configuration
 
 The synth_config dictionary is a configuration object that sets up ARES for generating synthetic queries based on a given dataset. Below is how the training classifier configuration style.
@@ -97,7 +89,7 @@ from ares import ARES
 
 classifier_config = {
     "classification_dataset": ["output/synthetic_queries_1.tsv"], 
-    "test_set_selection": "./datasets_v2/nq/ratio_0.5_reformatted_full_articles_False_validation_with_negatives.tsv",
+    "validation_set": "./datasets_v2/nq/ratio_0.5_reformatted_full_articles_False_validation_with_negatives.tsv",
     "label_column": ["Context_Relevance_Label"], 
     "model_choice": "microsoft/deberta-v3-large",
     "num_epochs": 10, 
