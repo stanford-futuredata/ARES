@@ -1,0 +1,25 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "docs/ares-doc/mkdocs.yml",
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "docs/ares-doc/site"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "/docs/ares-doc/site/$1"
+      }
+    ],
+    "buildCommand": "pip install -r docs/ares-doc/requirements.txt && mkdocs build -f docs/ares-doc/mkdocs.yml",
+    "build": {
+      "env": {
+        "PYTHON_VERSION": "3.10"
+      }
+    }
+  }
+  
