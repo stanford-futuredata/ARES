@@ -1,4 +1,4 @@
-<h3>This page teaches you how to configure the RAG model evaluation with ARES to accurately evaluate your model's performance.</h3>
+<h3>This page provides you with an in-depth overview of ARES's RAG model evaluation's capabilities and parameters, enabling you to accurately evaluate your model's performance.</h3>
 
 <hr>
 

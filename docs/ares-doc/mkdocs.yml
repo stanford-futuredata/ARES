@@ -1,33 +1,99 @@
+home_cover_image: assets/image/robot_red.png
+home_tagline: "ARES: An Automated Evaluation Framework for RAG Systems"
+home_description: |
+  ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models.
+
+# Gradient Color
+home_gradient_hsla: hsla(0deg,47%,55%,1) # Default Green: hsla(160deg,47%,55%,1)
+
+# Custom Homepage Button(s)
+home_button1_name: Get Started                  # Comment this parameter out to remove the button.
+home_button1_url: "/getting_started.html"      # This path starts at your root mkdocs directory.
+home_button1_theme: md-button md-button--primary # Options: "md-button", "md-button md-button--primary"
+home_button1_icon: gear                        # Options: "people", "gear", "image"
+home_button1_blurb: |                            # Short description of this button / section.
+  ARES (Automated RAG Evaluation System) simplifies evaluating retrieval-augmented generation (RAG) systems. 
+  It automates the assessment of context relevance, answer faithfulness, and answer relevance, eliminating 
+  the need for extensive human annotations. ARES generates synthetic training data and fine-tunes lightweight 
+  language models to provide accurate evaluations quickly and efficiently. 
+  With ARES, you can ensure your RAG systems perform optimally with minimal effort. 
+  Get started now to streamline your evaluation process and improve your RAG solutions.
+
+home_button2_name: Go to Github   # Comment this parameter out to remove the button.
+home_button2_url: https://github.com/stanford-futuredata/ARES    # This path starts at your root mkdocs directory.
+home_button2_theme: md-button # Options: "md-button", "md-button md-button--primary"
+home_button2_icon: people      # Options: "people", "gear", "image"
+home_button2_blurb: |         # Short description of this button / section.
+  ARES is open-source and available on GitHub, providing you with full access to the codebase.
+   Whether you're looking to understand how ARES works, contribute to its development, or customize it to 
+   better suit your specific needs, our GitHub repository is the perfect place to start. 
+   By joining our community, you can collaborate with other developers, share your insights, and 
+   help enhance the capabilities of ARES. The open-source nature of the project ensures that you 
+   can freely modify and adapt it to fit various use cases. Click the button to get started with 
+   ARES on GitHub and become a part of our growing community.
+
+home_button3_name: Read the Paper   # Comment this parameter out to remove the button.
+home_button3_url: https://arxiv.org/abs/2311.09476    # This path starts at your root mkdocs directory.
+home_button3_theme: md-button # Options: "md-button", "md-button md-button--primary"
+home_button3_icon: image      # Options: "people", "gear", "image"
+home_button3_blurb: |         # Short description of this button / section.
+  Dive deeper into the details of ARES by reading our comprehensive research paper. 
+  Discover the methodologies, evaluations, and innovations that make ARES a powerful tool 
+  for automated RAG system evaluation. The paper provides in-depth insights into how ARES generates synthetic data, 
+  fine-tunes language models, and leverages prediction-powered inference for accurate and efficient assessments. 
+  Click the button to access the full paper and explore the technical intricacies and empirical results of ARES.
+
+# Homepage Code Execution
+home_execute_js: | # Javascript to execute when accessing the homepage
+  console.log("This is an example!");
+
 site_name: ARES Documentation
 nav:
-    - Home: index.md
-    - Installation: installation.md
-    - Quick Start Guide:
-        - Setup: setup.md
-        - "Quick Start: Guide A": quick_start_guide_1.md
-        - "Quick Start: Guide B": quick_start_guide_2.md
-        - Local Model Execution: quick_local_model_execution.md
-    - Synthetic Generation: 
-        - Synthetic Generation Starter Guide: synth_gen.md
-        - Capabilities and Parameters: synth_gen_params.md
-    - Training Classifier: 
-        - Training Classifier Starter Guide: training_classifier.md
-        - Capabilities and Parameters: training_classifier_params.md
-    - RAG Evaluation: 
-        - RAG Evaluation Starter Guide: rag_eval.md
-        - Capabilities and Parameters: rag_eval_params.md
+  - Home: index.md
+  - Quick Start Guide: 
+      - Installation: installation.md
+      - Prerequisites: setup.md  # Direct link to the main quick start guide
+      - "Quick Start: Guide A": quick_start_guide_1.md
+      - "Quick Start: Guide B": quick_start_guide_2.md
+      - Local Model Execution: quick_local_model_execution.md
+  - Documentation:
+      - Getting Started: getting_started.md
+      - Synthetic Generation: 
+          - Synthetic Generation Starter Guide: synth_gen.md
+          - Capabilities and Parameters: synth_gen_params.md
+      - Training Classifier: 
+          - Training Classifier Starter Guide: training_classifier.md
+          - Capabilities and Parameters: training_classifier_params.md
+      - RAG Evaluation: 
+          - RAG Evaluation Starter Guide: rag_eval.md
+          - Capabilities and Parameters: rag_eval_params.md
+      - Local Model Execution Guide: local_model_execution.md
+  - Resources:
+      - Datasets: datasets.md
+      - Tutorials: 
+          - "[01] Full RAG Eval Walkthrough (Using Model API)": tutorial_01.md 
+
 theme:
   name: material
+  custom_dir: overrides
+  logo: assets/image/logo.png
+  features:
+    - navigation.indexes          # Implied section 'index.md' files
+    - navigation.tabs             # Static upper section tabs (exist)
+    - navigation.tabs.sticky      # Static upper section tabs (stay)
+    - navigation.footer           # Add 'previous' and 'next' buttons in the footer
+    - navigation.instant          # Keep navigation from reloading
+    - navigation.instant.progress # Display page loading progress-bar ( > 400ms)
+    - navigation.drawer           # Add a hamburger icon for navigation
+    - search.highlight            # Highlight all occurrences of queried string
+    - search.share                # Search Query can be copied to Clipboard
+    - search.suggest 
+
   icon:
     repo: fontawesome/brands/github 
   palette:
     scheme: default
     primary: black
-    
-theme:
-  name: material
-  icon:
-    repo: fontawesome/brands/github 
   
   font:
     text: 
@@ -36,9 +102,12 @@ theme:
     code: 
       size: 14
       style: italic
+    
   
 markdown_extensions:
   - admonition
 
 repo_url: https://github.com/stanford-futuredata/ARES
 repo_name: stanford-futuredata/ARES
+
+use_directory_urls: false

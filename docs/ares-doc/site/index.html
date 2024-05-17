@@ -1,3 +1,7 @@
+<!-- Elements added to "home.html" will only be displayed on the home page -->
+
+<!-- Elements added to "main.html" will be displayed on all pages -->
+
 
 <!doctype html>
 <html lang="en" class="no-js">
@@ -10,7 +14,7 @@
       
       
       
-        <link rel="next" href="installation/">
+        <link rel="next" href="getting_started.html">
       
       
       <link rel="icon" href="assets/images/favicon.png">
@@ -18,11 +22,14 @@
     
     
       
-        <title>ARES Documentation</title>
+        <title>Home - ARES Documentation</title>
       
     
     
       <link rel="stylesheet" href="assets/stylesheets/main.6543a935.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -36,8 +43,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family={'size':+20,+'style':+'normal'}:300,300i,400,400i,700,700i%7C{'size':+14,+'style':+'italic'}:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"{'size': 20, 'style': 'normal'}";--md-code-font:"{'size': 14, 'style': 'italic'}"}</style>
       
     
     
@@ -48,21 +55,24 @@
     
     
     
+    <!-- main.html | Added "navigation.instant" support -->
+    <link rel="canonical" href=".">
+
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#introduction" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -74,12 +84,11 @@
 
   
 
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="ARES Documentation" class="md-header__button md-logo" aria-label="ARES Documentation" data-md-component="logo">
+    <a href="index.html" title="ARES Documentation" class="md-header__button md-logo" aria-label="ARES Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+  <img src="assets/image/logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -103,8 +112,8 @@
       </div>
     </div>
     
+      
     
-      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -125,11 +134,18 @@
       </label>
       <nav class="md-search__options" aria-label="Search">
         
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -146,17 +162,450 @@
 </div>
     
     
+      <div class="md-header__source">
+        <a href="https://github.com/stanford-futuredata/ARES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    stanford-futuredata/ARES
+  </div>
+</a>
+      </div>
+    
   </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="index.html" class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="getting_started.html" class="md-tabs__link">
+        
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="installation.html" class="md-tabs__link">
+        
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="setup.html" class="md-tabs__link">
+          
+  
+    
+  
+  Quick Start Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="synth_gen.html" class="md-tabs__link">
+          
+  
+    
+  
+  Synthetic Generation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="training_classifier.html" class="md-tabs__link">
+          
+  
+    
+  
+  Training Classifier
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="rag_eval.html" class="md-tabs__link">
+          
+  
+    
+  
+  RAG Evaluation
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
   
 </header>
     
     <div class="md-container" data-md-component="container">
       
       
-        
-          
+
         
       
+
+
+<!-- Stole this styling from the "up42-py" project (link: https://sdk.up42.com/) -->
+<!-- .tx-container Original Green Gradient: hsla(160deg,47%,55%,1) -->
+<style>
+    .md-main {
+        flex-grow: 0;
+    }
+    .md-main__inner {
+        display: flex;
+        height: 100%;
+    }
+    .tx-container {
+        padding-top: 0rem;
+        background: linear-gradient(to bottom, var(--md-primary-fg-color), hsla(0deg,47%,55%,1) 99%, #fff 99%);
+    }
+    .tx-hero {
+        margin: 32px 2.8rem;
+        color: var(--md-primary-bg-color);
+        justify-content: center;
+    }
+    .tx-hero h1 {
+        margin-bottom: 1rem;
+        color: currentColor;
+        font-weight: 700;
+    }
+    .tx-hero__content {
+        padding-bottom: 1rem;
+        margin: 0 auto;
+    }
+    .tx-hero__image {
+        width: 20rem !important;
+        height: 20rem !important;
+        order: 1;
+        padding-right: -5rem;
+    }
+    .tx-hero .md-button {
+        margin-top: 0.5rem;
+        margin-right: 0.5rem;
+        color: var(--md-primary-bg-color);
+    }
+    .tx-hero .md-button--primary {
+        background-color: var(--md-primary-bg-color);
+        color: hsla(280deg, 37%, 48%, 1);
+        border-color: var(--md-primary-bg-color);
+    }
+    .tx-hero .md-button:focus,
+    .tx-hero .md-button:hover {
+        background-color: var(--md-accent-fg-color);
+        color: var(--md-default-bg-color);
+        border-color: var(--md-accent-fg-color);
+    }
+    .feature-item h2 svg {
+        height: 30px;
+        float: left;
+        margin-right: 10px;
+        transform: translateY(10%);
+    }
+    .top-hr {
+        margin-top: 42px;
+    }
+    .feature-item {
+        border-radius: 20px;
+        margin-top: 0.5rem;
+        margin-right: 0.5rem;
+        background-color: var(--md-primary-bg-color);
+        font-family: 'Lato', sans-serif;
+        font-weight: 300;
+        box-sizing: border-box;
+        padding: 0 15px;
+        word-break: break-word;
+    }
+    .feature-item h2 {
+        color: #333;
+        font-weight: 300;
+        font-size: 25px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: normal;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-family: inherit;
+    }
+    .feature-item p {
+        font-size: 16px;
+        line-height: 1.8em;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        color: #111;
+        margin: 0 0 10px;
+        display: block;
+    }
+    @media screen and (max-width: 30em) {
+        .tx-hero h1 {
+            font-size: 1.4rem;
+        }
+
+        .tx-hero__image {
+        width: 10rem !important;
+        height: 10rem !important;
+        order: 1;
+        padding-right: -5rem;
+        }
+    }
+    @media screen and (min-width: 60em) {
+        .md-sidebar--secondary {
+            display: none;
+        }
+        .tx-hero {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tx-hero__content {
+            max-width: 22rem;
+            margin-top: 3.5rem;
+            margin-bottom: 3.5rem;
+            margin-left: 1.0rem;
+            margin-right: 4.0rem;
+            align-items: center;
+        }
+    }
+    @media screen and (min-width: 76.25em) {
+        .md-sidebar--primary {
+            display: none;
+        }
+        .top-hr {
+            width: 100%;
+            display: flex;
+            max-width: 61rem;
+            margin-right: auto;
+            margin-left: auto;
+            padding: 0 0.2rem;
+        }
+        .bottom-hr {
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            max-width: 61rem;
+            margin-right: auto;
+            margin-left: auto;
+            padding: 0 0.2rem;
+        }
+        .feature-item {
+            flex: 1;
+            min-width: 0;
+        }
+        .feature-item:hover {
+            background-color: #526cfe47;
+            border-radius: 3px;
+        }
+    }
+    .hr {
+        border-bottom: 1px solid #eee;
+        width: 100%;
+        margin: 20px 0;
+    }
+    .text-center {
+        text-align: right;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        margin-top: 15px;
+        font-family: 'Lato', sans-serif;
+        font-size: 23px;
+        font-weight: 300;
+        padding-bottom: 10px;
+    }
+    .logos {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-flow: row wrap;
+        margin: 0 auto;
+    }
+    .logos img {
+        flex: 1 1 auto;
+        padding: 25px;
+        max-height: 130px;
+        vertical-align: middle;
+    }
+    .hr-logos {
+        margin-top: 0;
+        margin-bottom: 30px;
+    }
+    .md-footer-meta__inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-top: 1.0rem;
+    }
+    .md-footer-social {
+        padding-top: 20px;
+    }
+    </style>
+
+
+<!-- Main site entry button descriptions -->
+<section class="tx-container">
+    <div class="md-grid md-typeset">
+      <div class="tx-hero">
+      
+        <!-- Custom Image -->
+        <div class="tx-hero__image">
+	  <img src="assets/image/robot_red.png" draggable="false">
+        </div>
+	
+	<!-- Main Tagline -->
+        <div class="tx-hero__content">
+          <h1>ARES: An Automated Evaluation Framework for RAG Systems</h1>
+          <p>ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models.
+</p>
+	  
+	  <!-- Added Buttons (up to 3) --><a href="/getting_started.html" title="Material | MkDocs" class="md-button md-button--primary">
+            Get Started
+          </a><a href="https://github.com/stanford-futuredata/ARES" title="Material | MkDocs" class="md-button">
+            Go to Github
+          </a><a href="https://arxiv.org/abs/2311.09476" title="Material | MkDocs" class="md-button">
+            Read the Paper
+          </a></div>
+      </div>
+    </div>
+</section>
+
+
+<!-- Main site box descriptions -->
+<div class="top-hr">
+
+    <!-- Start Outer Condition --><div class="feature-item">
+        <h2>
+	    <!-- People Icon --><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M16 17v2H2v-2s0-4 7-4 7 4 7 4m-3.5-9.5A3.5 3.5 0 109 11a3.5 3.5 0 003.5-3.5m3.44 5.5A5.32 5.32 0 0118 17v2h4v-2s0-3.63-6.06-4M15 4a3.39 3.39 0 00-1.93.59 5 5 0 010 5.82A3.39 3.39 0 0015 11a3.5 3.5 0 000-7z" />
+            </svg><!-- Gear Icon --><!-- Image Icon --><!-- Button Description -->
+            Get Started
+        </h2>
+        <p>This joker navigates to the shadow wizard armory located in "/Folder1/index.md"
+</p>
+    </div><!-- End Outer Condition -->
+    
+    <!-- Start Outer Condition --><div class="feature-item">
+        <h2>
+	    <!-- People Icon --><!-- Gear Icon --><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M15 17v-3h3v-2l4 3.5-4 3.5v-2h-3m2 1v3h-3v2l-4-3.5 4-3.5v2h3M12 8c-2.21 0-4 1.8-4 4 0 1.91 1.35 3.54 3.21 3.92L16 11.86A3.997 3.997 0 0012 8m0 6c-1.1 0-2-.89-2-2s.9-2 2-2 2 .9 2 2-.89 2-2 2m9.66-5.27l-2-3.46c-.12-.22-.38-.31-.61-.22l-2.49 1c-.51-.41-1.06-.74-1.69-1l-.37-2.63A.506.506 0 0014 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.26-1.17.59-1.69 1L5 5.05c-.23-.09-.5 0-.61.22l-2 3.46c-.13.21-.08.49.11.64L4.57 11l-.07 1 .07 1-2.11 1.63c-.2.15-.25.43-.12.64l2 3.46c.11.27.4.38.66.27l2.5-1c.24.19.5.37.76.53l1.65-1.4c-.77-.33-1.45-.82-2-1.45l-2.41 1-.77-1.3L6.8 13.8a5.55 5.55 0 010-3.6L4.69 8.65l.75-1.3 2.41 1c.78-.9 1.83-1.53 3-1.78l.4-2.57h1.5l.37 2.62c1.17.24 2.22.88 3 1.77l2.41-1 .75 1.3-2.08 1.51c.09.26.16.53.2.8h2l2.1-1.63a.48.48 0 00.16-.64M12 8c-2.21 0-4 1.8-4 4 0 1.91 1.35 3.54 3.21 3.92L16 11.86A3.997 3.997 0 0012 8m0 6c-1.1 0-2-.89-2-2s.9-2 2-2 2 .9 2 2-.89 2-2 2m0-6c-2.21 0-4 1.8-4 4 0 1.91 1.35 3.54 3.21 3.92L16 11.86A3.997 3.997 0 0012 8m0 6c-1.1 0-2-.89-2-2s.9-2 2-2 2 .9 2 2-.89 2-2 2z" />
+            </svg><!-- Image Icon --><!-- Button Description -->
+	    Go to Github
+        </h2>
+        <p>This goober navigates to some important thingies located in "/Folder2/index.md"
+</p>
+    </div><!-- End Outer Condition -->
+    
+    <!-- Start Outer Condition --><div class="feature-item">
+        <h2>
+	    <!-- People Icon --><!-- Gear Icon --><!-- Image Icon --><svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M20.4 14.5L16 10 4 20"/>
+	    </svg><!-- Button Description -->
+            Read the Paper
+        </h2>
+        <p>This psycho navigates to an interesting table of stuff located in "/Folder3/index.md"
+</p>
+    </div><!-- End Outer Condition -->
+</div>
+
+<div class="top-hr">
+    <div class="hr">
+    </div>
+</div>
+
+
+<!-- Toggleable JavaScript execution --><script>
+document$.subscribe(function() {
+  console.log("'home_execute_js' is enabled:");
+  console.log("This is an example!");
+
+}).unsubscribe();
+</script>
       <main class="md-main" data-md-component="main">
         <div class="md-main__inner md-grid">
           
@@ -168,17 +617,30 @@
                     
 
 
-
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
-  <label class="md-nav__title" for="__drawer">
-    <a href="." title="ARES Documentation" class="md-nav__button md-logo" aria-label="ARES Documentation" data-md-component="logo">
-      
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="ARES Documentation" class="md-nav__button md-logo" aria-label="ARES Documentation" data-md-component="logo">
+      
+  <img src="assets/image/logo.png" alt="logo">
 
     </a>
     ARES Documentation
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/stanford-futuredata/ARES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    stanford-futuredata/ARES
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -195,21 +657,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Home
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+      <a href="index.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -218,34 +667,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#get-started" class="md-nav__link">
-    <span class="md-ellipsis">
-      Get Started
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -258,7 +679,27 @@
   
   
     <li class="md-nav__item">
-      <a href="installation/" class="md-nav__link">
+      <a href="getting_started.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="installation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -277,16 +718,228 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="synth_gen/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Quick Start Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Quick Start Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="setup.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quick_start_guide_1.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Start: Guide A
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quick_start_guide_2.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Start: Guide B
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quick_local_model_execution.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Local Model Execution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
   
   <span class="md-ellipsis">
     Synthetic Generation
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Synthetic Generation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synth_gen.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Synthetic Generation Starter Guide
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="synth_gen_params.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Capabilities and Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -297,16 +950,89 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="training_classifier/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
   
   <span class="md-ellipsis">
     Training Classifier
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Training Classifier
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="training_classifier.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Classifier Starter Guide
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="training_classifier_params.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Capabilities and Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -317,16 +1043,89 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="rag_eval/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   <span class="md-ellipsis">
     RAG Evaluation
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            RAG Evaluation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="rag_eval.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RAG Evaluation Starter Guide
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="rag_eval_params.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Capabilities and Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -348,25 +1147,6 @@
   
   
   
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#get-started" class="md-nav__link">
-    <span class="md-ellipsis">
-      Get Started
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -378,98 +1158,6 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-                  
-
-
-<h1 id="introduction">Introduction</h1>
-<p>Welcome to the Automated Evaluation Framework for Retrieval-Augmented Generation Systems (ARES). ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Precision-Performance Iteration (PPI), providing accurate evaluations with statistical confidence. </p>
-<p><a href="https://arxiv.org/abs/2311.09476">
-    <img alt="Static Badge" src="https://img.shields.io/badge/Read-ARES%20Paper-blue?style=flat&link=https%3A%2F%2Farxiv.org%2Fabs%2F2311.09476">
-</a></p>
-<h2 id="get-started">Get Started</h2>
-<style>
-.box-link {
-    flex: 0 0 calc(50% - 10px); 
-    padding: 20px;
-    margin: 5px;
-    background: #f0f0f0;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    transition: box-shadow 0.3s ease-in-out, border 0.3s ease-in-out;
-    text-decoration: none;
-    color: inherit;
-}
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    text-align: left;
-    gap: 15px;
-}
-.box {
-    padding: 20px;
-    margin-bottom: 10px; /* Adds space between rows */
-    flex: 0 0 48%; /* Ensures that only two boxes will fit in one row */
-    background: #f0f0f0;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    transition: box-shadow 0.3s ease-in-out, border 0.3s ease-in-out;
-    text-decoration: none;
-    color: inherit;
-}
-.box:hover {
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    border-color: #333; /* Or any other color for the outline */
-    border: 1px solid #333;
-}
-.box h3 {
-    margin-top: 0;
-}
-
-.box p{
-    color: black;
-}
-</style>
-
-<div class="container">
-
-<a href="installation/" class="box">
-    <h3 style="margin-top: 0px;">⚙️ Installation</h3>
-    <p>Set up ARES efficiently with our step-by-step installation guide.</p>
-</a>
-
-
-<a href="synth_gen/" class="box">
-    <h3 style="margin-top: 0px;">💪  Synthetic Generation</h3>
-    <p>Discover how to automatically create synthetic datasets that closely mimic real-world scenarios for robust RAG testing.</p>
-</a>
-
-<a href="training_classifier/" class="box">
-    <h3 style="margin-top: 0px;">📊 Training Classifier</h3>
-    <p>Learn how to train high-precision classifiers to determine the relevance and faithfulness of RAG outputs</p>
-</a>
-
-
-<a href="rag_eval/" class="box">
-    <h3 style="margin-top: 0px;">⚙️ RAG Evaluation</h3>
-    <p>Configure RAG model evaluation with ARES to accurately evaluate your model's performance.</p>
-</a>
-
-
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-                
               </article>
             </div>
           
@@ -479,31 +1167,15 @@
         
       </main>
       
-        <footer class="md-footer">
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-copyright">
-  
-  
-    Made with
-    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
-    </a>
-  
-</div>
-      
-    </div>
-  </div>
-</footer>
-      
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
-    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.indexes", "navigation.tabs", "navigation.tabs.sticky", "navigation.footer", "navigation.instant", "navigation.instant.progress", "navigation.drawer", "search.highlight", "search.share", "search.suggest"], "search": "assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="assets/javascripts/bundle.ebd0bdb7.min.js"></script>
