@@ -100,6 +100,21 @@ results = ares.run()
 print(results)
 ```
 
+## Results 
+
+The following are ARES's evaluation accuracies on the NQ (60% ground truth accuracy) dataset:
+
+```python
+Context_Relevance_Label Scoring
+ARES Ranking
+ARES Prediction: [0.6116376385433233]
+ARES Confidence Interval: [[0.554, 0.669]]
+Number of Examples in Evaluation Set: [4421]
+Ground Truth Performance: [0.6]
+ARES LLM Judge Accuracy on Ground Truth Labels: [0.775]
+Annotated Examples used for PPI: 300
+```
+
 
 
 
