@@ -1,7 +1,7 @@
 home_cover_image: assets/image/robot_red.png
 home_tagline: "ARES: An Automated Evaluation Framework for RAG Systems"
 home_description: |
-  ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models.
+  A groundbreaking framework for automatically evaluating Retrieval-Augmented Generation (RAG) models.
 
 # Gradient Color
 home_gradient_hsla: hsla(0deg,47%,55%,1) # Default Green: hsla(160deg,47%,55%,1)
@@ -58,6 +58,7 @@ nav:
       - Local Model Execution: quick_local_model_execution.md
   - Documentation:
       - Getting Started: getting_started.md
+      - UES/IDP: ues_idp.md
       - Synthetic Generation: 
           - Synthetic Generation Starter Guide: synth_gen.md
           - Capabilities and Parameters: synth_gen_params.md
@@ -71,7 +72,8 @@ nav:
   - Resources:
       - Datasets: datasets.md
       - Tutorials: 
-          - "[01] Full RAG Eval Walkthrough (Using Model API)": tutorial_01.md 
+          - "[01] Full RAG Eval Walkthrough w/ PPI": tutorial_01.md 
+      - FAQs: faq.md
 
 theme:
   name: material
@@ -94,7 +96,7 @@ theme:
   palette:
     scheme: default
     primary: black
-  
+
   font:
     text: 
       size: 20

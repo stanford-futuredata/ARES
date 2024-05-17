@@ -1,6 +1,6 @@
 # Introduction
 
-Welcome to the Automated Evaluation Framework for Retrieval-Augmented Generation Systems (ARES). ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Precision-Performance Iteration (PPI), providing accurate evaluations with statistical confidence. 
+Welcome to the Automated Evaluation Framework for Retrieval-Augmented Generation Systems (ARES). ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and prediction-powered inference (PPI), providing accurate evaluations with statistical confidence. 
 
 <a href="https://arxiv.org/abs/2311.09476">
     <img alt="Static Badge" src="https://img.shields.io/badge/Read-ARES%20Paper-blue?style=flat&link=https%3A%2F%2Farxiv.org%2Fabs%2F2311.09476">

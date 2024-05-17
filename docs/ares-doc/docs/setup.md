@@ -9,15 +9,13 @@ To implement ARES for scoring your RAG system and comparing to other RAG configu
 * A much larger set of unlabeled query-document-answer triples outputted by your RAG system for scoring
 
 <a id="section3"></a>
-<hr>
 
-To get started with ARES, you'll need to set up your configuration. Below is an example of a configuration for ARES!
-
-Copy-paste each step to see ARES in action!
-
-<hr>
+<hr> 
 
 ### Download datasets
+To get started with ARES, you'll need to have datasets. 
+
+Copy-paste each step below to retrive the necessary datasets for ARES.
 
 <hr>
 
