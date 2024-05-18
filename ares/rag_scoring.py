@@ -18,6 +18,29 @@ machine_label_system_prompt = (
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
 model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_path, rag_type, vllm, host_url, request_delay, debug_mode, 
 machine_label_llm_model, gold_machine_label_path):
+    """
+    Configures and runs the RAG scoring process.
+
+    Parameters:
+    - alpha: The alpha value for the scoring process.
+    - num_trials: Number of trials to run.
+    - evaluation_datasets: List of datasets to evaluate.
+    - few_shot_examples_filepath: Filepath for few-shot examples.
+    - checkpoints: List of model checkpoints.
+    - labels: List of labels.
+    - model_choice: Choice of model.
+    - llm_judge: LLM judge to use.
+    - assigned_batch_size: Batch size to use.
+    - number_of_labels: Number of labels.
+    - gold_label_path: Path to the gold labels.
+    - rag_type: Type of RAG.
+    - vllm: VLLM to use.
+    - host_url: Host URL.
+    - request_delay: Delay between requests.
+    - debug_mode: Whether to run in debug mode.
+    - machine_label_llm_model: Machine label LLM model.
+    - gold_machine_label_path: Path to the gold machine labels.
+    """
     
     # Validate if either gold_label_path or gold_machine_label_path is provided
     if not gold_label_path and not gold_machine_label_path:
@@ -136,39 +159,3 @@ machine_label_llm_model, gold_machine_label_path):
             }
             
             evaluate_and_scoring_data(evaluate_scoring_settings)
-
-# if not checkpoints and not llm_judge:
-#         raise ValueError("Either checkpoints or an llm_model must be provided.")
-
-#     if checkpoints:
-#         if len(checkpoints) != len(evaluation_datasets):
-#             raise ValueError("The number of checkpoints must match the number of evaluation datasets.")
-#         models_to_use = checkpoints
-#     else:
-#         models_to_use = [llm_judge] * len(evaluation_datasets)
-
-#     for model_to_use, test_set_selection in zip(models_to_use, evaluation_datasets):
-#         for label_column in labels:
-#             LLM_judge_ratio_predictions = []
-#             validation_set_lengths = []
-#             validation_set_ratios = []
-#             ppi_confidence_intervals = []
-#             accuracy_scores = []
-
-#             few_shot_examples = begin(evaluation_datasets, model_to_use, labels, GPT_scoring, few_shot_examples_filepath)
-
-#             context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt = filter_dataset(rag_type)
-            
-#             test_set, text_column = preprocess_data(test_set_selection, label_column, labels)
-
-#             model, tokenizer, device = load_model(llm_judge, number_of_labels, GPT_scoring, model_to_use) 
-
-#             total_predictions, total_references, results, metric = evaluate_model(test_set, label_column, text_column, device, GPT_scoring, tokenizer, model, assigned_batch_size, llm_judge, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt)
-
-#             test_set, Y_labeled_dataset, Y_labeled_dataloader, Y_labeled_predictions, Yhat_unlabeled_dataset, prediction_column = post_process_predictions(test_set, label_column, total_predictions, labels, use_pseudo_human_labels, gold_label_path, tokenizer, assigned_batch_size, device) 
-
-#             evaluate_and_scoring_data(test_set, Y_labeled_predictions, Y_labeled_dataset, Y_labeled_dataloader, Yhat_unlabeled_dataset, alpha, num_trials, model, device, llm_judge, 
-#             annotated_datapoints_filepath, context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt,
-#             few_shot_examples, metric, prediction_column, label_column, test_set_selection, 
-#             LLM_judge_ratio_predictions, validation_set_lengths, validation_set_ratios, 
-#             ppi_confidence_intervals, accuracy_scores, results)
