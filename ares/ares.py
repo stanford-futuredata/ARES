@@ -40,13 +40,11 @@ class ARES:
             "synthetic_queries_filenames": (list, None),  # Required parameter with no default value
             "documents_sampled": (int, None),  # Required parameter with no default value
             "model_choice": (str, "google/flan-t5-xxl"),  # Optional with default
-            "flan_approach": (bool, True),  # Optional with default
             "clean_documents": (bool, False),  # Optional with default
             "regenerate_synth_questions": (bool, True),  # Optional with default
             "percentiles": (list, [0.05, 0.25, 0.5, 0.95]),  # Optional with default
             "question_temperatures": (list, [2.0, 1.5, 1.0, 0.5, 0.0]),  # Optional with default
             "regenerate_answers": (bool, True),  # Optional with default
-            "generate_contradictory_answers_with_flan": (bool, True),  # Optional with default
             "number_of_negatives_added_ratio": (float, 0.5),  # Optional with default
             "lower_bound_for_negatives": (int, 5),  # Optional with default
             "number_of_contradictory_answers_added_ratio": (float, 0.67),  # Optional with default
@@ -81,8 +79,6 @@ class ARES:
             "checkpoints": (list, []),  # Required parameter with no default value
             "gold_label_path": (str, "None"),  # Optional with default
             "rag_type": (str, "question_answering"),  # Optional with default
-            "annotated_datapoints_filepath": (bool, False),  # Optional with default
-            "GPT_scoring": (bool, False),  # Optional with default
             "model_choice": (str, "microsoft/deberta-v3-large"),  # Optional with default
             "llm_judge": (str, "None"),  # Optional with default
             "assigned_batch_size": (int, 1),  # Optional with default

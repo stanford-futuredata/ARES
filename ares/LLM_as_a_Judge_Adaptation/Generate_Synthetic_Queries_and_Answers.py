@@ -1,74 +1,119 @@
-import requests
-import time
-import pandas as pd
-import ast
-import json
-import copy
-import openai
-from tqdm import tqdm
-import csv
-from datasets import Dataset
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoConfig, AutoModelForCausalLM, BitsAndBytesConfig
-import torch
-import numpy as np
-from sklearn.model_selection import train_test_split
-import re
 import argparse
+import ast
+import copy
+import csv
+import json
 import pdb
+import re
+import requests
 import sys
+import time
 import warnings
 
-from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import generate_synthetic_query_openai_approach, generate_answer_from_context, generate_contradictory_answer_from_context
-from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import check_generated_answer, generate_contradictory_answer_examples, generate_synthetic_query_llm_approach, generate_answer_llm_approach
+import numpy as np
+import openai
+import pandas as pd
+import torch
+from datasets import Dataset
+from sklearn.model_selection import train_test_split
+from tqdm import tqdm
+from transformers import (AutoConfig, AutoModelForCausalLM, AutoModelForSeq2SeqLM,
+                          AutoTokenizer, BitsAndBytesConfig)
 
-from ares.LLM_as_a_Judge_Adaptation.Filter_Synthetic_Queries import get_embedding, generate_index, filter_synthetic_queries, generate_additional_negatives, generate_additional_positives
-#from Instruction_Finetune import instruction_finetune
-#from Instruction_Finetune_V2 import instruction_finetune_v2
-#from Instruction_Finetune_v3 import instruction_finetune_v3
+from ares.LLM_as_a_Judge_Adaptation.Filter_Synthetic_Queries import (filter_synthetic_queries,
+                                                                      generate_additional_negatives,
+                                                                      generate_additional_positives,
+                                                                      generate_index, get_embedding)
+from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import (check_generated_answer,
+                                                                      generate_answer_from_context,
+                                                                      generate_answer_llm_approach,
+                                                                      generate_contradictory_answer_examples,
+                                                                      generate_contradictory_answer_from_context,
+                                                                      generate_synthetic_query_llm_approach,
+                                                                      generate_synthetic_query_openai_approach)
 
-pd.set_option('display.max_columns', None)  # Show all columns - TEST
-pd.set_option('display.max_rows', None)  # Show all rows - TEST
-pd.set_option('display.max_colwidth', None)  # Show full content of each column - TEST
+pd.set_option('display.max_columns', None) 
+pd.set_option('display.max_rows', None)  
+pd.set_option('display.max_colwidth', None) 
 
-#################################################
+def clean_document(document: str) -> str:
+    """
+    Cleans the input document by removing unnecessary whitespace characters and replacing certain punctuation.
 
-def clean_document(document: str):
-    cleaned_document = re.sub(r'\n+', '\n', document.replace("\r"," ").replace("\t"," ")).strip()
+    Args:
+        document (str): The original document text that needs to be cleaned.
+
+    Returns:
+        str: The cleaned document text.
+    """
+    # Replace carriage returns and tabs with a space, and reduce multiple newlines to a single newline
+    cleaned_document = re.sub(r'\n+', '\n', document.replace("\r", " ").replace("\t", " ")).strip()
+    # Replace equals signs and hyphens with spaces
     cleaned_document = cleaned_document.replace("=", " ").replace("-", " ")
+    # Reduce multiple spaces to a single space
     cleaned_document = re.sub(r'\s+', ' ', cleaned_document).strip()
-    cleaned_document = (" ").join(cleaned_document.split(" ")) #[:512]
+    # Join words with a single space (this line seems redundant and could be removed if confirmed)
+    cleaned_document = (" ").join(cleaned_document.split(" "))  # [:512] - this part is commented out and can be ignored or removed
     return cleaned_document
 
-    # Load model for synthetic query generation 
+def validate_input_file(df: pd.DataFrame, required_columns: list[str]) -> bool:
+    """
+    Validates that the DataFrame contains all required columns. Exits the program if any are missing.
 
-def validate_input_file(df, required_columns) -> bool: 
+    Args:
+        df (pd.DataFrame): The DataFrame to validate.
+        required_columns (List[str]): A list of strings representing the column names that are required in the DataFrame.
+
+    Returns:
+        bool: True if the DataFrame contains all required columns, otherwise the program will exit with an error.
+    """
+    # Identify any missing columns
     missing_columns = [col for col in required_columns if col not in df.columns]
+    # Exit the program with an error message if there are missing columns
     if missing_columns:
         sys.exit(f"Error: The DataFrame is missing the following required column(s): {', '.join(missing_columns)}.")
-############
+    return True
 
-def load_model(flan_approach, model_choice):
-    if flan_approach:
-        tokenizer = AutoTokenizer.from_pretrained(model_choice)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_choice)
+def load_model(model_choice: str) -> tuple:
+    """
+    Loads the specified model and tokenizer, and sets the model to evaluation mode on the appropriate device.
 
-        torch.no_grad()
-        model.eval()
+    Args:
+        model_choice (str): The model identifier to load from the Hugging Face model hub.
 
-        device = "cuda:0"
-        device = torch.device(device)
-        model.to(device)
+    Returns:
+        tuple: A tuple containing the model, tokenizer, and device.
+    """
+    # Load the tokenizer and model from the specified model choice
+    tokenizer = AutoTokenizer.from_pretrained(model_choice)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_choice)
+
+    # Disable gradient calculations and set the model to evaluation mode
+    torch.no_grad()
+    model.eval()
+
+    # Set the device to CUDA if available
+    device = torch.device("cuda:0")
+    model.to(device)
+    
     return model, tokenizer, device
 
-#############
+def load_documents(document_filepath: str, clean_documents: bool, documents_sampled: int) -> pd.DataFrame:
+    """
+    Loads and processes documents for synthetic query and answer generation.
 
-# Load documents for synthetic query and answer generation
-def load_documents(document_filepath, clean_documents, documents_sampled):
+    Args:
+        document_filepath (str): The path to the document file.
+        clean_documents (bool): Flag indicating whether to clean the documents.
+        documents_sampled (int): The number of documents to sample.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the processed documents.
+    """
     documents = []
     required_columns = ['Query', 'Document', 'Answer']
 
     if "docs_aws" in document_filepath:
-
         with open(document_filepath, "r") as json_file:
             json_data = json.load(json_file)
             documents = [x['text'] for x in json_data]
@@ -78,7 +123,6 @@ def load_documents(document_filepath, clean_documents, documents_sampled):
                 documents = [clean_document(text) for text in documents]
 
         documents = pd.DataFrame(documents, columns=["document"])
-
     else:
         if not document_filepath.endswith('.tsv'):
             sys.exit(f"Error: The file {document_filepath} is not a TSV file.")
@@ -90,368 +134,408 @@ def load_documents(document_filepath, clean_documents, documents_sampled):
         except Exception as e:
             sys.exit(f"Error reading the file {document_filepath}: {e}")
 
-
     initial_count = len(documents)
-    documents = documents[documents['document'].str.split().apply(len) >= 50] # Filter documents w/ less than 50 words.
+    documents = documents[documents['document'].str.split().apply(len) >= 50]  # Filter documents with less than 50 words.
     after_filter_count = len(documents)
 
     count = initial_count - after_filter_count
 
-    if(after_filter_count == 0): 
-        sys.exit(f"All documents were less than 50 words, please provide dataset with documents containing more than 50 words")
+    if after_filter_count == 0:
+        sys.exit("All documents were less than 50 words, please provide a dataset with documents containing more than 50 words.")
 
     if documents_sampled > initial_count:
         print(f"\nThe `documents_sampled` parameter ({documents_sampled}) exceeds the available number of documents ({initial_count}). Sampling will be adjusted to the maximum available documents ({initial_count}).\n")
         documents_sampled = initial_count
 
-    if count > 0: 
-        print(f"Filtered out {count} documents because they had less than 50 words. Sampling will be be adjusted to {after_filter_count} documents\n")
-        documents_sampled = after_filter_count
+    if count > 0:
+        print(f"Filtered out {count} documents because they had less than 50 words.")
+        if documents_sampled > after_filter_count: 
+            print(f"Document sample is greater than document count. Sampling will be adjusted to {after_filter_count} documents\n")
+            documents_sampled = after_filter_count
 
-    documents = documents.sample(n=documents_sampled, random_state=43)
+    documents = documents.sample(n=documents_sampled)
 
-    #documents = documents[:10]
-    # print("documents") - CHANGED
-    # print(len(documents)) - CHANGED
-    # print(documents.head()) - CHANGED
     return documents
 
-################
+def load_few_shot_prompt(few_shot_prompt_filename: str, for_fever_dataset: bool, for_wow_dataset: bool) -> tuple[str, int]:
+    """
+    Loads and processes a few-shot prompt from a TSV file.
 
-# Load few-shot prompt
-def load_few_shot_prompt(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset):
+    Args:
+        few_shot_prompt_filename (str): The filename of the TSV file containing the few-shot prompts.
+        for_fever_dataset (bool): Flag indicating if the prompts are for the FEVER dataset.
+        for_wow_dataset (bool): Flag indicating if the prompts are for the WoW dataset.
+
+    Returns:
+        tuple[str, int]: A tuple containing the few-shot examples as a string and the length of the few-shot prompt.
+    """
     few_shot_prompt = pd.read_csv(few_shot_prompt_filename, sep="\t")
     few_shot_prompt = few_shot_prompt[few_shot_prompt['Context_Relevance_Label'] == "[[Yes]]"]
+    
     if "Query" not in few_shot_prompt:
         few_shot_prompt['Query'] = few_shot_prompt['Question']
 
     length_of_fewshot_prompt = len(few_shot_prompt)
     few_shot_examples = ""
-    for row in range(len(few_shot_prompt)):
-        few_shot_examples += "Example " + str(row + 1) + ":\n"
-        few_shot_examples += "Document: " + clean_document(few_shot_prompt.iloc[row]['Document']) + "\n"
-        if for_fever_dataset:
-            few_shot_examples += "Statement: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
-        elif for_wow_dataset:
-            few_shot_examples += "Dialogue: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
-        else:
-            few_shot_examples += "Question: " + few_shot_prompt.iloc[row]['Query'] + "\n\n"
 
-    # print("Fewshot Prompt") - CHANGED
-    # print(few_shot_examples) - CHANGED 
-    # print("Finished loading dataset + model") - CHANGED
+    for row in range(len(few_shot_prompt)):
+        few_shot_examples += f"Example {row + 1}:\n"
+        few_shot_examples += f"Document: {clean_document(few_shot_prompt.iloc[row]['Document'])}\n"
+        
+        if for_fever_dataset:
+            few_shot_examples += f"Statement: {few_shot_prompt.iloc[row]['Query']}\n\n"
+        elif for_wow_dataset:
+            few_shot_examples += f"Dialogue: {few_shot_prompt.iloc[row]['Query']}\n\n"
+        else:
+            few_shot_examples += f"Question: {few_shot_prompt.iloc[row]['Query']}\n\n"
+
     return few_shot_examples, length_of_fewshot_prompt
 
-#################################################
-def generate_contradictory_answers(few_shot_prompt_filename,generate_contradictory_answers_with_flan,for_fever_dataset,for_wow_dataset): 
-    few_shot_prompt_for_contradictory_answers = pd.read_csv(few_shot_prompt_filename, sep="\t")
-    few_shot_prompt_for_contradictory_answers = few_shot_prompt_for_contradictory_answers[few_shot_prompt_for_contradictory_answers['Contradictory_Answer'].str.len() > 4]
+def generate_contradictory_answers(few_shot_prompt_filename: str, for_fever_dataset: bool, for_wow_dataset: bool) -> str:
+    """
+    Generates few-shot examples for contradictory answers based on the provided dataset.
 
-    if generate_contradictory_answers_with_flan:
-        few_shot_examples_for_contradictory_answers = ""
-        for row in range(len(few_shot_prompt_for_contradictory_answers)):
-            few_shot_examples_for_contradictory_answers += "Example " + str(row + 1) +":\n"
-            few_shot_examples_for_contradictory_answers += "Document: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Document'] + "\n"
-            if for_fever_dataset:
-                few_shot_examples_for_contradictory_answers += "Statement: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Query'] + "\n"
-                few_shot_examples_for_contradictory_answers += "Incorrect Answer: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Contradictory_Answer'] + "\n\n"
-            elif for_wow_dataset:
-                few_shot_examples_for_contradictory_answers += "Dialogue: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Query'] + "\n"
-                few_shot_examples_for_contradictory_answers += "Incorrect Response: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Contradictory_Answer'] + "\n\n"
-            else:
-                few_shot_examples_for_contradictory_answers += "Question: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Query'] + "\n"
-                few_shot_examples_for_contradictory_answers += "Incorrect Answer: " + few_shot_prompt_for_contradictory_answers.iloc[row]['Contradictory_Answer'] + "\n\n"
+    Args:
+        few_shot_prompt_filename (str): The filename of the TSV file containing the few-shot prompts.
+        for_fever_dataset (bool): Flag indicating if the prompts are for the FEVER dataset.
+        for_wow_dataset (bool): Flag indicating if the prompts are for the WoW dataset.
+
+    Returns:
+        str: A string containing the few-shot examples for contradictory answers.
+    """
+    # Load the few-shot prompt data
+    few_shot_prompt_for_contradictory_answers = pd.read_csv(few_shot_prompt_filename, sep="\t")
+    few_shot_prompt_for_contradictory_answers = few_shot_prompt_for_contradictory_answers[
+        few_shot_prompt_for_contradictory_answers['Contradictory_Answer'].str.len() > 4
+    ]
+
+    # Initialize the few-shot examples string
+    few_shot_examples_for_contradictory_answers = ""
+
+    for row in range(len(few_shot_prompt_for_contradictory_answers)):
+        few_shot_examples_for_contradictory_answers += f"Example {row + 1}:\n"
+        few_shot_examples_for_contradictory_answers += f"Document: {few_shot_prompt_for_contradictory_answers.iloc[row]['Document']}\n"
+        
+        if for_fever_dataset:
+            few_shot_examples_for_contradictory_answers += f"Statement: {few_shot_prompt_for_contradictory_answers.iloc[row]['Query']}\n"
+            few_shot_examples_for_contradictory_answers += f"Incorrect Answer: {few_shot_prompt_for_contradictory_answers.iloc[row]['Contradictory_Answer']}\n\n"
+        elif for_wow_dataset:
+            few_shot_examples_for_contradictory_answers += f"Dialogue: {few_shot_prompt_for_contradictory_answers.iloc[row]['Query']}\n"
+            few_shot_examples_for_contradictory_answers += f"Incorrect Response: {few_shot_prompt_for_contradictory_answers.iloc[row]['Contradictory_Answer']}\n\n"
+        else:
+            few_shot_examples_for_contradictory_answers += f"Question: {few_shot_prompt_for_contradictory_answers.iloc[row]['Query']}\n"
+            few_shot_examples_for_contradictory_answers += f"Incorrect Answer: {few_shot_prompt_for_contradictory_answers.iloc[row]['Contradictory_Answer']}\n\n"
+
     return few_shot_examples_for_contradictory_answers
 
-def generate_few_shot_prompts(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset):
+def generate_few_shot_prompts(few_shot_prompt_filename: str, for_fever_dataset: bool, for_wow_dataset: bool) -> tuple[str, int]:
+    """
+    Generates few-shot prompts for answer generation based on the provided dataset.
+
+    Args:
+        few_shot_prompt_filename (str): The filename of the TSV file containing the few-shot prompts.
+        for_fever_dataset (bool): Flag indicating if the prompts are for the FEVER dataset.
+        for_wow_dataset (bool): Flag indicating if the prompts are for the WoW dataset.
+
+    Returns:
+        tuple: A tuple containing the few-shot examples string and the length of the few-shot prompt.
+    """
+    # Load the few-shot prompt data
     answer_gen_few_shot_prompt = pd.read_csv(few_shot_prompt_filename, sep="\t")
-    answer_gen_few_shot_prompt = answer_gen_few_shot_prompt[answer_gen_few_shot_prompt['Answer_Relevance_Label'] == "[[Yes]]"]
-    answer_gen_few_shot_prompt = answer_gen_few_shot_prompt[answer_gen_few_shot_prompt['Answer_Faithfulness_Label'] == "[[Yes]]"]
-    #answer_gen_few_shot_prompt = answer_gen_few_shot_prompt[:4]
+    
+    # Filter the prompts based on relevance and faithfulness labels
+    answer_gen_few_shot_prompt = answer_gen_few_shot_prompt[
+        (answer_gen_few_shot_prompt['Answer_Relevance_Label'] == "[[Yes]]") & 
+        (answer_gen_few_shot_prompt['Answer_Faithfulness_Label'] == "[[Yes]]")
+    ]
+    
+    # Get the length of the few-shot prompt
     length_of_fewshot_prompt_answer_gen = len(answer_gen_few_shot_prompt)
+    
+    # Rename 'Query' column to 'Question' if it exists
     if "Query" in answer_gen_few_shot_prompt.columns:
         answer_gen_few_shot_prompt['Question'] = answer_gen_few_shot_prompt['Query']
-
+    
+    # Initialize the few-shot examples string
     answer_gen_few_shot_examples = ""
+    
+    # Construct the few-shot examples
     for row in range(len(answer_gen_few_shot_prompt)):
-        answer_gen_few_shot_examples += "Example " + str(row + 1) +":\n"
-        answer_gen_few_shot_examples += "Document: " + answer_gen_few_shot_prompt.iloc[row]['Document'] + "\n"
+        answer_gen_few_shot_examples += f"Example {row + 1}:\n"
+        answer_gen_few_shot_examples += f"Document: {answer_gen_few_shot_prompt.iloc[row]['Document']}\n"
+        
         if for_fever_dataset:
-            answer_gen_few_shot_examples += "Statement: " + answer_gen_few_shot_prompt.iloc[row]['Query'] + "\n"
-            answer_gen_few_shot_examples += "Answer: " + answer_gen_few_shot_prompt.iloc[row]['Answer'] + "\n\n"
+            answer_gen_few_shot_examples += f"Statement: {answer_gen_few_shot_prompt.iloc[row]['Query']}\n"
+            answer_gen_few_shot_examples += f"Answer: {answer_gen_few_shot_prompt.iloc[row]['Answer']}\n\n"
         elif for_wow_dataset:
-            answer_gen_few_shot_examples += "Dialogue: " + answer_gen_few_shot_prompt.iloc[row]['Query'] + "\n"
-            answer_gen_few_shot_examples += "Response: " + answer_gen_few_shot_prompt.iloc[row]['Answer'] + "\n\n"
+            answer_gen_few_shot_examples += f"Dialogue: {answer_gen_few_shot_prompt.iloc[row]['Query']}\n"
+            answer_gen_few_shot_examples += f"Response: {answer_gen_few_shot_prompt.iloc[row]['Answer']}\n\n"
         else:
-            answer_gen_few_shot_examples += "Question: " + answer_gen_few_shot_prompt.iloc[row]['Query'] + "\n"
-            answer_gen_few_shot_examples += "Answer: " + answer_gen_few_shot_prompt.iloc[row]['Answer'] + "\n\n"
-
-    # print("answer_gen_few_shot_examples") - CHANGED
-    # print(answer_gen_few_shot_examples) - CHANGED
+            answer_gen_few_shot_examples += f"Question: {answer_gen_few_shot_prompt.iloc[row]['Query']}\n"
+            answer_gen_few_shot_examples += f"Answer: {answer_gen_few_shot_prompt.iloc[row]['Answer']}\n\n"
+    
     return answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen
 
-##############################
+def generate_query(document: str, settings: dict) -> list:
+    """
+    Generates synthetic queries for a given document.
 
- # Save Synthetic Queries
-def save_synthetic_queries(documents, regenerate_synth_questions, flan_approach, few_shot_examples, 
-    length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
-    synthetic_query_prompt, synthetic_queries_filename, question_temperatures): 
+    Args:
+        document (str): The document text.
+        settings (dict): Dictionary containing various settings and parameters required for generating synthetic queries.
 
-    # print("documents") - CHANGED 
-    # print(len(documents)) - CHANGED
-    # print(documents.head()) - CHANGED
+    Returns:
+        list: List of generated synthetic queries.
+    """
+    return generate_synthetic_query_llm_approach(
+        document, 
+        settings['few_shot_examples'], 
+        settings['length_of_fewshot_prompt'], 
+        settings['device'], 
+        settings['tokenizer'], 
+        settings['model'], 
+        settings['percentiles'], 
+        settings['for_fever_dataset'], 
+        settings['for_wow_dataset']
+    )
 
-    if regenerate_synth_questions:
-        print("Beginning synthetic query generation!")
-        tqdm.pandas(desc="Generating synthetic queries...", total=documents.shape[0])
-        if flan_approach:
-            # Testing
-            # subset_documents = documents.head(10)  #
-            # subset_documents["synthetic_query"] = subset_documents.apply(lambda x: generate_synthetic_query_llm_approach(x["document"], few_shot_examples, length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset), axis=1)
-            # print(subset_documents[["document", "synthetic_query"]])
-            # breakpoint()
-            # synthetic_query = generate_synthetic_query_llm_approach(test_doc["document"], few_shot_examples, length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset) #
-            # print(synthetic_query)
-            documents["synthetic_query"] = documents.progress_apply(lambda x: generate_synthetic_query_llm_approach(x["document"], few_shot_examples, length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset), axis=1)
-        else:
-            documents["synthetic_query"] = documents.progress_apply(lambda x: generate_synthetic_query_openai_approach(x["document"], synthetic_query_prompt, few_shot_examples, question_temperatures, length_of_fewshot_prompt), axis=1)
-        documents = documents.explode("synthetic_query", ignore_index=True)
-        documents = documents.drop_duplicates(subset=['synthetic_query'])
-        documents.to_csv(synthetic_queries_filename, index=False, sep="\t")
-        print("Saved synthetic queries to: " + synthetic_queries_filename)
+def process_documents(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
+    """
+    Processes the documents to generate synthetic queries and remove duplicates.
 
-################################################
+    Args:
+        documents (pd.DataFrame): DataFrame containing the documents.
+        settings (dict): Dictionary containing various settings and parameters required for generating synthetic queries.
 
-# Generate synthetic queries and their answers for training set
-def Generate_Synthetic_Answers(synthetic_queries_filename,
-    regenerate_answers, flan_approach, answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, 
-    device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
-    few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio,
-    lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings): 
-    synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
-    # print("Filtered synth queries")
-    # print(len(synth_queries))
-    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
-    # print(len(synth_queries))
+    Returns:
+        pd.DataFrame: DataFrame containing the documents with the generated synthetic queries.
+    """
+    tqdm.pandas(desc="Generating synthetic queries (FLAN)...", total=documents.shape[0])
+    documents["synthetic_query"] = documents.progress_apply(
+        lambda x: generate_query(x["document"], settings), axis=1
+    )
+    documents = documents.explode("synthetic_query", ignore_index=True)
+    documents = documents.drop_duplicates(subset=['synthetic_query'])
+    return documents
 
-    if regenerate_answers:
-        print("Beginning answer generation!")
-        
-        tqdm.pandas(desc="Generating answers...", total=synth_queries.shape[0])
-        if flan_approach:
-            synth_queries["generated_answer"] = synth_queries.progress_apply(lambda x: generate_answer_llm_approach(x["document"], x["synthetic_query"], answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, device, tokenizer, model, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset), axis=1)
-        else:
-            synth_queries["generated_answer"] = synth_queries.progress_apply(lambda x: generate_answer_from_context(x["document"], x["synthetic_query"]), axis=1)
-        synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
-        print("Saved answers to: " + synthetic_queries_filename)
+def save_synthetic_queries(documents: pd.DataFrame, filename: str) -> None:
+    """
+    Saves the generated synthetic queries to a TSV file.
 
-        #################################################
+    Args:
+        documents (pd.DataFrame): DataFrame containing the documents with the generated synthetic queries.
+        filename (str): Filename to save the generated synthetic queries.
+    """
+    documents.to_csv(filename, index=False, sep="\t")
+    print("Saved synthetic queries to: " + filename)
 
-        #  for idx, row in synth_queries.iterrows():
-        #     print(f"Document: {row['document']}\nSynthetic Query: {row['synthetic_query']}\nGenerated Answer: {row['generated_answer']}\n---\n")
-        # breakpoint()
+def generate_synthetic_queries(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
+    """
+    Generate synthetic queries using the FLAN approach.
 
-        synth_queries["Answer_Faithfulness_Label"] = [check_generated_answer(synth_queries.iloc[i]['generated_answer']) for i in range(len(synth_queries))]
-        synth_queries["Answer_Relevance_Label"] = [check_generated_answer(synth_queries.iloc[i]['generated_answer']) for i in range(len(synth_queries))]
-        print("Generating contradictory answers!")
-        if generate_contradictory_answers_with_flan:
-            synth_queries = generate_contradictory_answer_examples(synth_queries, int(len(synth_queries) * number_of_contradictory_answers_added_ratio), few_shot_examples_for_contradictory_answers=few_shot_examples_for_contradictory_answers, device=device, tokenizer=tokenizer, model=model, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset)
-        else:
-            synth_queries = generate_contradictory_answer_examples(synth_queries, int(len(synth_queries) * number_of_contradictory_answers_added_ratio))
-        # print(synth_queries.columns)  # List all column names to understand the structure
-        # print(synth_queries.head()) 
-        synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
-        print("Saved answers to: " + synthetic_queries_filename)
+    Args:
+        documents (pd.DataFrame): DataFrame containing the documents for which synthetic queries are to be generated.
+        settings (dict): Dictionary containing various settings and parameters required for generating synthetic queries.
 
-    #################################################
+    Returns:
+        pd.DataFrame: DataFrame containing the documents with the generated synthetic queries.
+    """
+    print("Beginning synthetic query generation!")
+    documents = process_documents(documents, settings)
+    save_synthetic_queries(documents, settings['synthetic_queries_filename'])
+    return documents
 
-    synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
-    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
+def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings: dict) -> pd.DataFrame:
+    """
+    Generate synthetic answers using the FLAN approach.
 
-    # print("synth_queries")
-    # print(len(synth_queries))
-    # print(synth_queries.head())
+    Args:
+        synthetic_queries (pd.DataFrame): DataFrame containing the synthetic queries.
+        answer_generation_settings (dict): Dictionary containing settings and parameters for answer generation.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the synthetic queries with generated answers.
+    """
+    tqdm.pandas(desc="Generating answers...", total=synthetic_queries.shape[0])
     
+    synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
+        lambda x: generate_answer_llm_approach(
+            x["document"], 
+            x["synthetic_query"], 
+            answer_generation_settings['answer_gen_few_shot_examples'], 
+            answer_generation_settings['length_of_fewshot_prompt_answer_gen'], 
+            answer_generation_settings['device'], 
+            answer_generation_settings['tokenizer'], 
+            answer_generation_settings['model'], 
+            answer_generation_settings['for_fever_dataset'], 
+            answer_generation_settings['for_wow_dataset']
+        ), 
+        axis=1
+    )
+    
+    return synthetic_queries
 
-    if regenerate_embeddings:
+def label_answers(synthetic_queries: pd.DataFrame) -> pd.DataFrame:
+    """
+    Label the generated answers for faithfulness and relevance.
+
+    This function takes a DataFrame containing synthetic queries and their generated answers,
+    and labels each answer for faithfulness and relevance. The labels are added as new columns
+    in the DataFrame.
+
+    Args:
+        synthetic_queries (pd.DataFrame): DataFrame containing the synthetic queries and their generated answers.
+
+    Returns:
+        pd.DataFrame: DataFrame with additional columns for answer faithfulness and relevance labels.
+    """
+    # Label each generated answer for faithfulness
+    synthetic_queries["Answer_Faithfulness_Label"] = [
+        check_generated_answer(synthetic_queries.iloc[i]['generated_answer']) for i in range(len(synthetic_queries))
+    ]
+    
+    # Label each generated answer for relevance
+    synthetic_queries["Answer_Relevance_Label"] = [
+        check_generated_answer(synthetic_queries.iloc[i]['generated_answer']) for i in range(len(synthetic_queries))
+    ]
+    
+    return synthetic_queries
+
+def generate_contradictory_answers_wrapper(synthetic_queries: pd.DataFrame, answer_generation_settings: dict) -> pd.DataFrame:
+    """
+    Generate contradictory answers using the specified approach.
+
+    This function generates contradictory answers for the given synthetic queries based on the provided settings.
+
+    Args:
+        synthetic_queries (pd.DataFrame): DataFrame containing the synthetic queries.
+        answer_generation_settings (dict): Dictionary containing settings for answer generation, including:
+            - 'number_of_contradictory_answers_added_ratio' (float): Ratio to determine the number of contradictory answers to add.
+            - 'few_shot_examples_for_contradictory_answers' (list): Few-shot examples for generating contradictory answers (if applicable).
+            - 'device' (str): Device to use for model inference.
+            - 'tokenizer' (transformers.PreTrainedTokenizer): Tokenizer for the model.
+            - 'model' (transformers.PreTrainedModel): Model to use for generating answers.
+            - 'for_fever_dataset' (bool): Flag indicating if the dataset is for FEVER.
+            - 'for_wow_dataset' (bool): Flag indicating if the dataset is for WoW.
+
+    Returns:
+        pd.DataFrame: DataFrame with added contradictory answers.
+    """
+    synthetic_queries = generate_contradictory_answer_examples(
+        synthetic_queries, 
+        int(len(synthetic_queries) * answer_generation_settings['number_of_contradictory_answers_added_ratio']), 
+        few_shot_examples_for_contradictory_answers=answer_generation_settings['few_shot_examples_for_contradictory_answers'], 
+        device=answer_generation_settings['device'], 
+        tokenizer=answer_generation_settings['tokenizer'], 
+        model=answer_generation_settings['model'], 
+        for_fever_dataset=answer_generation_settings['for_fever_dataset'], 
+        for_wow_dataset=answer_generation_settings['for_wow_dataset']
+    )
+    return synthetic_queries
+
+def process_embeddings(synthetic_queries: pd.DataFrame, answer_generation_settings: dict) -> pd.DataFrame:
+    """
+    Handle embedding generation and additional negatives/positives.
+
+    This function processes the embeddings for the synthetic queries based on the provided settings.
+    It generates an index, filters the synthetic queries, and adds additional negatives and positives.
+
+    Args:
+        synthetic_queries (pd.DataFrame): DataFrame containing the synthetic queries.
+        answer_generation_settings (dict): Dictionary containing settings for answer generation, including:
+            - 'regenerate_embeddings' (bool): Flag to determine if embeddings should be regenerated.
+            - 'number_of_negatives_added_ratio' (float): Ratio to determine the number of additional negatives to add.
+            - 'lower_bound_for_negatives' (int): Lower bound for the number of negatives.
+            - 'number_of_positives_added_ratio' (float): Ratio to determine the number of additional positives to add.
+
+    Returns:
+        pd.DataFrame: DataFrame with processed embeddings and additional negatives/positives.
+    """
+    if answer_generation_settings['regenerate_embeddings']:
         print("Generating index and negatives!")
-        documentation_index = generate_index(synth_queries)
-        synth_queries = filter_synthetic_queries(synth_queries, documentation_index)
-        synth_queries = generate_additional_negatives(synth_queries, documentation_index, number_of_negatives_added_ratio, lower_bound_for_negatives)
-        synth_queries = generate_additional_positives(synth_queries, documentation_index, number_of_positives_added_ratio)
-        synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
+        documentation_index = generate_index(synthetic_queries)
+        synthetic_queries = filter_synthetic_queries(synthetic_queries, documentation_index)
+        synthetic_queries = generate_additional_negatives(
+            synthetic_queries, 
+            documentation_index, 
+            answer_generation_settings['number_of_negatives_added_ratio'], 
+            answer_generation_settings['lower_bound_for_negatives']
+        )
+        synthetic_queries = generate_additional_positives(
+            synthetic_queries, 
+            documentation_index, 
+            answer_generation_settings['number_of_positives_added_ratio']
+        )
+    return synthetic_queries
 
-    #################################################
+def shuffle_and_save(synthetic_queries: pd.DataFrame, synthetic_queries_filename: str) -> None:
+    """
+    Shuffle and save the synthetic queries to a specified file.
 
-    synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
+    This function shuffles the rows of the synthetic queries DataFrame and saves the result to a file in TSV format.
 
-    #Shuffle queries
-    synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
+    Args:
+        synthetic_queries (pd.DataFrame): The DataFrame containing synthetic queries to be shuffled and saved.
+        synthetic_queries_filename (str): The filename where the shuffled synthetic queries will be saved.
 
-    # print("Label Sets for each Metric")
-    # print(set(synth_queries['Context_Relevance_Label'].tolist()))
-    # print(set(synth_queries['Answer_Faithfulness_Label'].tolist()))
-    # print(set(synth_queries['Answer_Relevance_Label'].tolist()))
-
-    # print("synth_queries filtered")
-    # print(len(synth_queries))
-    # print(synth_queries.head())
-
-    # print("Positive and Negative Counts")
-    # print("Context Relevance")
-    # print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "Yes"]))
-    # print(len(synth_queries[synth_queries['Context_Relevance_Label'] == "No"]))
-    # print("Answer Faithfulness")
-    # print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "Yes"]))
-    # print(len(synth_queries[synth_queries['Answer_Faithfulness_Label'] == "No"]))
-    # print("Answer Relevance")
-    # print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "Yes"]))
-    # print(len(synth_queries[synth_queries['Answer_Relevance_Label'] == "No"]))
-
-    synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
-    print("Completed synthetic generation!")
-    print("Saved synthetic queries file to: " + synthetic_queries_filename)
-
-# def print_synthetic_queries(filename): 
-#     queries = pd.read_csv(filename,sep='\t')
+    Returns:
+        None
+    """
+    # Shuffle the synthetic queries DataFrame with a fixed random state for reproducibility
+    synthetic_queries = synthetic_queries.sample(n=len(synthetic_queries), random_state=42)
     
-#     for index, row in queries.head(6).iterrows(): 
-#         print(f"Document {index}: {row['document']}")
-#         print(f"Synthetic Query: {row['synthetic_query']}")
-#         print(f"Answer: {row['generated_answer']}")
-#         print("-" * 50)
+    # Save the shuffled DataFrame to a TSV file without the index
+    synthetic_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
+    
+    # Print completion messages
+    print("Completed synthetic generation!")
+    print(f"Saved synthetic queries file to: {synthetic_queries_filename}")
 
-# def synthetic_generator_config(document_filepath: str, few_shot_prompt_filename: str,
-#                                synthetic_queries_filename: str, documents_sampled: int,
-#                                flan_approach: bool = True, clean_documents: bool = False,
-#                                regenerate_synth_questions: bool = True, 
-#                                percentiles: list = [0.05, 0.25, 0.5, 0.95], 
-#                                question_temperatures: list = [2.0, 1.5, 1.0, 0.5, 0.0],
-#                                regenerate_answers: bool = True,
-#                                generate_contradictory_answers_with_flan: bool = True, 
-#                                number_of_negatives_added_ratio: float = 0.5, # Check whether can also be an int
-#                                lower_bound_for_negatives: int = 5, # Need to be an int value
-#                                number_of_contradictory_answers_added_ratio: float = 0.67, # Check whether can also be an int
-#                                number_of_positives_added_ratio: float = 0.0, # Check whether can also be an int
-#                                regenerate_embeddings: float = True, 
-#                                synthetic_query_prompt: str = "You are an expert question-answering system. You must create a question for the provided document. The question must be answerable within the context of the document.\n\n"
-#                                ): 
-#     for_fever_dataset = False
-#     if "fever" in document_filepath.lower():
-#         for_fever_dataset = True
-#     for_wow_dataset = False
-#     if "wow" in document_filepath.lower():
-#         for_wow_dataset = True
+def Generate_Synthetic_Answers(synthetic_queries_filename: str, answer_generation_settings: dict) -> None:
+    """
+    Main function to generate and save synthetic answers.
 
-#     model, model_choice, tokenizer, device = load_model(flan_approach)
+    This function reads synthetic queries from a file, processes them to generate answers,
+    labels, and contradictory answers, and then saves the results back to the file. It also
+    processes embeddings and shuffles the synthetic queries before saving.
 
-#     documents = load_documents(document_filepath, clean_documents, documents_sampled)
+    Args:
+        synthetic_queries_filename (str): The filename where the synthetic queries are stored.
+        answer_generation_settings (dict): Dictionary containing settings for answer generation, including:
+            - 'regenerate_answers' (bool): Flag to determine if answers should be regenerated.
+            - 'regenerate_embeddings' (bool): Flag to determine if embeddings should be regenerated.
+            - 'number_of_negatives_added_ratio' (float): Ratio to determine the number of additional negatives to add.
+            - 'lower_bound_for_negatives' (int): Lower bound for the number of negatives.
+            - 'number_of_positives_added_ratio' (float): Ratio to determine the number of additional positives to add.
 
-#     few_shot_examples, length_of_fewshot_prompt = load_few_shot_prompt(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset)
+    Returns:
+        None
+    """
+    # Read the synthetic queries from the specified file
+    synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
+    # Filter out queries with a length of 10 or less
+    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
 
-#     few_shot_examples_for_contradictory_answers = generate_contradictory_answers(few_shot_prompt_filename,generate_contradictory_answers_with_flan,for_fever_dataset,for_wow_dataset)
+    # Check if answers need to be regenerated
+    if answer_generation_settings['regenerate_answers']:
+        print("Beginning answer generation!")
+        # Generate answers for the synthetic queries
+        synth_queries = generate_answers(synth_queries, answer_generation_settings)
+        # Label the generated answers
+        synth_queries = label_answers(synth_queries)
+        print("Generating contradictory answers!")
+        # Generate contradictory answers
+        synth_queries = generate_contradictory_answers_wrapper(synth_queries, answer_generation_settings)
+        # Save the synthetic queries with answers back to the file
+        synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
+        print(f"Saved answers to: {synthetic_queries_filename}")
 
-#     answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen = generate_few_shot_prompts(few_shot_prompt_filename,for_fever_dataset,for_wow_dataset)
+    # Re-read the synthetic queries from the file
+    synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
+    # Filter out queries with a length of 10 or less
+    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
 
-#     save_synthetic_queries(documents, regenerate_synth_questions, flan_approach, few_shot_examples, 
-#     length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
-#     synthetic_query_prompt, synthetic_queries_filename, question_temperatures)
-
-#     Generate_Synthetic_Queries_and_Answers(synthetic_queries_filename,
-#     regenerate_answers, flan_approach, answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, 
-#     device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
-#     few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio, lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings)
-
-#     print_synthetic_queries(synthetic_queries_filename)
-
-#################################################
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--document_filepath", type=str, required=True)
-    parser.add_argument("--few_shot_prompt_filename", type=str, required=True)
-    parser.add_argument("--synthetic_queries_filename", type=str, required=True)
-    parser.add_argument("--flan_approach", type=bool, default="True", required=False)
-    parser.add_argument("--documents_sampled", type=int, required=True)
-
-    args = parser.parse_args()
-
-    ### Instructions
-
-    document_filepath = args.document_filepath
-    few_shot_prompt_filename = args.few_shot_prompt_filename
-    synthetic_queries_filename = args.synthetic_queries_filename
-    flan_approach = args.flan_approach
-    if flan_approach == "True":
-        flan_approach = True 
-    else:
-        flan_approach = False
-    documents_sampled = args.documents_sampled
-
-    ########################################################
-
-    for_fever_dataset = False
-    if "fever" in document_filepath.lower():
-        for_fever_dataset = True
-    for_wow_dataset = False
-    if "wow" in document_filepath.lower():
-        for_wow_dataset = True
-
-    regenerate_synth_questions = True
-    regenerate_answers = True
-    regenerate_embeddings = True
-
-    lower_bound_for_negatives = 20
-    number_of_negatives_added_ratio = 0.5
-    number_of_positives_added_ratio = 0.0 #0.2
-    number_of_contradictory_answers_added_ratio = 0.67
-    clean_documents = False
-
-    question_temperatures = [2.0, 1.5, 1.0, 0.5, 0.0] #[2.0, 0.9, 0.7, 0.5]
-    percentiles = [0.05, 0.25, 0.5, 0.95] #[0.01, 0.05, 0.25, 0.5, 0.95]
-    clean_few_shot_prompt_docs = False
-
-    flan_approach = True
-    generate_contradictory_answers_with_flan = True
-
-    #################################################
-
-    synthetic_query_prompt = "You are an expert question-answering system. You must create a question for the provided document. The question must be answerable within the context of the document.\n\n"
-
-    print("------------------------------------------------------------")
-    print("Document File: " + document_filepath)
-    print("Synthetic File Path: " + synthetic_queries_filename)
-    print("number_of_negatives_added_ratio: " + str(number_of_negatives_added_ratio))
-    print("number_of_positives_added_ratio: " + str(number_of_positives_added_ratio))
-    print("number_of_contradictory_answers_added_ratio: " + str(number_of_contradictory_answers_added_ratio))
-    print("clean_documents: " + str(clean_documents))
-    print("question_temperatures: " + str(question_temperatures))
-    print("percentiles: " + str(percentiles))
-    print("lower_bound_for_negatives: " + str(lower_bound_for_negatives))
-    print("for_fever_dataset: " + str(for_fever_dataset))
-    print("for_wow_dataset: " + str(for_wow_dataset))
-    print("------------------------------------------------------------")
-
-    # model, model_choice, tokenizer, device = load_model(flan_approach)
-
-    # documents = load_documents(document_filepath, clean_documents)
-
-    # few_shot_examples, length_of_fewshot_prompt = load_few_shot_prompt(few_shot_prompt_filename,for_fever_dataset)
-
-    # few_shot_examples_for_contradictory_answers = generate_contradictory_answers(few_shot_prompt_filename)
-
-    # answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen = generate_few_shot_prompts(few_shot_prompt_filename)
-
-    # save_synthetic_queries(documents, regenerate_synth_questions, flan_approach, few_shot_examples, 
-    # length_of_fewshot_prompt, device, tokenizer, model, percentiles, for_fever_dataset, for_wow_dataset, 
-    # synthetic_query_prompt, synthetic_queries_filename, question_temperatures)
-
-    # Generate_Synthetic_Queries_and_Answers(synthetic_queries_filename,
-    # regenerate_answers, flan_approach, answer_gen_few_shot_examples, length_of_fewshot_prompt_answer_gen, 
-    # device, tokenizer, model, for_fever_dataset, for_wow_dataset, generate_contradictory_answers_with_flan,
-    # number_of_contradictory_answers_added_ratio, few_shot_examples_for_contradictory_answers, number_of_negatives_added_ratio
-    # lower_bound_for_negatives, number_of_contradictory_answers_added_ratio, number_of_positives_added_ratio, regenerate_embeddings): 
-
-    ######################################################################
+    # Process embeddings for the synthetic queries
+    synth_queries = process_embeddings(synth_queries, answer_generation_settings)
+    # Shuffle and save the synthetic queries
+    shuffle_and_save(synth_queries, synthetic_queries_filename)

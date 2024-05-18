@@ -1,60 +1,76 @@
 
 
-import torch.nn as nn
-from transformers import T5Tokenizer, T5EncoderModel, T5ForConditionalGeneration
-from transformers import BertModel, AutoTokenizer, AutoModel, GPT2Tokenizer
-#import tensorflow as tf
-
-import pandas as pd
-import numpy as np
+import os
+import re
 import ast
-import datasets
-from datasets import load_metric
-from transformers import TrainingArguments, Trainer
+import json
+import time
+import random
+import argparse
+import statistics
+import warnings
+import subprocess as sp
 
+import numpy as np
+import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset as ds
 
+import torch
+import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from transformers import get_scheduler, AutoModelForCausalLM, AutoConfig, AutoModelForSequenceClassification #MptForSequenceClassification
-
-import torch
-from tqdm.auto import tqdm
-import statistics
-import time
-
-import subprocess as sp
-import os
 
 from sklearn.model_selection import train_test_split
-import json
-import random
-
-import re
-import argparse
 
 from tqdm import tqdm, tqdm_pandas
+from tqdm.auto import tqdm
 
-import warnings
-warnings.filterwarnings("ignore", message="The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers.")
-#############################################################
+from transformers import (
+    PreTrainedTokenizer, T5Tokenizer, T5EncoderModel, T5ForConditionalGeneration,
+    BertModel, AutoTokenizer, AutoModel, GPT2Tokenizer,
+    TrainingArguments, Trainer, get_scheduler,
+    AutoModelForCausalLM, AutoConfig, AutoModelForSequenceClassification
+)
+import datasets
+from datasets import load_metric
 
-def combine_query_document(query: str, document: str, answer=None):
-    cleaned_document = re.sub(r'\n+', '\n', document.replace("\r"," ").replace("\t"," ")).strip()
+warnings.filterwarnings(
+    "ignore", 
+    message=(
+        "The sentencepiece tokenizer that you are converting to a fast tokenizer "
+        "uses the byte fallback option which is not implemented in the fast tokenizers."
+    )
+)
+def combine_query_document(query: str, document: str, answer: str = None) -> str:
+    """
+    Combines a query and a document into a single string, optionally including an answer.
+
+    Parameters:
+    query (str): The query string.
+    document (str): The document string.
+    answer (str, optional): The answer string. Defaults to None.
+
+    Returns:
+    str: A combined string of the query, cleaned document, and optionally the answer.
+    """
+    # Clean the document by removing extra newlines, carriage returns, and tabs
+    cleaned_document = re.sub(r'\n+', '\n', document.replace("\r", " ").replace("\t", " ")).strip()
     cleaned_document = cleaned_document.replace("=", " ").replace("-", " ")
     cleaned_document = re.sub(r'\s+', ' ', cleaned_document).strip()
-    cleaned_document = (" ").join(cleaned_document.split(" ")[:512])
+    cleaned_document = " ".join(cleaned_document.split(" ")[:512])
 
+    # Truncate the query if it is too long
     if len(query.split(" ")) > 100:
-        query = (" ").join(query.split(" ")[:30])
+        query = " ".join(query.split(" ")[:30])
 
+    # Combine query and cleaned document, optionally including the answer
     if answer is None:
         return query + " | " + cleaned_document
     else:
         try:
             return query + " | " + cleaned_document + " | " + answer
-        except:
+        except Exception as e:
             breakpoint()
             print("Error with combine_query_document")
             print("Query: " + str(query))
@@ -62,55 +78,82 @@ def combine_query_document(query: str, document: str, answer=None):
             print("Answer: " + str(answer))
             return str(query) + " | " + str(cleaned_document) + " | " + str(answer)
 
-def format_text_for_fine_tuning_content_relevance_sequence_classification(question: str, document: str):
-    instruction = "You are an expert judge for evaluating question answering systems. "
-    instruction += "Given the following question and document, you must analyze the provided document and determine whether it is sufficient for answering the question. \n\n"
+def format_text_for_fine_tuning_content_relevance_sequence_classification(question: str, document: str) -> str:
+    """
+    Formats text for fine-tuning content relevance sequence classification.
 
-    cleaned_document = re.sub(r'\n+', '\n', document.replace("\r"," ").replace("\t"," ")).strip()
+    Parameters:
+    question (str): The question string.
+    document (str): The document string.
+
+    Returns:
+    str: A formatted string containing the instruction, question, and cleaned document.
+    """
+    instruction = (
+        "You are an expert judge for evaluating question answering systems. "
+        "Given the following question and document, you must analyze the provided document and determine whether it is sufficient for answering the question. \n\n"
+    )
+
+    # Clean the document by removing extra newlines, carriage returns, and tabs
+    cleaned_document = re.sub(r'\n+', '\n', document.replace("\r", " ").replace("\t", " ")).strip()
     cleaned_document = cleaned_document.replace("=", " ").replace("-", " ")
     cleaned_document = re.sub(r'\s+', ' ', cleaned_document).strip()
-    cleaned_document = (" ").join(cleaned_document.split(" ")[:512])
+    cleaned_document = " ".join(cleaned_document.split(" ")[:512])
 
+    # Construct the instruction string
     instruction += "### Instruction:\n"
-    instruction += "Question: " + question + "\n"
-    instruction += "Document: " + cleaned_document + "\n"
+    instruction += f"Question: {question}\n"
+    instruction += f"Document: {cleaned_document}\n"
     instruction += "### Response:\n"
 
     return instruction
 
-#############################################################
+def set_random_seed(seed: int):
+    """
+    Set the random seed for reproducibility.
 
-random_state = 42
+    Parameters:
+    seed (int): The seed value to set.
+    """
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
-np.random.seed(random_state)
-random.seed(random_state)
-torch.manual_seed(random_state)
-os.environ['PYTHONHASHSEED'] = str(random_state)
+def get_gpu_memory() -> list:
+    """
+    Retrieves the free GPU memory for each GPU available on the system.
 
-############################################################
+    This function uses the `nvidia-smi` command to query the free memory of each GPU and returns a list of free memory values.
 
-def get_gpu_memory():
+    Returns:
+    list: A list of integers representing the free memory (in MiB) for each GPU.
+    """
     command = "nvidia-smi --query-gpu=memory.free --format=csv"
     memory_free_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
-    memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+    memory_free_values = [int(x.split()[0]) for x in memory_free_info]
     return memory_free_values
 
-############################################################
-
 class CustomBERTModel(nn.Module):
-    def __init__(self, number_of_labels, model_choice):
-          self.model_choice = model_choice
-          super(CustomBERTModel, self).__init__()
-          if model_choice in ["mosaicml/mpt-7b-instruct", "mosaicml/mpt-7b"]:
+    def __init__(self, number_of_labels: int, model_choice: str):
+        """
+        Initializes the CustomBERTModel with the specified number of labels and model choice.
 
+        Args:
+            number_of_labels (int): The number of labels for the classification task.
+            model_choice (str): The choice of the pre-trained model to use.
+        """
+        self.model_choice = model_choice
+        super(CustomBERTModel, self).__init__()
+
+        if model_choice in ["mosaicml/mpt-7b-instruct", "mosaicml/mpt-7b"]:
             config = AutoConfig.from_pretrained(model_choice, trust_remote_code=True)
-            config.attn_config['attn_impl'] = 'triton'  # change this to use triton-based FlashAttention
+            config.attn_config['attn_impl'] = 'triton'  # Use triton-based FlashAttention
             config.max_seq_len = max_token_length
 
             model_encoding = AutoModelForCausalLM.from_pretrained(
                 model_choice,
                 config=config,
-                #max_seq_len=max_token_length,
                 torch_dtype=torch.bfloat16,
                 trust_remote_code=True,
                 use_auth_token=True
@@ -118,124 +161,206 @@ class CustomBERTModel(nn.Module):
             embedding_size = 4096
             self.encoderModel = model_encoding.transformer
 
-          elif model_choice in ['mosaicml/mpt-1b-redpajama-200b']:
-
-            #model_encoding = AutoModelForCausalLM.from_pretrained("mosaicml/mpt-1b-redpajama-200b", trust_remote_code=True, 
-            #                                                      torch_dtype=torch.bfloat16) #attn_impl='triton', 
-            model_encoding = MptForSequenceClassification.from_pretrained("mosaicml/mpt-1b-redpajama-200b", trust_remote_code=True)
+        elif model_choice in ['mosaicml/mpt-1b-redpajama-200b']:
+            model_encoding = MptForSequenceClassification.from_pretrained(
+                "mosaicml/mpt-1b-redpajama-200b", 
+                trust_remote_code=True
+            )
             embedding_size = 2048
             self.encoderModel = model_encoding
-          
-          elif model_choice in ["google/t5-large-lm-adapt", "google/t5-xl-lm-adapt"]:
 
+        elif model_choice in ["google/t5-large-lm-adapt", "google/t5-xl-lm-adapt"]:
             model_encoding = AutoModelForSequenceClassification.from_pretrained(model_choice)
             embedding_size = 1024
-            self.encoderModel = model_encoding#.transformer
+            self.encoderModel = model_encoding
 
-          elif model_choice in ["roberta-large", "microsoft/deberta-v3-large"]:
-
+        elif model_choice in ["roberta-large", "microsoft/deberta-v3-large"]:
             model_encoding = AutoModel.from_pretrained(model_choice)
             embedding_size = 1024
             self.encoderModel = model_encoding
 
-          elif model_choice in ["microsoft/deberta-v2-xlarge", "microsoft/deberta-v2-xxlarge"]:
-
+        elif model_choice in ["microsoft/deberta-v2-xlarge", "microsoft/deberta-v2-xxlarge"]:
             model_encoding = AutoModel.from_pretrained(model_choice)
             embedding_size = 1536
             self.encoderModel = model_encoding
-          
-          else:
 
+        else:
             model_encoding = AutoModel.from_pretrained(model_choice)
             embedding_size = 768
             self.encoderModel = model_encoding
 
-          #########################################
+        self.classifier = nn.Sequential(
+            nn.Linear(embedding_size, 256),
+            nn.Linear(256, number_of_labels)
+        )
+        self.embedding_size = embedding_size
 
-          self.classifier = nn.Sequential(nn.Linear(embedding_size, 256), nn.Linear(256, number_of_labels))
-          self.embedding_size = embedding_size
+    def forward(self, ids: torch.Tensor, mask: torch.Tensor, labels: torch.Tensor = None, 
+    decoder_input_ids: torch.Tensor = None) -> torch.Tensor:
+        """
+        Perform a forward pass through the model.
 
-########################################################
+        Parameters:
+        ids (torch.Tensor): Input IDs tensor.
+        mask (torch.Tensor): Attention mask tensor.
+        labels (torch.Tensor, optional): Labels tensor. Defaults to None.
+        decoder_input_ids (torch.Tensor, optional): Decoder input IDs tensor. Defaults to None.
 
-    def forward(self, ids, mask, labels=None, decoder_input_ids=None):
-        model_choice = self.model_choice # Possibly change this to self.model_choice = model_choice
+        Returns:
+        torch.Tensor: The output logits or classifier output.
+        """
+        # Retrieve the model choice
+        model_choice = self.model_choice
+
+        # Check if the model choice is one of the specified models
         if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt", "mosaicml/mpt-1b-redpajama-200b"]:
-            total_output = self.encoderModel(input_ids=ids, attention_mask=mask) #labels=labels
+            # Perform a forward pass for the specified models
+            total_output = self.encoderModel(input_ids=ids, attention_mask=mask)
             return total_output['logits']
         else:
+            # Perform a forward pass for other models
             total_output = self.encoderModel(ids, attention_mask=mask)
             sequence_output = total_output['last_hidden_state']
 
-            last_hidden_state_formatted = sequence_output[:,0,:].view(-1, self.embedding_size)
+            # Format the last hidden state and pass it through the classifier
+            last_hidden_state_formatted = sequence_output[:, 0, :].view(-1, self.embedding_size)
             linear2_output = self.classifier(last_hidden_state_formatted)
 
             return linear2_output
 
-############################################################
+def tokenize_function(tokenizer: AutoTokenizer, examples: dict) -> dict:
+    """
+    Tokenizes the input examples using the provided tokenizer.
 
-def tokenize_function(tokenizer, examples):
-    return tokenizer(examples["text"], padding="max_length", truncation=True) #.input_ids
+    Parameters:
+    tokenizer (AutoTokenizer): The tokenizer to use for tokenizing the examples.
+    examples (dict): A dictionary containing the text to be tokenized. 
+                     It should have a key "text" with the corresponding text data.
 
-########################################################
+    Returns:
+    dict: A dictionary containing the tokenized input with padding and truncation applied.
+    """
+    return tokenizer(examples["text"], padding="max_length", truncation=True)
 
-def checkpoints(classification_dataset, model_choice):
+def checkpoints(classification_datasets: list, model_choice: str) -> None:
+    """
+    Creates necessary checkpoint directories for the given classification datasets and model choice.
+
+    Parameters:
+    classification_datasets (list): A list of dataset names for which checkpoints need to be created.
+    model_choice (str): The model choice string used to determine the folder structure.
+
+    Returns:
+    None
+    """
     checkpoints_folder_path = "checkpoints/"
+    
+    # Create the main checkpoints directory if it doesn't exist
     if not os.path.isdir(checkpoints_folder_path):
         os.mkdir(checkpoints_folder_path)
 
-    dataset_folder_path = "checkpoints/" + model_choice.replace("/", "-")
+    # Create a directory for the specific model choice
+    dataset_folder_path = os.path.join(checkpoints_folder_path, model_choice.replace("/", "-"))
     if not os.path.isdir(dataset_folder_path):
-        print("Creating folder: " + dataset_folder_path)
+        print(f"Creating folder: {dataset_folder_path}")
         os.mkdir(dataset_folder_path)
 
+    # Create directories for each dataset within the model choice directory
     for dataset in classification_datasets:
+        dataset_path = os.path.join(dataset_folder_path, dataset.replace("../", "").replace("/", "-"))
         try:
-            os.mkdir(dataset_folder_path + "/" + dataset.replace("../", "").replace("/", "-"))
-        except:
+            os.mkdir(dataset_path)
+        except FileExistsError:
             print("Already exists")
-            print(dataset_folder_path + "/" + dataset.replace("../", "").replace("/", "-"))
+            print(dataset_path)
 
-########################################################
+def load_model(model_choice: str) -> tuple[AutoTokenizer, int]:
+    """
+    Loads the tokenizer for the specified model choice and sets the maximum token length.
 
-def load_model(model_choice):
+    Parameters:
+    model_choice (str): The model identifier to load the tokenizer from.
+
+    Returns:
+    tuple: A tuple containing the tokenizer and the maximum token length.
+           - tokenizer (AutoTokenizer): The tokenizer loaded from the specified model.
+           - max_token_length (int): The maximum token length set for the tokenizer.
+    """
     max_token_length = 2048
     tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
     
     return tokenizer, max_token_length
 
-########################################################
+def prepare_and_clean_data(params: dict) -> tuple[str, int]:
+    """
+    Prepares and cleans data based on the provided parameters.
 
-def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate, model_choice, 
-                number_of_runs, validation_set_scoring, 
-                label_column, validation_set, patience_value, 
-                num_epochs, num_warmup_steps, gradient_accumulation_multiplier, 
-                assigned_batch_size, tokenizer): 
+    Parameters:
+    params (dict): A dictionary containing the following keys:
+        - "training_dataset_path" (str): Path to the training dataset.
+        - "learning_rate_choices" (list): List of possible learning rates.
+        - "chosen_learning_rate" (float): The chosen learning rate for the model.
+        - "model_choice" (str): The model identifier.
+        - "number_of_runs" (int): Number of runs for the training.
+        - "validation_set_scoring" (str): Scoring method for the validation set.
+        - "label" (str): The label column name in the dataset.
+        - "validation_dataset_path" (str): Path to the validation dataset.
+        - "patience_value" (int): Patience value for early stopping.
+        - "num_epochs" (int): Number of epochs for training.
+        - "num_warmup_steps" (int): Number of warmup steps for the learning rate scheduler.
+        - "gradient_accumulation_multiplier" (int): Multiplier for gradient accumulation.
+        - "assigned_batch_size" (int): Batch size assigned for training.
+        - "tokenizer" (AutoTokenizer): Tokenizer to be used.
 
+    Returns:
+    tuple: A tuple containing:
+        - checkpoint_path (str): Path to the checkpoint file.
+        - patience_value (int): The patience value for early stopping.
+    """
+    # Extract parameters from the dictionary
+    dataset = params["training_dataset_path"]
+    learning_rate_choices = params["learning_rate_choices"]
+    chosen_learning_rate = params["chosen_learning_rate"]
+    model_choice = params["model_choice"]
+    number_of_runs = params["number_of_runs"]
+    validation_set_scoring = params["validation_set_scoring"]
+    label_column = params["label"]
+    validation_set = params["validation_dataset_path"]
+    patience_value = params["patience_value"]
+    num_epochs = params["num_epochs"]
+    num_warmup_steps = params["num_warmup_steps"]
+    gradient_accumulation_multiplier = params["gradient_accumulation_multiplier"]
+    assigned_batch_size = params["assigned_batch_size"]
+    tokenizer = params["tokenizer"]
+
+    # Log the start of a new learning rate
     print("--------------------------------------------------------------------------")
     print("Starting new learning rate: " + str(chosen_learning_rate))
     print("--------------------------------------------------------------------------")
 
-    import datetime
-
+    # Generate current datetime for checkpoint naming
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
+    # Define parent directory for checkpoints
     parent_dir = "checkpoints/" + model_choice.replace("/", "-")
 
+    # Create parent directory if it doesn't exist
     if not os.path.exists(parent_dir):
         print(f"Creating parent checkpoint directory: {parent_dir}")
         print("--------------------------------------------------------------------------")
         os.makedirs(parent_dir)
 
-    checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + current_datetime + ".pt"
+    # Define the checkpoint path
+    checkpoint_path = os.path.join(
+        "checkpoints",
+        model_choice.replace("/", "-"),
+        f"{label_column}_{os.path.basename(validation_set).replace('.tsv', '')}_{current_datetime}.pt"
+    )
 
-    # checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
-    # checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
-
-    # checkpoint_path = "checkpoints/" + model_choice.replace("/", "-") + "/" + dataset.replace("../", "").replace("/", "-") + "/" + str(chosen_learning_rate) + "_"
-    # checkpoint_path += str(number_of_runs) + "_" + str(validation_set_scoring) + "_" + label_column + "_" + str(validation_set.split("/")[-1].replace(".tsv", "")) + "_" + str(random_int) + ".pt"
-    
+    # Record the start time of execution
     execution_start = time.time()
 
+    # Log various parameters
     print("Dataset: " + dataset)
     print("Model: " + model_choice)
     print("Test Set Selection: " + validation_set)
@@ -250,77 +375,110 @@ def prepare_and_clean_data(dataset, learning_rate_choices, chosen_learning_rate,
 
     return checkpoint_path, patience_value
 
-########################################################
+def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoTokenizer, max_token_length: int) -> pd.DataFrame:
+    """
+    Analyzes and reports data from a given dataset.
 
-def analyze_and_report_data(dataset, label_column, tokenizer, max_token_length): 
+    Parameters:
+    - dataset (str): Path to the dataset file.
+    - label_column (str): The column name in the dataset that contains the labels.
+    - tokenizer: Tokenizer object used for encoding text.
+    - max_token_length (int): Maximum token length allowed for the text.
 
+    Returns:
+    - pd.DataFrame: A DataFrame containing the processed and filtered data.
+    """
+
+    # Read the dataset
     synth_queries = pd.read_csv(dataset, sep="\t")
     
+    # If the dataset is reformatted, rename columns accordingly
     if "nq_reformatted" in dataset:
         synth_queries['synthetic_query'] = synth_queries['Query']
         synth_queries['generated_answer'] = synth_queries['Answer']
         synth_queries['document'] = synth_queries['Document']
 
-    # print("Positive and Negative Label Count")
-    # print(synth_queries[label_column].tolist().count("Yes"))
-    # print(synth_queries[label_column].tolist().count("No"))
-    # print(set(synth_queries[label_column].tolist()))
-    
+    # Filter out rows with NaN values in the specified columns
     synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
     synth_queries = synth_queries[synth_queries["synthetic_query"].notna()]
     synth_queries = synth_queries[synth_queries["document"].notna()]
     synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
     synth_queries = synth_queries[synth_queries[label_column].notna()]
-    synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
-    #synth_queries = synth_queries[:40000]
 
-    # print("Number of unique questions")
-    # print(len(set(synth_queries['synthetic_query'].tolist())))
-    # print("Positive and Negative Label Count")
-    # print(synth_queries[label_column].tolist().count("Yes"))
-    # print(synth_queries[label_column].tolist().count("No"))
-    # print(set(synth_queries[label_column].tolist()))
-    
+    # Shuffle the dataset
+    synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
+
+    # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
-        synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document']) for i in range(len(synth_queries))]
+        synth_queries["concat_text"] = [
+            combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document']) 
+            for i in range(len(synth_queries))
+        ]
     else:
-        synth_queries["concat_text"] = [combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer']) for i in range(len(synth_queries))]
-    synth_queries['token_length'] = [len(tokenizer.encode(text, return_tensors='pt')[0]) for text in tqdm(synth_queries['concat_text'], desc="Tokenizing")]
+        synth_queries["concat_text"] = [
+            combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer']) 
+            for i in range(len(synth_queries))
+        ]
+
+    # Tokenize the concatenated text and calculate token lengths
+    synth_queries['token_length'] = [
+        len(tokenizer.encode(text, return_tensors='pt')[0]) 
+        for text in tqdm(synth_queries['concat_text'], desc="Tokenizing")
+    ]
+
+    # Remove duplicate rows based on the concatenated text
     synth_queries = synth_queries.drop_duplicates(["concat_text"])
 
-    # print("Max token length")
-    # print(synth_queries['token_length'].max())
-    # print("Total inputs over max token length set of " + str(max_token_length))
-    # print(len(synth_queries[synth_queries['token_length'] > max_token_length]))
-
+    # Filter out rows where token length exceeds the maximum allowed token length
     synth_queries = synth_queries[synth_queries['token_length'] <= 2048]
 
     return synth_queries
 
-########################################################
+def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_column: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Transforms the synthetic queries and validation set for training and testing.
 
-def transform_data(synth_queries, validation_set, label_column):
+    Parameters:
+    - synth_queries (pd.DataFrame): DataFrame containing synthetic queries.
+    - validation_set (str): Path to the validation set file.
+    - label_column (str): The column name used for labeling.
 
+    Returns:
+    - tuple: A tuple containing the transformed training and test DataFrames.
+    """
+
+    # Initialize the training DataFrame
     train_df = synth_queries
 
+    # Read and preprocess the validation set
     test_set = pd.read_csv(validation_set, sep="\t")
     test_set['Question'] = test_set['Query']
     test_set['Document'] = test_set['Document'].str.strip()
     test_set = test_set[test_set["Document"].str.len() > 100]
     test_set = test_set[test_set[label_column].notna()]
 
+    # Preprocess the training DataFrame
     train_df['document'] = train_df['document'].astype(str).str.strip()
     train_df = train_df[train_df["document"].str.len() > 100]
     train_df = train_df[train_df[label_column].notna()]
 
+    # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
-        test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document']) for i in range(len(test_set))]
+        test_set['concat_text'] = [
+            combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document']) 
+            for i in range(len(test_set))
+        ]
     else:
-        test_set['concat_text'] = [combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) for i in range(len(test_set))]
+        test_set['concat_text'] = [
+            combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) 
+            for i in range(len(test_set))
+        ]
 
+    # Remove duplicate rows based on the concatenated text
     train_df = train_df.drop_duplicates(["concat_text"])
     test_set = test_set.drop_duplicates(["concat_text"])
 
+    # Additional filtering for Answer_Faithfulness classification
     if "Faith" in label_column:
         print("Refining data for Answer_Faithfulness classification!")
         train_df = train_df[train_df["Context_Relevance_Label"].notna()]
@@ -331,183 +489,253 @@ def transform_data(synth_queries, validation_set, label_column):
 
     return train_df, test_set
 
-########################################################
+def split_dataset(train_df: pd.DataFrame, dataset: str, 
+test_set: pd.DataFrame, label_column: str) -> tuple[list[str], list[int], list[str], list[int], list[str], list[int], list[int]]:
+    """
+    Splits the dataset into training, development, and test sets, and extracts the corresponding labels.
 
-def split_dataset(train_df, dataset, test_set, label_column):
+    Parameters:
+    - train_df (pd.DataFrame): DataFrame containing the training data.
+    - dataset (str): Name of the dataset.
+    - test_set (pd.DataFrame): DataFrame containing the test data.
+    - label_column (str): The column name used for labeling.
+
+    Returns:
+    - tuple: A tuple containing:
+        - train_set_text (list): List of concatenated text fields for the training set.
+        - train_set_label (list): List of labels for the training set.
+        - dev_set_text (list): List of concatenated text fields for the development set.
+        - dev_set_label (list): List of labels for the development set.
+        - test_set_text (list): List of concatenated text fields for the test set.
+        - test_set_label (list): List of labels for the test set.
+        - labels_list (list): Sorted list of unique labels.
+    """
+    
+    # Conversion dictionary for binary classification
     conversion_dict = {"Yes": 1, "No": 0}
+    
+    # Extract concatenated text fields for the training set
     train_set_text = [train_df.iloc[i]['concat_text'] for i in range(len(train_df))]
+    
+    # Extract labels for the training set
     if "nq_reformatted" not in dataset:
         train_set_label = [conversion_dict[train_df.iloc[i][label_column]] for i in range(len(train_df))]
     else:
         train_set_label = [int(train_df.iloc[i][label_column]) for i in range(len(train_df))]
     
-    #dev_set_text = [validation_df.iloc[i]['concat_text'] for i in range(len(validation_df))]
-    #dev_set_label = [conversion_dict[validation_df.iloc[i]['Label']] for i in range(len(validation_df))]
+    # Extract concatenated text fields and labels for the development set
     dev_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
     dev_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
     
-    #test_set_text = [test_df.iloc[i]['concat_text'] for i in range(len(test_df))]
-    #test_set_label = [conversion_dict[test_df.iloc[i]['Label']] for i in range(len(test_df))]
+    # Extract concatenated text fields and labels for the test set
     test_set_text = [test_set.iloc[i]['concat_text'] for i in range(len(test_set))]
     test_set_label = [int(test_set.iloc[i][label_column]) for i in range(len(test_set))]
 
-    print('---------------------------------------------------')
-    # print("Lengths of train, dev, and test")
-    # print(len(train_set_text))
-    # print(len(dev_set_text))
-    # print(len(test_set_text))
-    # print("Training example")
-    # print(train_set_text[100])
-    # print('---------------------------------------------------')
-    # print(train_set_label[100])
-    # print('---------------------------------------------------')
-
+    # Create a sorted list of unique labels
     labels_list = sorted(list(set(train_set_label + dev_set_label + test_set_label)))
-
-    # print("Label List")
-    # print(labels_list)
-    # print(set(train_set_label))
-    # print(set(dev_set_label))
-    # print(set(test_set_label))
 
     return train_set_text, train_set_label, dev_set_text, dev_set_label, test_set_text, test_set_label, labels_list
 
     ############################################################
 
-def prepare_dataset(validation_set_scoring, train_set_label, train_set_text, dev_set_label, dev_set_text):
-    if validation_set_scoring == True:
+def prepare_dataset(validation_set_scoring: bool, 
+                    train_set_label: list[int], 
+                    train_set_text: list[str], 
+                    dev_set_label: list[int], 
+                    dev_set_text: list[str], 
+                    test_set_label: list[int] = None, 
+                    test_set_text: list[str] = None) -> tuple[pd.DataFrame, datasets.Dataset, datasets.Dataset, datasets.Dataset, pd.DataFrame]:
+    """
+    Prepares the dataset for training, validation, and testing by converting them into pandas DataFrames and Arrow tables.
 
-        training_dataset_pandas = pd.DataFrame({'label': train_set_label, 'text': train_set_text})#[:100]
-        training_dataset_arrow = pa.Table.from_pandas(training_dataset_pandas)
-        training_dataset_arrow = datasets.Dataset(training_dataset_arrow)
+    Parameters:
+    - validation_set_scoring (bool): Flag to determine if validation set scoring is enabled.
+    - train_set_label (list[int]): List of labels for the training set.
+    - train_set_text (list[str]): List of text data for the training set.
+    - dev_set_label (list[int]): List of labels for the development set.
+    - dev_set_text (list[str]): List of text data for the development set.
+    - test_set_label (list[int], optional): List of labels for the test set. Required if validation_set_scoring is False.
+    - test_set_text (list[str], optional): List of text data for the test set. Required if validation_set_scoring is False.
 
-        validation_dataset_pandas = pd.DataFrame({'label': dev_set_label, 'text': dev_set_text})#[:100]
-        validation_dataset_arrow = pa.Table.from_pandas(validation_dataset_pandas)
-        validation_dataset_arrow = datasets.Dataset(validation_dataset_arrow)
+    Returns:
+    - tuple: A tuple containing:
+        - training_dataset_pandas (pd.DataFrame): DataFrame for the training set.
+        - training_dataset_arrow (datasets.Dataset): Arrow table for the training set.
+        - validation_dataset_arrow (datasets.Dataset): Arrow table for the validation set.
+        - test_dataset_arrow (datasets.Dataset): Arrow table for the test set.
+        - test_dataset_pandas (pd.DataFrame): DataFrame for the test set.
+    """
+    
+    if validation_set_scoring:
+        # Prepare training dataset
+        training_dataset_pandas = pd.DataFrame({'label': train_set_label, 'text': train_set_text})
+        training_dataset_arrow = datasets.Dataset(pa.Table.from_pandas(training_dataset_pandas))
 
+        # Prepare validation dataset
+        validation_dataset_pandas = pd.DataFrame({'label': dev_set_label, 'text': dev_set_text})
+        validation_dataset_arrow = datasets.Dataset(pa.Table.from_pandas(validation_dataset_pandas))
+
+        # Prepare test dataset
         test_dataset_pandas = pd.DataFrame({'label': dev_set_label, 'text': dev_set_text})
-        test_dataset_arrow = pa.Table.from_pandas(test_dataset_pandas)
-        test_dataset_arrow = datasets.Dataset(test_dataset_arrow)
-
+        test_dataset_arrow = datasets.Dataset(pa.Table.from_pandas(test_dataset_pandas))
     else:
+        # Prepare training dataset
+        training_dataset_pandas = pd.DataFrame({'label': train_set_label, 'text': train_set_text})
+        training_dataset_arrow = datasets.Dataset(pa.Table.from_pandas(training_dataset_pandas))
 
-        training_dataset_pandas = pd.DataFrame({'label': train_set_label, 'text': train_set_text})#[:1000]
-        training_dataset_arrow = pa.Table.from_pandas(training_dataset_pandas)
-        training_dataset_arrow = datasets.Dataset(training_dataset_arrow)
+        # Prepare validation dataset
+        validation_dataset_pandas = pd.DataFrame({'label': dev_set_label, 'text': dev_set_text})
+        validation_dataset_arrow = datasets.Dataset(pa.Table.from_pandas(validation_dataset_pandas))
 
-        validation_dataset_pandas = pd.DataFrame({'label': dev_set_label, 'text': dev_set_text})#[:1000]
-        validation_dataset_arrow = pa.Table.from_pandas(validation_dataset_pandas)
-        validation_dataset_arrow = datasets.Dataset(validation_dataset_arrow)
-
+        # Prepare test dataset
         test_dataset_pandas = pd.DataFrame({'label': test_set_label, 'text': test_set_text})
-        test_dataset_arrow = pa.Table.from_pandas(test_dataset_pandas)
-        test_dataset_arrow = datasets.Dataset(test_dataset_arrow)
+        test_dataset_arrow = datasets.Dataset(pa.Table.from_pandas(test_dataset_pandas))
 
     return training_dataset_pandas, training_dataset_arrow, validation_dataset_arrow, test_dataset_arrow, test_dataset_pandas
 
+def initalize_dataset_for_tokenization(tokenizer: PreTrainedTokenizer, 
+                                      training_dataset_arrow: datasets.Dataset, 
+                                      validation_dataset_arrow: datasets.Dataset, 
+                                      test_dataset_arrow: datasets.Dataset) -> datasets.DatasetDict:
+    """
+    Initializes and tokenizes the dataset for training, validation, and testing.
 
-def initalize_dataset_for_tokenization(tokenizer, training_dataset_arrow, validation_dataset_arrow, test_dataset_arrow):
+    Parameters:
+    - tokenizer (PreTrainedTokenizer): The tokenizer to be used for tokenizing the text data.
+    - training_dataset_arrow (datasets.Dataset): Arrow table for the training set.
+    - validation_dataset_arrow (datasets.Dataset): Arrow table for the validation set.
+    - test_dataset_arrow (datasets.Dataset): Arrow table for the test set.
 
-    classification_dataset = datasets.DatasetDict({'train' : training_dataset_arrow, 
-                                    'validation': validation_dataset_arrow, 
-                                    'test' : test_dataset_arrow})
+    Returns:
+    - datasets.DatasetDict: A dictionary containing the tokenized datasets for training, validation, and testing.
+    """
     
+    # Create a DatasetDict with the provided datasets
+    classification_dataset = datasets.DatasetDict({
+        'train': training_dataset_arrow, 
+        'validation': validation_dataset_arrow, 
+        'test': test_dataset_arrow
+    })
+    
+    # Tokenize the datasets
     tokenized_datasets = classification_dataset.map(lambda examples: tokenize_function(tokenizer, examples), batched=True)
 
+    # Remove the 'text' column as it is no longer needed after tokenization
     tokenized_datasets = tokenized_datasets.remove_columns(["text"])
+    
+    # Rename the 'label' column to 'labels' to match the expected input format for the model
     tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
+    
+    # Set the format of the datasets to PyTorch tensors
     tokenized_datasets.set_format("torch")
 
     return tokenized_datasets
 
     ############################################################
 
-def train_and_evaluate_model(number_of_runs, tokenized_datasets, assigned_batch_size, train_set_label, model_choice, chosen_learning_rate, 
-                            device, checkpoint_path, patience_value, num_epochs, num_warmup_steps, gradient_accumulation_multiplier): 
+def train_and_evaluate_model(params: dict) -> tuple[list[torch.nn.Module], list[float], list[float], list[float]]:
+    """
+    Trains and evaluates a model based on the provided parameters.
 
+    Parameters:
+    - params (dict): A dictionary containing the following keys:
+        - number_of_runs (int): Number of training runs.
+        - tokenized_datasets (datasets.DatasetDict): Tokenized datasets for training, validation, and testing.
+        - assigned_batch_size (int): Batch size for training and evaluation.
+        - train_set_label (list): Labels for the training set.
+        - model_choice (str): Model choice identifier.
+        - chosen_learning_rate (float): Learning rate for the optimizer.
+        - device (torch.device): Device to run the model on (e.g., 'cpu' or 'cuda').
+        - checkpoint_path (str): Path to save the model checkpoints.
+        - patience_value (int): Patience value for early stopping.
+        - num_epochs (int): Number of epochs for training.
+        - num_warmup_steps (int): Number of warmup steps for the learning rate scheduler.
+        - gradient_accumulation_multiplier (int): Gradient accumulation steps.
+
+    Returns:
+    - tuple: A tuple containing the trained model, average training losses, average validation losses, evaluation dataloader, and inference times.
+    """
+    
+    # Extract parameters from the dictionary
+    number_of_runs = params["number_of_runs"]
+    tokenized_datasets = params["tokenized_datasets"]
+    assigned_batch_size = params["assigned_batch_size"]
+    train_set_label = params["train_set_label"]
+    model_choice = params["model_choice"]
+    chosen_learning_rate = params["chosen_learning_rate"]
+    device = params["device"]
+    checkpoint_path = params["checkpoint_path"]
+    patience_value = params["patience_value"]
+    num_epochs = params["num_epochs"]
+    num_warmup_steps = params["num_warmup_steps"]
+    gradient_accumulation_multiplier = params["gradient_accumulation_multiplier"]
+
+    # Initialize lists to store metrics
     micro_averages = []
     macro_averages = []
     inference_times = []
 
-    for i in range(0, number_of_runs):
-
+    for i in range(number_of_runs):
         run_start = time.time()
-
         print("Loading Model")
 
+        # Create dataloaders for training, validation, and evaluation
         train_dataloader = DataLoader(tokenized_datasets['train'], batch_size=assigned_batch_size)
         validation_dataloader = DataLoader(tokenized_datasets['validation'], batch_size=assigned_batch_size)
         eval_dataloader = DataLoader(tokenized_datasets['test'], batch_size=assigned_batch_size)
 
-        # print("Number of labels: " + str(len(set(train_set_label))))
-
-        ############################################################
-
+        # Initialize the model and move it to the specified device
         model = CustomBERTModel(len(set(train_set_label)), model_choice)
-
         model.to(device)
 
-        ############################################################
-
+        # Define the loss function and optimizer
         criterion = nn.CrossEntropyLoss()
         optimizer = Adam(model.parameters(), lr=chosen_learning_rate)
 
+        # Calculate the total number of training steps and initialize the learning rate scheduler
         num_training_steps = num_epochs * len(train_dataloader)
-
         lr_scheduler = get_scheduler(
             name="linear", optimizer=optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps
         )
 
-        ############################################################
-
-        # to track the training loss as the model trains
+        # Initialize lists to store losses
         train_losses = []
-        # to track the validation loss as the model trains
         valid_losses = []
-        # to track the average training loss per epoch as the model trains
         avg_train_losses = []
-        # to track the average validation loss per epoch as the model trains
         avg_valid_losses = []
 
-        # import EarlyStopping
+        # Import EarlyStopping utility
         from ares.LLM_as_a_Judge_Adaptation.pytorchtools import EarlyStopping
 
-        # initialize the early_stopping object
+        # Initialize early stopping
         early_stopping = EarlyStopping(patience=patience_value, verbose=True, path=checkpoint_path)
-        #early_stopping = EarlyStopping(patience=10, verbose=True)
-
         print("Checkpoint Path: " + checkpoint_path)
-
         print("Beginning Training")
 
         total_epochs_performed = 0
 
         for epoch in range(num_epochs):
-
             total_epochs_performed += 1
-
             print("Current Epoch: " + str(epoch))
 
             progress_bar = tqdm(range(len(train_dataloader)))
-
             gradient_accumulation_count = 0
-
             model.train()
             for batch in train_dataloader:
-
+                # Prepare the batch for the model
                 if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
                     new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
                 else:
                     new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
 
+                # Forward pass
                 outputs = model(**new_batch)
-
                 loss = criterion(outputs, batch['labels'].to(device))
-
                 loss.backward()
 
+                # Gradient accumulation
                 gradient_accumulation_count += 1
-                if gradient_accumulation_count % (gradient_accumulation_multiplier) == 0:
+                if gradient_accumulation_count % gradient_accumulation_multiplier == 0:
                     optimizer.step()
                     lr_scheduler.step()
                     optimizer.zero_grad()
@@ -515,164 +743,144 @@ def train_and_evaluate_model(number_of_runs, tokenized_datasets, assigned_batch_
                 progress_bar.update(1)
                 train_losses.append(loss.item())
 
-            ######################################################
-
             progress_bar = tqdm(range(len(validation_dataloader)))
-
             model.eval()
             for batch in validation_dataloader:
-
                 with torch.no_grad():
-                
+                    # Prepare the batch for the model
                     if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
                         new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
                     else:
                         new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
 
                     if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
-                        new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device), 
+                        new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
 
+                    # Forward pass
                     outputs = model(**new_batch)
-
                     loss = criterion(outputs, batch['labels'].to(device))
                     progress_bar.update(1)
-
                     valid_losses.append(loss.item())
 
-            # print training/validation statistics 
-            # calculate average loss over an epoch
+            # Calculate average losses
             train_loss = np.average(train_losses)
             valid_loss = np.average(valid_losses)
             avg_train_losses.append(train_loss)
             avg_valid_losses.append(valid_loss)
-            
+
+            # Print epoch summary
             epoch_len = len(str(num_epochs))
-            
             print_msg = (f'[{epoch:>{epoch_len}}/{num_epochs:>{epoch_len}}] ' +
-                        f'train_loss: {train_loss:.5f} ' +
-                        f'valid_loss: {valid_loss:.5f}')
-            
+                         f'train_loss: {train_loss:.5f} ' +
+                         f'valid_loss: {valid_loss:.5f}')
             print(print_msg)
-            
-            # clear lists to track next epoch
+
+            # Reset losses for the next epoch
             train_losses = []
             valid_losses = []
-            
-            # early_stopping needs the validation loss to check if it has decresed, 
-            # and if it has, it will make a checkpoint of the current model
             early_stopping(valid_loss, model)
-            
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
-            
-        return model, avg_train_losses, avg_valid_losses, eval_dataloader, inference_times
+
+    return model, avg_train_losses, avg_valid_losses, eval_dataloader, inference_times
 
         ############################################################
 
-def evaluate_model(model, model_choice, checkpoint_path, device, eval_dataloader, inference_times):
+def evaluate_model(model: torch.nn.Module, model_choice: str, checkpoint_path: str, 
+device: torch.device, eval_dataloader: DataLoader, inference_times: list) -> tuple:
+    """
+    Evaluates the given model on the evaluation dataset.
 
-        print("Loading the Best Model")
+    Parameters:
+    - model (torch.nn.Module): The model to be evaluated.
+    - model_choice (str): The choice of model architecture.
+    - checkpoint_path (str): Path to the model checkpoint to load.
+    - device (torch.device): The device to run the evaluation on (e.g., 'cuda:0').
+    - eval_dataloader (DataLoader): DataLoader for the evaluation dataset.
+    - inference_times (list): List to store inference times.
 
-        model.load_state_dict(torch.load(checkpoint_path))
+    Returns:
+    - tuple: A tuple containing total predictions, total references, and the evaluation metric.
+    """
+
+    print("Loading the Best Model")
+    model.load_state_dict(torch.load(checkpoint_path))
+
+    print("Beginning Evaluation")
+    metric = load_metric("accuracy")
+
+    total_predictions = torch.FloatTensor([]).to(device)
+    total_references = torch.FloatTensor([]).to(device)
+
+    inference_start = time.time()
+
+    progress_bar = tqdm(range(len(eval_dataloader)))
+    for batch in eval_dataloader:
+        with torch.no_grad():
+            # Prepare the batch for the model
+            if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
+                new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
+            else:
+                new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
+
+            if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
+                new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+
+            # Forward pass
+            outputs = model(**new_batch)
+
+            logits = outputs
+            predictions = torch.argmax(logits, dim=-1)
+            metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+
+            total_predictions = torch.cat((total_predictions, predictions), 0)
+            total_references = torch.cat((total_references, batch['labels'].to(device)), 0)
+
+            progress_bar.update(1)
+
+    inference_end = time.time()
+    total_inference_time = inference_end - inference_start
+    inference_times.append(total_inference_time)
+
+    return total_predictions, total_references, metric
 
         ############################################################
 
-        print("Beginning Evaluation")
+def print_and_save_model(total_predictions: torch.Tensor, total_references: torch.Tensor, checkpoint_path: str, metric) -> None:
+    """
+    Prints the shapes of the predictions and references, computes and prints the accuracy and F1 scores,
+    and saves the classification checkpoint.
 
-        metric = load_metric("accuracy")
+    Args:
+    - total_predictions (torch.Tensor): Tensor containing the model's predictions.
+    - total_references (torch.Tensor): Tensor containing the true labels.
+    - checkpoint_path (str): Path to save the classification checkpoint.
+    - metric: Metric object used to compute the accuracy.
 
-        total_predictions = torch.FloatTensor([]).to(device)
-        total_references = torch.FloatTensor([]).to(device)
+    Returns:
+    - None
+    """
+    print("--------------------------")
+    print("Predictions and Reference Shapes")
+    print(total_predictions.shape)
+    print(total_references.shape)
 
-        inference_start = time.time()
+    # Compute and print accuracy
+    results = metric.compute(references=total_references, predictions=total_predictions)
+    print("Accuracy for Test Set: " + str(results['accuracy']))
 
-        ############################################################
+    # Compute and print F1 scores
+    f_1_metric = load_metric("f1", trust_remote_code=True)
+    macro_f_1_results = f_1_metric.compute(average='macro', references=total_references, predictions=total_predictions)
+    print("Macro F1 for Test Set: " + str(macro_f_1_results['f1'] * 100))
+    micro_f_1_results = f_1_metric.compute(average='micro', references=total_references, predictions=total_predictions)
+    print("Micro F1 for Test Set: " + str(micro_f_1_results['f1'] * 100))
 
-        progress_bar = tqdm(range(len(eval_dataloader)))
-        for batch in eval_dataloader:
+    # Compute and print positive/negative reference ratio
+    positive_ratio = round(total_references.tolist().count(1) / len(total_references.tolist()), 3)
+    print("Positive / Negative Reference Ratio: " + str(positive_ratio))
 
-            with torch.no_grad():
+    # Print checkpoint save path
+    print("Saved classification checkpoint to: " + str(checkpoint_path))
 
-                if model_choice in ["mosaicml/mpt-1b-redpajama-200b"]:
-                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].bool().to(device)}
-                else:
-                    new_batch = {'ids': batch['input_ids'].to(device), 'mask': batch['attention_mask'].to(device)}
-
-                if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
-                    new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
-
-                outputs = model(**new_batch)
-
-                logits = outputs
-                predictions = torch.argmax(logits, dim=-1)
-                metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
-
-                total_predictions = torch.cat((total_predictions, predictions), 0)
-                total_references = torch.cat((total_references, batch['labels'].to(device)), 0)
-
-                progress_bar.update(1)
-
-        ############################################################
-
-        inference_end = time.time()
-        total_inference_time = inference_end - inference_start
-        inference_times.append(total_inference_time)
-
-        return total_predictions, total_references, metric
-
-        ############################################################
-
-def print_and_save_model(total_predictions, total_references, checkpoint_path, metric):
-        print("--------------------------")
-        print("Predictions and Reference Shapes")
-        print(total_predictions.shape)
-        print(total_references.shape)
-
-        results = metric.compute(references=total_references, predictions=total_predictions)
-        print("Accuracy for Test Set: " + str(results['accuracy']))
-
-        f_1_metric = load_metric("f1", trust_remote_code=True)
-        macro_f_1_results = f_1_metric.compute(average='macro', references=total_references, predictions=total_predictions)
-        print("Macro F1 for Test Set: " + str(macro_f_1_results['f1'] * 100))
-        micro_f_1_results = f_1_metric.compute(average='micro', references=total_references, predictions=total_predictions)
-        print("Micro F1 for Test Set: " + str(micro_f_1_results['f1']  * 100))
-
-        print("Positive / Negative Reference Ratio: " + str(round(total_references.tolist().count(1) / len(total_references.tolist()), 3)))
-
-        print("Saved classification checkpoint to: " + str(checkpoint_path))
-
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--classification_dataset", type=str, required=True)
-    parser.add_argument("--test_set_selection", type=str, required=True)
-    parser.add_argument("--label_column", type=str, required=True)
-    parser.add_argument("--num_epochs", type=int, required=True)
-    parser.add_argument("--patience_value", type=int, required=True)
-    parser.add_argument("--learning_rate", type=float, required=True)
-
-    args = parser.parse_args()
-
-    classification_datasets = [args.classification_dataset] # 
-    test_set_selection = args.test_set_selection #
-    label_column = args.label_column # 
-    num_epochs = args.num_epochs # 
-    patience_value = args.patience_value # 
-    learning_rate_choices = [args.learning_rate] # 
-
-    ### Instructions
-
-    device = "cuda:0"
-    device = torch.device(device)
-
-    validation_set_scoring = True # 
-    assigned_batch_size = 1
-    gradient_accumulation_multiplier = 32
-
-    number_of_runs = 1 # 
-    num_warmup_steps = 100 #
-
-    ############################################################
