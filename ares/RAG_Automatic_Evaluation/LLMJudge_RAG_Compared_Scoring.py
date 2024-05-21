@@ -270,7 +270,10 @@ def calculate_ppi(Y_labeled: np.ndarray, Yhat_labeled: np.ndarray,
             ci[j, i, :] = output
             # Classical interval
             try:
-                ci_classical[j, i, :] = binomial_iid(n, alpha, y.mean())
+                if n == 0:
+                    ci_classical[j, i, :] = [0, 0]
+                else:
+                    ci_classical[j, i, :] = binomial_iid(n, alpha, y.mean())
             except:
                 avg_ci_classical = None
 

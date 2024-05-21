@@ -148,13 +148,16 @@ def pp_mean_iid_asymptotic(Y_labeled: np.ndarray, Yhat_labeled: np.ndarray, Yhat
     """
     n = Y_labeled.shape[0]  # Number of labeled samples
     N = Yhat_unlabeled.shape[0]  # Number of unlabeled samples
+    
+    if n == 0 or N == 0:
+        return [0, 0]
 
     # Mean of the predicted values for the unlabeled data
     tildethetaf = Yhat_unlabeled.mean()
 
     # Mean of the residuals (difference between predicted and actual values for labeled data)
     rechat = (Yhat_labeled - Y_labeled).mean()
-
+    
     # Point estimate for the parameter of interest
     thetahatPP = tildethetaf - rechat
 
