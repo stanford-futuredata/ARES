@@ -125,7 +125,7 @@ To get started with ARES's PPI, you'll need to set up your configuration. Below 
 
 Just copy-paste as you go to see ARES in action!
 
-#### Step 1) Run the following to retrive the UES/IDP scores with GPT3.5!
+#### Step 1) Run the following to retrieve the UES/IDP scores with GPT3.5!
 
 ```python
 from ares import ARES
@@ -239,7 +239,6 @@ from ares import ARES
 
 ppi_config = { 
     "evaluation_datasets": ['nq_unlabeled_output.tsv'], 
-    "few_shot_examples_filepath": "nq_few_shot_prompt_for_judge_scoring.tsv",
     "checkpoints": ["Context_Relevance_Label_nq_labeled_output_date_time.pt"], 
     "rag_type": "question_answering", 
     "labels": ["Context_Relevance_Label"], 
@@ -249,6 +248,19 @@ ppi_config = {
 ares = ARES(ppi=ppi_config)
 results = ares.evaluate_RAG()
 print(results)
+
+# Output Should be: 
+""" 
+Context_Relevance_Label Scoring
+ARES Ranking
+ARES Prediction: [0.6056978059262574]
+ARES Confidence Interval: [[0.547, 0.664]]
+Number of Examples in Evaluation Set: [4421]
+Ground Truth Performance: [0.6]
+ARES LLM Judge Accuracy on Ground Truth Labels: [0.789]
+Annotated Examples used for PPI: 300
+"""
+
 ```
 
 <br>
