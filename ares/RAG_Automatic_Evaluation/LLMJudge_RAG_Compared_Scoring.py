@@ -202,10 +202,14 @@ def prepare_dataset_for_evaluation(dataframe: pd.DataFrame, label_column: str,
 
     # Extract text and labels from the dataframe
     test_set_text = [dataframe.iloc[i][text_column] for i in range(len(dataframe))]
-    test_set_label = [dataframe.iloc[i][label_column] for i in range(len(dataframe))]
-
-    # Create a pandas DataFrame with the extracted text and labels
-    test_dataset_pandas = pd.DataFrame({'label': test_set_label, 'text': test_set_text})
+    
+    if label_column in dataframe.columns:
+        test_set_label = dataframe[label_column].tolist()
+        # Create a pandas DataFrame with the extracted text and labels
+        test_dataset_pandas = pd.DataFrame({'label': test_set_label, 'text': test_set_text})
+    else: 
+        # Create a pandas DataFrame with only the text data
+        test_dataset_pandas = pd.DataFrame({'text': test_set_text})
 
     # Convert the pandas DataFrame to an Arrow Table and then to a Hugging Face Dataset
     test_dataset_arrow = pa.Table.from_pandas(test_dataset_pandas)
@@ -219,7 +223,8 @@ def prepare_dataset_for_evaluation(dataframe: pd.DataFrame, label_column: str,
 
     # Remove the original text column and rename the label column to "labels"
     tokenized_datasets = tokenized_datasets.remove_columns(["text"])
-    tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
+    if 'label' in tokenized_datasets['test'].column_names:
+        tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
 
     # Set the format of the dataset to PyTorch tensors
     tokenized_datasets.set_format("torch")
@@ -305,7 +310,7 @@ def begin(evaluation_datasets: list, checkpoints: list, labels: list,
     print("--------------------------------------------------------")
 
     few_shot_examples = None
-    if few_shot_examples_filepath is not None:
+    if few_shot_examples_filepath != "None":
         few_shot_examples = pd.read_csv(few_shot_examples_filepath, sep="\t")
     
     return few_shot_examples
@@ -452,8 +457,8 @@ def preprocess_data(test_set_selection: str, label_column: str, labels: list):
     # Define the text column name
     text_column = 'concat_text'
     
-    # Filter out rows where the label column is NaN
-    test_set = test_set[test_set[label_column].notna()]
+    if label_column in test_set.columns:
+        test_set = test_set[test_set[label_column].notna()]
     
     # Combine query and document (and answer if applicable) into the text column
     if "Context" in label_column:
@@ -645,10 +650,15 @@ def evaluate_model(params: dict) -> tuple:
 
                     logits = outputs
                     predictions = torch.argmax(logits, dim=-1)
-                    metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+                    
+                    if 'labels' in batch:
+                        # Add the batch to the metric
+                        metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+
+                        # Concatenate the references for later use
+                        total_references = torch.cat((total_references, batch['labels'].to(device)), 0)
 
                     total_predictions = torch.cat((total_predictions, predictions), 0)
-                    total_references = torch.cat((total_references, batch['labels'].to(device)), 0)
                     total_logits = torch.cat((total_logits, logits), 0)
 
                     progress_bar.update(1)
@@ -707,8 +717,12 @@ def evaluate_model(params: dict) -> tuple:
 
         total_predictions = test_set[label_column.replace("_Label", "_Prediction")].to_numpy()
         total_references = test_set[label_column].to_numpy()
-     
-    results = metric.compute(references=total_references, predictions=total_predictions)
+    
+    
+    if total_references.nelement() > 0: 
+        results = metric.compute(references=total_references, predictions=total_predictions)
+    else:
+        results = None
 
     return total_predictions, total_references, results, metric
 
@@ -1016,7 +1030,10 @@ def post_process_predictions(params: dict):
 
     prediction_column = label_column + "_Model_Predictions"
     test_set[prediction_column] = total_predictions.tolist()
-    test_set = test_set[test_set[label_column].notna()]
+    
+    if label_column in test_set.columns:
+        test_set = test_set[test_set[label_column].notna()]
+        
     for label in labels:
         if label != label_column:
             test_set = test_set[test_set[label] != 0]
@@ -1079,6 +1096,7 @@ def evaluate_and_scoring_data(params: dict):
     host_url = params["host_url"]
     request_delay = params["request_delay"]
     debug_mode = params["debug_mode"]
+    prediction_filepath = params["prediction_filepath"]
     
     failed_extraction_count = {'failed': 0}  # Reset failed extraction count
 
@@ -1093,12 +1111,22 @@ def evaluate_and_scoring_data(params: dict):
                     }
                     if model_choice in ["t5-small", "google/t5-xl-lm-adapt", "google/t5-large-lm-adapt"]:
                         new_batch['decoder_input_ids'] = batch['labels'].reshape(batch['labels'].shape[0], 1).to(device)
+                    
                     outputs = model(**new_batch)
                     logits = outputs
                     predictions = torch.argmax(logits, dim=-1)
-                    metric.add_batch(predictions=predictions, references=batch['labels'].to(device))
+
+                    if 'labels' in batch:
+                        # Get the labels from the batch
+                        labels = batch['labels'].to(device)
+
+                        # Add the batch to the metric
+                        metric.add_batch(predictions=predictions, references=labels)
+
+                    # Concatenate all predictions for later use
                     Y_labeled_predictions = torch.cat((Y_labeled_predictions, predictions), 0)
                     progress_bar.update(1)
+                    
         Y_labeled_dataset[prediction_column] = Y_labeled_predictions.detach().cpu().numpy().tolist()
         Yhat_unlabeled_dataset = test_set
     else:
@@ -1197,14 +1225,38 @@ def evaluate_and_scoring_data(params: dict):
     LLM_judge_ratio_predictions.append(LLM_judge_prediction)
     validation_set_lengths.append(len(test_set))
     ppi_confidence_intervals.append([round(value, 3) for value in avg_ci])
-    accuracy_scores.append(round(results['accuracy'], 3))
 
     # Check if the ground truth label column exists and has any non-null values
     if label_column in Yhat_unlabeled_dataset.columns and not Yhat_unlabeled_dataset[label_column].isnull().all():
         validation_set_ratios.append(round(Yhat_unlabeled_dataset[label_column].tolist().count(1) / len(Yhat_unlabeled_dataset), 3))
+        accuracy_scores.append(round(results['accuracy'], 3))
         ground_truth_available = True
     else:
         ground_truth_available = False
+
+    results = {
+        "ARES_Prediction": LLM_judge_ratio_predictions[0] if LLM_judge_ratio_predictions else None,
+        "ARES_Confidence_Interval": ppi_confidence_intervals[0] if ppi_confidence_intervals else None,
+        "Number_of_Examples_in_Evaluation_Set": validation_set_lengths[0] if validation_set_lengths else None,
+        "Ground_Truth_Performance": validation_set_ratios[0] if ground_truth_available and validation_set_ratios else None,
+        "ARES_LLM_Judge_Accuracy_on_Ground_Truth_Labels": accuracy_scores[0] if ground_truth_available and accuracy_scores else None,
+        "Annotated_Examples_used_for_PPI": len(Y_labeled)
+    }
+    # Save the labeled dataset with predictions to a new TSV file
+    if prediction_filepath != "None": 
+        # Update the prediction column name based on the label column
+        if label_column == "Context_Relevance_Label":
+            prediction_column_name = "ARES_Context_Relevance_Prediction"
+        elif label_column == "Answer_Relevance_Label":
+            prediction_column_name = "ARES_Answer_Relevance_Prediction"
+        elif label_column == "Answer_Faithfulness_Label":
+            prediction_column_name = "ARES_Answer_Faithfulness_Prediction"
+
+        Yhat_unlabeled_dataset.rename(columns={prediction_column: prediction_column_name}, inplace=True)
+        Yhat_unlabeled_dataset.to_csv(prediction_filepath, sep='\t', index=False)
+        print("--------------------------------------------------")
+        print(f"Labeled dataset with predictions saved to {prediction_filepath}")
+        print("--------------------------------------------------")
 
     print("--------------------------------------------------")
     print(label_column + " Scoring")
@@ -1214,6 +1266,11 @@ def evaluate_and_scoring_data(params: dict):
     print("Number of Examples in Evaluation Set: " + str(validation_set_lengths))
     if ground_truth_available:
         print("Ground Truth Performance: " + str(validation_set_ratios))
-    print("ARES LLM Judge Accuracy on Ground Truth Labels: " + str(accuracy_scores))
+    if ground_truth_available:
+        print("ARES LLM Judge Accuracy on Ground Truth Labels: " + str(accuracy_scores))
     print("Annotated Examples used for PPI: " + str(len(Y_labeled)))
     print("--------------------------------------------------\n")
+
+    return results
+
+
