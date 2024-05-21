@@ -17,7 +17,7 @@ machine_label_system_prompt = (
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
 model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_path, rag_type, vllm, host_url, request_delay, debug_mode, 
-machine_label_llm_model, gold_machine_label_path):
+machine_label_llm_model, gold_machine_label_path, prediction_filepath):
     """
     Configures and runs the RAG scoring process.
 
@@ -42,8 +42,11 @@ machine_label_llm_model, gold_machine_label_path):
     - gold_machine_label_path: Path to the gold machine labels.
     """
     
+    if few_shot_examples_filepath == "None" and (llm_judge != "None" or machine_label_llm_model != "None"):
+        raise ValueError("'few_shot_examples_filepath' cannot be None if generating machine labels.")
+    
     # Validate if either gold_label_path or gold_machine_label_path is provided
-    if not gold_label_path and not gold_machine_label_path:
+    if gold_label_path == "None" and gold_machine_label_path == "None":
         raise ValueError("Either 'gold_label_path' or 'gold_machine_label_path' must be provided.")
 
     # Validate inputs and determine model loading strategy
@@ -155,7 +158,9 @@ machine_label_llm_model, gold_machine_label_path):
                 "vllm": vllm,
                 "host_url": host_url,
                 "request_delay": request_delay,
-                "debug_mode": debug_mode
+                "debug_mode": debug_mode,
+                "prediction_filepath": prediction_filepath
             }
             
-            evaluate_and_scoring_data(evaluate_scoring_settings)
+            return evaluate_and_scoring_data(evaluate_scoring_settings)
+            
