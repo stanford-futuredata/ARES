@@ -74,9 +74,9 @@ class ARES:
 
         "ppi": {
             "evaluation_datasets": (list, None),  # Required parameter with no default value
-            "few_shot_examples_filepath": (str, None),  # Required parameter with no default value
             "labels": (list, None),  # Required parameter with no default value
             "checkpoints": (list, []),  # Required parameter with no default value
+            "few_shot_examples_filepath": (str, "None"), # Optional with default
             "gold_label_path": (str, "None"),  # Optional with default
             "rag_type": (str, "question_answering"),  # Optional with default
             "model_choice": (str, "microsoft/deberta-v3-large"),  # Optional with default
@@ -90,7 +90,8 @@ class ARES:
             "request_delay": (int, 0),  # Optional with default
             "debug_mode": (bool, False),  # Optional with default
             "machine_label_llm_model": (str, "None"),  # Optional with default
-            "gold_machine_label_path": (str, "None")  # Optional with default
+            "gold_machine_label_path": (str, "None"),  # Optional with default
+            "prediction_filepath": (str, "None")  # Optional with default
         }
     }
 
@@ -140,7 +141,7 @@ class ARES:
         if not self.ppi_config:
             print("Skipping RAG evaluation configuration due to no parameters")
         else:
-            rag_scoring_config(**self.ppi_config)
+            return rag_scoring_config(**self.ppi_config)
 
     def ues_idp(self):
         """
