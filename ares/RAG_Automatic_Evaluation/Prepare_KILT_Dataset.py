@@ -222,7 +222,7 @@ def run_kilt(dataset_choice):
                         
                         
                         filtered_list = [item for item in current_wikipedia_passages if answer not in item] # Filter out paragraphs with answer in it
-                        filtered_list = [item for item in current_wikipedia_passages if len(item.strip().split(" ")) >= 50] # Filter out paragraphs with not enough text
+                        filtered_list = [item for item in filtered_list if len(item.strip().split(" ")) >= 50] # Filter out paragraphs with not enough text
                         
                         if row % 2 == 0 and len(filtered_list) > 0 and "wow" != dataset_chosen:
                             incorrect_passages.append(random.choice(filtered_list))
@@ -257,7 +257,7 @@ def run_kilt(dataset_choice):
                             
                             
                             filtered_list = [item for item in current_wikipedia_passages if answer not in item]
-                            filtered_list = [item for item in current_wikipedia_passages if len(item.strip().split(" ")) >= 50]
+                            filtered_list = [item for item in filtered_list if len(item.strip().split(" ")) >= 50]
                             
                             incorrect_passages.append(random.choice(filtered_list))
                             context_relevance_labels.append(0)
