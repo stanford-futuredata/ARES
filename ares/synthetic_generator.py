@@ -23,7 +23,7 @@ def synthetic_generator_config(
     lower_bound_for_negatives: int = 5, 
     number_of_contradictory_answers_added_ratio: float = 0.67, 
     number_of_positives_added_ratio: float = 0.0, 
-    regenerate_embeddings: float = True, 
+    regenerate_embeddings: bool = True, 
     synthetic_query_prompt: str = (
         "You are an expert question-answering system. You must create a question for the provided document. "
         "The question must be answerable within the context of the document.\n\n"
