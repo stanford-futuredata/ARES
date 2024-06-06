@@ -34,7 +34,7 @@
 </p>
 
 
-ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Precision-Performance Iteration (PPI), providing accurate evaluations with statistical confidence.
+ARES is a groundbreaking framework for evaluating Retrieval-Augmented Generation (RAG) models. The automated process combines synthetic data generation with fine-tuned classifiers to efficiently assess context relevance, answer faithfulness, and answer relevance, minimizing the need for extensive human annotations. ARES employs synthetic query generation and Prediction-Powered Inference (PPI), providing accurate evaluations with statistical confidence.
 
 
 ### 💬 Mini Q&A
@@ -225,9 +225,6 @@ print(results)
 Note: This code creates a checkpoint for the trained classifier.
 Training may take some time. You can download our jointly trained checkpoint on context relevance here!:
 [Download Checkpoint](https://drive.google.com/file/d/15poFyeoqdnaNZVjl41HllL2213DKyZjH/view?usp=sharing)
-
-Alternatively, you can download our jointly trained checkpoint on answer relevance here! Be sure to change the parameters in the config to match the label "Answer_Relevance_Label"
-[Download Checkpoint](https://drive.google.com/file/d/1wGcgELBfnCGqXlPEbpPmf7LJ53DPWVXI/view?usp=sharing)
 
 
 <hr>
