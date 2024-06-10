@@ -6,6 +6,7 @@ from ares.RAG_Automatic_Evaluation.LLMJudge_RAG_Compared_Scoring import load_tok
 from ares.RAG_Automatic_Evaluation.LLMJudge_RAG_Compared_Scoring import evaluate_model
 from ares.RAG_Automatic_Evaluation.LLMJudge_RAG_Compared_Scoring import post_process_predictions
 from ares.RAG_Automatic_Evaluation.LLMJudge_RAG_Compared_Scoring import evaluate_and_scoring_data
+import torch
 
 machine_label_system_prompt = (
     "Given the following question and document, you must analyze the provided document "
@@ -67,7 +68,12 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
         # If no checkpoints, create dummy pairs for labels with None for checkpoint
         pairings = ((None, label) for label in labels)
 
+    all_evaluation_results = []
+    
     for checkpoint, label_column in pairings:
+
+        chekpoint_results = []
+
         LLM_judge_ratio_predictions = []
         validation_set_lengths = []
         validation_set_ratios = []
@@ -81,7 +87,13 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
             
             test_set, text_column = preprocess_data(test_set_selection, label_column, labels)
 
-            model, tokenizer, device = model_loader(checkpoint)
+            loaded_model = model_loader(checkpoint)
+            if isinstance(loaded_model, tuple):
+                model, tokenizer, device = loaded_model
+            else:
+                model = loaded_model
+                tokenizer = None
+                device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             
             eval_model_settings = {
                 "test_set": test_set,
@@ -161,6 +173,9 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
                 "debug_mode": debug_mode,
                 "prediction_filepath": prediction_filepath
             }
+            dataset_results = evaluate_and_scoring_data(evaluate_scoring_settings)
+            chekpoint_results.append(dataset_results)
             
-            return evaluate_and_scoring_data(evaluate_scoring_settings)
+        all_evaluation_results.append(chekpoint_results)
             
+    return all_evaluation_results
