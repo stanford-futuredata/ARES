@@ -1238,11 +1238,13 @@ def evaluate_and_scoring_data(params: dict):
         ground_truth_available = False
 
     results = {
-        "ARES_Prediction": LLM_judge_ratio_predictions[0] if LLM_judge_ratio_predictions else None,
-        "ARES_Confidence_Interval": ppi_confidence_intervals[0] if ppi_confidence_intervals else None,
-        "Number_of_Examples_in_Evaluation_Set": validation_set_lengths[0] if validation_set_lengths else None,
-        "Ground_Truth_Performance": validation_set_ratios[0] if ground_truth_available and validation_set_ratios else None,
-        "ARES_LLM_Judge_Accuracy_on_Ground_Truth_Labels": accuracy_scores[0] if ground_truth_available and accuracy_scores else None,
+        "Label_Column": label_column,
+        "Evaluation_Set": test_set_selection,
+        "ARES_Prediction": LLM_judge_ratio_predictions[-1] if LLM_judge_ratio_predictions else None,
+        "ARES_Confidence_Interval": ppi_confidence_intervals[-1] if ppi_confidence_intervals else None,
+        "Number_of_Examples_in_Evaluation_Set": validation_set_lengths[-1] if validation_set_lengths else None,
+        "Ground_Truth_Performance": validation_set_ratios[-1] if ground_truth_available and validation_set_ratios else None,
+        "ARES_LLM_Judge_Accuracy_on_Ground_Truth_Labels": accuracy_scores[-1] if ground_truth_available and accuracy_scores else None,
         "Annotated_Examples_used_for_PPI": len(Y_labeled)
     }
     # Save the labeled dataset with predictions to a new TSV file
@@ -1264,6 +1266,8 @@ def evaluate_and_scoring_data(params: dict):
     print("--------------------------------------------------")
     print(label_column + " Scoring")
     print("ARES Ranking")
+    print("Evaluation_Set:" +str(test_set_selection))
+    print("Checkpoint:" +str(checkpoint))
     print("ARES Prediction: " + str(LLM_judge_ratio_predictions))
     print("ARES Confidence Interval: " + str(ppi_confidence_intervals))
     print("Number of Examples in Evaluation Set: " + str(validation_set_lengths))
@@ -1275,5 +1279,3 @@ def evaluate_and_scoring_data(params: dict):
     print("--------------------------------------------------\n")
 
     return results
-
-
