@@ -205,3 +205,4 @@ few_shot_example.tsv
 filter_v4.py
 filter_v5.py
 package_test.py
+ares/RAG_Automatic_Evaluation/Prepare_FinanceBench.py
