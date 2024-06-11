@@ -51,7 +51,7 @@ dependencies = [
     "numpy >=1.20.0, <2.0.0",
     "openai == 1.14.2",
     "pandas >= 2.0.1",
-    "protobuf >= 4.23.2",
+    "protobuf == 4.23.2",
     "python-dateutil >=2.8.2,<3.0.0",
     "pytorch-ranger >=0.1.1,<0.2.0",
     "pytz >=2023.3,<2024.0",
