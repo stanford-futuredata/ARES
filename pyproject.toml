@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ares-ai"
-version = "0.5.7"
+version = "0.6.1"
 description = """ 
 ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
 utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
@@ -37,6 +37,7 @@ dependencies = [
     "anthropic >= 0.25.7",
     "Cython >=0.29.35",
     "datasets >=2.12.0",
+    "evaluate==0.4.2",
     "fastapi == 0.110.2",
     "faiss-cpu >= 1.8.0", 
     "ipywidgets >=8.0.6, <9.0.0",
@@ -48,8 +49,9 @@ dependencies = [
     "nltk >=3.8.1, <4.0.0",
     "numexpr >=2.8.4, <3.0.0",
     "numpy >=1.20.0, <2.0.0",
-    "openai ==1.14.2",
+    "openai == 1.14.2",
     "pandas >= 2.0.1",
+    "protobuf >= 4.23.2",
     "python-dateutil >=2.8.2,<3.0.0",
     "pytorch-ranger >=0.1.1,<0.2.0",
     "pytz >=2023.3,<2024.0",
@@ -64,8 +66,10 @@ dependencies = [
     "together >= 1.1.0",
     "tokenizers >=0.13.3",
     "transformers == 4.40.1",
-    "vllm == 0.4.1",
 ]
+
+[project.optional-dependencies]
+vllm = ["vllm == 0.4.1"]
 
 [project.urls]
 documentation = "https://github.com/stanford-futuredata/ARES/tree/new-dev/docs"
