@@ -6,7 +6,6 @@ from .kilt_filter import KILT_dataset_process
 from .superglue_filter import superGlue
 from .prompts import context_relevance_system_prompt, answer_relevance_system_prompt, answer_faithfulness_system_prompt
 from typing import List
-import pandas as pd
 
 class ARES:
     """
@@ -27,7 +26,7 @@ class ARES:
             "answer_relevance_system_prompt": (str, answer_relevance_system_prompt),  # Optional with default
             "answer_faithfulness_system_prompt": (str, answer_faithfulness_system_prompt),  # Optional with default
             "debug_mode": (bool, False),  # Optional with default
-            "documents": (int, 0),  # Optional with default
+            "documents": (int, "None"),  # Optional with default
             "model_choice": (str, "gpt-3.5-turbo-1106"),  # Optional with default
             "request_delay": (int, 0),  # Optional with default
             "vllm": (bool, False),  # Optional with default
