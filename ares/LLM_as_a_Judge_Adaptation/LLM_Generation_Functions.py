@@ -19,6 +19,8 @@ import openai
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoModelForSeq2SeqLM,
                           AutoTokenizer, BitsAndBytesConfig)
 
+from ares.LLM_as_a_Judge_Adaptation.LLM_Synthetic_Generation import generate_synthetic_contradictory_answers_api_approach
+
 def generate_synthetic_query_llm_approach(document: str, prompt: str, length_of_fewshot_prompt: int, 
 device: torch.device, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, percentiles: list, 
 for_fever_dataset=False, for_wow_dataset=False) -> list:
@@ -94,6 +96,9 @@ for_fever_dataset=False, for_wow_dataset=False) -> list:
             num_return_sequences=1)
 
         query = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        breakpoint() 
+
         synthetic_queries.append(query)
 
     return synthetic_queries
@@ -193,7 +198,6 @@ few_shot_examples: str, temperatures: list, length_of_fewshot_prompt: int) -> li
         list: A list of synthetic documents generated at different temperatures.
     """
 
-    # Introduce a slight delay to prevent rapid-fire requests which might lead to API rate limits
     time.sleep(1)
 
     # Initialize a list to store the generated documents
@@ -384,7 +388,7 @@ def check_generated_answer(answer: str) -> str:
     return "Yes"
     
 def generate_contradictory_answer_examples(queries_dataset: pd.DataFrame, number_of_contradictory_answers_to_generate: int, 
-few_shot_examples_for_contradictory_answers=None, device=None, tokenizer=None, 
+few_shot_examples_for_contradictory_answers=None, api_model=False, synthetic_contradictory_answer_prompt=None, device=None, tokenizer=None, 
 model=None, for_fever_dataset=None, for_wow_dataset=None) -> pd.DataFrame:
     """
     Generates a specified number of contradictory answers from a given dataset of queries.
@@ -438,8 +442,8 @@ model=None, for_fever_dataset=None, for_wow_dataset=None) -> pd.DataFrame:
 
     # Generate contradictory answers for each query in the dataset
     for i in tqdm(range(len(queries_dataset_copy))):
-        if few_shot_examples_for_contradictory_answers is None:
-            contradictory_answer_generated = generate_contradictory_answer_from_context(queries_dataset_copy.iloc[i]['document'], queries_dataset_copy.iloc[i]['synthetic_query'])
+        if api_model:
+            contradictory_answer_generated = generate_synthetic_contradictory_answers_api_approach(queries_dataset_copy.iloc[i]['document'], queries_dataset_copy.iloc[i]['synthetic_query'], synthetic_contradictory_answer_prompt, few_shot_examples_for_contradictory_answers, model, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset)
         else:
             contradictory_answer_generated = generate_contradictory_answer_llm_approach(queries_dataset_copy.iloc[i]['document'], queries_dataset_copy.iloc[i]['synthetic_query'], few_shot_examples_for_contradictory_answers, device, tokenizer, model, for_fever_dataset=for_fever_dataset, for_wow_dataset=for_wow_dataset)
 
@@ -558,4 +562,3 @@ tokenizer: AutoTokenizer, model: AutoModelForCausalLM, for_fever_dataset: bool =
     query = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     return query
-
