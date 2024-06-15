@@ -72,15 +72,15 @@ def validate_inputs(vllm: bool, host_url: str, in_domain_prompts_dataset: str, u
         print("Error: UES is not provided")
         exit()
 
+    # Set documents to the length of the unlabeled evaluation set if documents is 0
+    if documents == 0 or documents == "None":
+        documents = len(unlabeled_evaluation_set)
+
     # Validate documents size
     if documents > len(unlabeled_evaluation_set):
         sys.exit("Error: documents size passed in is larger than documents present in unlabeled evaluation set")
 
-    # Set documents to the length of the unlabeled evaluation set if documents is 0
-    if documents == 0:
-        documents = len(unlabeled_evaluation_set)
-
-    return in_domain_prompts_dataset, unlabeled_evaluation_set
+    return in_domain_prompts_dataset, unlabeled_evaluation_set, documents
 
 def extract_query(row: pd.Series, in_domain_prompts_dataset: pd.DataFrame) -> tuple:
     """
@@ -273,7 +273,7 @@ def ues_idp_config(
     """
     
     # Validate inputs and get the processed datasets
-    in_domain_prompts_dataset, unlabeled_evaluation_set = validate_inputs(
+    in_domain_prompts_dataset, unlabeled_evaluation_set, documents = validate_inputs(
         vllm, host_url, in_domain_prompts_dataset, unlabeled_evaluation_set, documents
     )
 
