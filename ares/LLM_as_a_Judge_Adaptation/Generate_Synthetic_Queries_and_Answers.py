@@ -9,6 +9,7 @@ import requests
 import sys
 import time
 import warnings
+import together
 
 import numpy as np
 import openai
@@ -31,6 +32,10 @@ from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import (check_gener
                                                                       generate_contradictory_answer_from_context,
                                                                       generate_synthetic_query_llm_approach,
                                                                       generate_synthetic_query_openai_approach)
+
+from ares.LLM_as_a_Judge_Adaptation.LLM_Synthetic_Generation import (generate_synthetic_query_api_approach,
+                                                                    generate_synthetic_answer_api_approach,
+                                                                    generate_synthetic_contradictory_answers_api_approach)
 
 pd.set_option('display.max_columns', None) 
 pd.set_option('display.max_rows', None)  
@@ -74,7 +79,7 @@ def validate_input_file(df: pd.DataFrame, required_columns: list[str]) -> bool:
         sys.exit(f"Error: The DataFrame is missing the following required column(s): {', '.join(missing_columns)}.")
     return True
 
-def load_model(model_choice: str) -> tuple:
+def load_model(model_choice: str, api_model: bool) -> tuple:
     """
     Loads the specified model and tokenizer, and sets the model to evaluation mode on the appropriate device.
 
@@ -84,6 +89,10 @@ def load_model(model_choice: str) -> tuple:
     Returns:
         tuple: A tuple containing the model, tokenizer, and device.
     """
+
+    if api_model: 
+        return model_choice, None, None
+
     # Load the tokenizer and model from the specified model choice
     tokenizer = AutoTokenizer.from_pretrained(model_choice)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_choice)
@@ -287,17 +296,29 @@ def generate_query(document: str, settings: dict) -> list:
     Returns:
         list: List of generated synthetic queries.
     """
-    return generate_synthetic_query_llm_approach(
+
+    if settings['api_model']:
+        return generate_synthetic_query_api_approach(
         document, 
+        settings["synthetic_query_prompt"], 
         settings['few_shot_examples'], 
         settings['length_of_fewshot_prompt'], 
-        settings['device'], 
-        settings['tokenizer'], 
         settings['model'], 
         settings['percentiles'], 
         settings['for_fever_dataset'], 
-        settings['for_wow_dataset']
-    )
+        settings['for_wow_dataset'])
+    else: 
+        return generate_synthetic_query_llm_approach(
+            document, 
+            settings['few_shot_examples'], 
+            settings['length_of_fewshot_prompt'], 
+            settings['device'], 
+            settings['tokenizer'], 
+            settings['model'], 
+            settings['percentiles'], 
+            settings['for_fever_dataset'], 
+            settings['for_wow_dataset']
+        )
 
 def process_documents(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
     """
@@ -310,10 +331,19 @@ def process_documents(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame containing the documents with the generated synthetic queries.
     """
-    tqdm.pandas(desc="Generating synthetic queries (FLAN)...", total=documents.shape[0])
-    documents["synthetic_query"] = documents.progress_apply(
-        lambda x: generate_query(x["document"], settings), axis=1
-    )
+    if settings['api_model']:
+        tqdm.pandas(desc=f"Generating synthetic queries ({settings['model_choice']})...", total=documents.shape[0])
+        # If the API model is used, we query API model.
+        documents["synthetic_query"] = documents.progress_apply(
+            lambda x: generate_query(x["document"], settings), axis=1
+        )
+    else:
+        tqdm.pandas(desc="Generating synthetic queries (FLAN)...", total=documents.shape[0])
+        # If the API model is not used, we query the local model.
+        documents["synthetic_query"] = documents.progress_apply(
+            lambda x: generate_query(x["document"], settings), axis=1
+        )
+    
     documents = documents.explode("synthetic_query", ignore_index=True)
     documents = documents.drop_duplicates(subset=['synthetic_query'])
     return documents
@@ -356,10 +386,25 @@ def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings
     Returns:
         pd.DataFrame: DataFrame containing the synthetic queries with generated answers.
     """
-    tqdm.pandas(desc="Generating answers...", total=synthetic_queries.shape[0])
-    
-    synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
-        lambda x: generate_answer_llm_approach(
+    if answer_generation_settings['api_model']:
+        tqdm.pandas(desc=f"Generating answers... ({answer_generation_settings['model']})", total=synthetic_queries.shape[0])
+        synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
+            lambda x: generate_synthetic_answer_api_approach(
+                x["document"], 
+                x["synthetic_query"], 
+                answer_generation_settings['synthetic_valid_answer_prompt'], 
+                answer_generation_settings['answer_gen_few_shot_examples'], 
+                answer_generation_settings['length_of_fewshot_prompt_answer_gen'], 
+                answer_generation_settings['model'],  
+                answer_generation_settings['for_fever_dataset'], 
+                answer_generation_settings['for_wow_dataset']
+            ), 
+            axis=1
+        )
+    else: 
+        tqdm.pandas(desc="Generating answers... (FLAN)", total=synthetic_queries.shape[0])
+        synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
+            lambda x: generate_answer_llm_approach(
             x["document"], 
             x["synthetic_query"], 
             answer_generation_settings['answer_gen_few_shot_examples'], 
@@ -372,7 +417,6 @@ def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings
         ), 
         axis=1
     )
-    
     return synthetic_queries
 
 def label_answers(synthetic_queries: pd.DataFrame) -> pd.DataFrame:
@@ -421,17 +465,20 @@ def generate_contradictory_answers_wrapper(synthetic_queries: pd.DataFrame, answ
     Returns:
         pd.DataFrame: DataFrame with added contradictory answers.
     """
-    synthetic_queries = generate_contradictory_answer_examples(
+
+    synthetic_contradictory_answers = generate_contradictory_answer_examples(
         synthetic_queries, 
         int(len(synthetic_queries) * answer_generation_settings['number_of_contradictory_answers_added_ratio']), 
         few_shot_examples_for_contradictory_answers=answer_generation_settings['few_shot_examples_for_contradictory_answers'], 
+        api_model=answer_generation_settings['api_model'],
+        synthetic_contradictory_answer_prompt=answer_generation_settings['synthetic_contradictory_answer_prompt'],
         device=answer_generation_settings['device'], 
         tokenizer=answer_generation_settings['tokenizer'], 
         model=answer_generation_settings['model'], 
         for_fever_dataset=answer_generation_settings['for_fever_dataset'], 
         for_wow_dataset=answer_generation_settings['for_wow_dataset']
     )
-    return synthetic_queries
+    return synthetic_contradictory_answers
 
 def process_embeddings(synthetic_queries: pd.DataFrame, answer_generation_settings: dict) -> pd.DataFrame:
     """

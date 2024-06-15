@@ -103,6 +103,12 @@ def filter_synthetic_queries(queries_dataset: pd.DataFrame, document_index) -> p
         question = queries_dataset[i]["synthetic_query"]
         question_embedding = np.array(get_embedding(question)).astype(np.float32)
         
+        # Ensure question_embedding is a 2D array with shape (1, 1536)
+        if question_embedding.shape != (1536,):
+            raise ValueError(f"Expected embedding of shape (1536,), but got {question_embedding.shape}")
+
+        question_embedding = question_embedding.reshape(1, -1)
+        
         # Retrieve the nearest examples from the document index
         scores, samples = document_index.get_nearest_examples("embeddings", question_embedding, k=20)
         
@@ -160,6 +166,12 @@ number_of_negatives_added_ratio: float, lower_bound_for_negatives: int) -> pd.Da
     for i in tqdm(range(len(queries_dataset_copy))):
         question = queries_dataset_copy.iloc[i]["synthetic_query"]
         question_embedding = np.array(get_embedding(question)).astype(np.float32)
+        
+        # Ensure question_embedding is a 2D array with shape (1, 1536)
+        if question_embedding.shape != (1536,):
+            raise ValueError(f"Expected embedding of shape (1536,), but got {question_embedding.shape}")
+
+        question_embedding = question_embedding.reshape(1, -1)
         
         # Retrieve the nearest examples from the document index
         scores, samples = document_index.get_nearest_examples("embeddings", question_embedding, k=100)
@@ -242,5 +254,3 @@ def generate_additional_positives(queries_dataset, document_index, number_of_pos
     queries_dataset = pd.concat([queries_dataset, queries_dataset_copy], axis=0, ignore_index=True)
     
     return queries_dataset
-
-
