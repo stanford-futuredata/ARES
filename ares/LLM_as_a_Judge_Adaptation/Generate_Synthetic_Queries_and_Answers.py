@@ -37,6 +37,11 @@ from ares.LLM_as_a_Judge_Adaptation.LLM_Synthetic_Generation import (generate_sy
                                                                     generate_synthetic_answer_api_approach,
                                                                     generate_synthetic_contradictory_answers_api_approach)
 
+
+from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer
+
+
 pd.set_option('display.max_columns', None) 
 pd.set_option('display.max_rows', None)  
 pd.set_option('display.max_colwidth', None) 
@@ -320,7 +325,7 @@ def generate_query(document: str, settings: dict) -> list:
             settings['for_wow_dataset']
         )
 
-def process_documents(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
+def generate_positive_synthetic_queries(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
     """
     Processes the documents to generate synthetic queries and remove duplicates.
 
@@ -331,22 +336,121 @@ def process_documents(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame containing the documents with the generated synthetic queries.
     """
-    if settings['api_model']:
-        tqdm.pandas(desc=f"Generating synthetic queries ({settings['model_choice']})...", total=documents.shape[0])
-        # If the API model is used, we query API model.
-        documents["synthetic_query"] = documents.progress_apply(
-            lambda x: generate_query(x["document"], settings), axis=1
-        )
-    else:
-        tqdm.pandas(desc="Generating synthetic queries (FLAN)...", total=documents.shape[0])
-        # If the API model is not used, we query the local model.
-        documents["synthetic_query"] = documents.progress_apply(
-            lambda x: generate_query(x["document"], settings), axis=1
-        )
+
+    num_documents = len(documents)
+    min_queries = num_documents 
     
-    documents = documents.explode("synthetic_query", ignore_index=True)
-    documents = documents.drop_duplicates(subset=['synthetic_query'])
-    return documents
+    # Overproduce queries initially
+    initial_queries_per_document = 2
+    all_queries = []
+
+    # Add progress bar for the number of documents processed
+    with tqdm(total=num_documents * initial_queries_per_document, desc="Generating positive synthetic queries...") as pbar:
+        for index, row in documents.iterrows():
+            document = row['document']
+            synthetic_queries = []
+            for _ in range(initial_queries_per_document):
+                synthetic_queries.extend(generate_query(document, settings))
+                pbar.update(1)  # Update progress bar after generating each query
+            all_queries.append((index, document, synthetic_queries))
+
+    # Flatten the list of queries and include the document content
+    all_queries_flat = [(index, document, query) for index, document, queries in all_queries for query in queries]
+
+    # Create a DataFrame for synthetic queries
+    synthetic_queries_df = pd.DataFrame(all_queries_flat, columns=["document_index", "document", "synthetic_query"])
+
+    # Filter out queries with a length of 10 or less
+    synthetic_queries_df = synthetic_queries_df[synthetic_queries_df["synthetic_query"].str.len() > 10]
+
+    # Drop exact duplicates
+    synthetic_queries_df = synthetic_queries_df.drop_duplicates(subset=['synthetic_query'])
+
+    # Generate the document index
+    document_index = generate_index(documents)
+
+    # Filter synthetic queries based on relevance
+    synthetic_queries_df = filter_synthetic_queries(synthetic_queries_df, document_index)
+
+    # Ensure at least min_queries valid queries remain
+    while len(synthetic_queries_df) < min_queries:
+        # Identify documents that need more queries
+        counts = synthetic_queries_df['document_index'].value_counts()
+        documents_needing_more_queries = counts[counts < initial_queries_per_document].index.tolist()
+
+        additional_queries = []
+        with tqdm(total=len(documents_needing_more_queries) * initial_queries_per_document, desc="Generating additional synthetic queries...") as pbar:
+            for index in documents_needing_more_queries:
+                document = documents.loc[index, 'document']
+                for _ in range(initial_queries_per_document):
+                    additional_queries.extend(generate_query(document, settings))
+                    pbar.update(1)  # Update progress bar after generating each query
+                all_queries.append((index, document, additional_queries))
+
+        # Flatten and filter again
+        additional_queries_flat = [(index, document, query) for index, document, queries in additional_queries for query in queries]
+        additional_queries_df = pd.DataFrame(additional_queries_flat, columns=["document_index", "document", "synthetic_query"])
+
+        # Filter out queries with a length of 10 or less
+        additional_queries_df = additional_queries_df[additional_queries_df["synthetic_query"].str.len() > 10]
+
+        # Append and re-filter
+        synthetic_queries_df = pd.concat([synthetic_queries_df, additional_queries_df]).drop_duplicates(subset=['synthetic_query'])
+        synthetic_queries_df = filter_synthetic_queries(synthetic_queries_df, document_index)
+
+    # Filter down to top 1 positive query for each document
+    filtered_queries = []
+    unique_document_indices = set()
+
+    for doc_index in synthetic_queries_df['document_index'].unique():
+        if len(unique_document_indices) >= num_documents:
+            break
+        doc_queries = synthetic_queries_df[(synthetic_queries_df['document_index'] == doc_index) & (synthetic_queries_df['Context_Relevance_Label'] == "Yes")]
+        if not doc_queries.empty:
+            filtered_queries.append(doc_queries.iloc[0])
+            unique_document_indices.add(doc_index)
+
+    # Create a DataFrame for the filtered queries
+    filtered_queries_df = pd.DataFrame(filtered_queries)
+        
+    return filtered_queries_df
+
+
+
+def generate_negative_synthetic_queries(positive_queries_df: pd.DataFrame, documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
+    """
+    Generates negative synthetic queries by randomly sampling the positive queries for the remaining documents.
+
+    Args:
+        positive_queries_df (pd.DataFrame): DataFrame containing the positive synthetic queries.
+        documents (pd.DataFrame): DataFrame containing the documents.
+        settings (dict): Dictionary containing various settings and parameters required for generating synthetic queries.
+
+    Returns:
+        pd.DataFrame: DataFrame containing both positive and negative synthetic queries.
+    """
+    # print("Generating negative synthetic queries!")
+
+    negative_queries = []
+    used_queries = set()
+    sampled_queries = positive_queries_df['synthetic_query'].values
+
+    for index, row in documents.iterrows():
+        document = row['document']
+        negative_query = None
+        
+        # Ensure unique negative queries
+        while negative_query is None or negative_query in used_queries:
+            negative_query = np.random.choice(sampled_queries)
+        
+        used_queries.add(negative_query)
+        negative_queries.append((index, document, negative_query))
+
+    negative_queries_df = pd.DataFrame(negative_queries, columns=["document_index", "document", "synthetic_query"])
+    negative_queries_df['Context_Relevance_Label'] = "No"
+
+    return negative_queries_df
+
 
 def save_synthetic_queries(documents: pd.DataFrame, filename: str) -> None:
     """
@@ -370,10 +474,50 @@ def generate_synthetic_queries(documents: pd.DataFrame, settings: dict) -> pd.Da
     Returns:
         pd.DataFrame: DataFrame containing the documents with the generated synthetic queries.
     """
-    print("Beginning synthetic query generation!")
-    documents = process_documents(documents, settings)
-    save_synthetic_queries(documents, settings['synthetic_queries_filename'])
-    return documents
+    message = "Starting Synthetic Query Generation"
+    box_width = len(message) + 4
+
+    print("\n" + "=" * box_width)
+    print(f"| {message} |")
+    print("=" * box_width + "\n")
+    
+    # Split the documents into two halves
+    num_documents = len(documents)
+    half_num_documents = num_documents // 2  # Process first half of the documents
+    
+    if num_documents % 2 != 0:
+        half_num_documents += 1  # Handle odd number of documents
+    
+    first_half_documents = documents.head(half_num_documents)
+    second_half_documents = documents.tail(num_documents - half_num_documents)
+    
+    # Generate positive queries
+    print(f"Generating positive queries for the first {len(first_half_documents)} documents...")
+    positive_queries_df = generate_positive_synthetic_queries(first_half_documents, settings)
+    
+    # Duplicate the positive queries for generating positive answers and preparing for negative answers
+    positive_queries_for_answers_df = positive_queries_df.copy()
+    
+    positive_queries_duplicate_df = positive_queries_df.copy()
+    
+    # Generate negative queries
+    print(f"Generating negative queries for the remaining {len(second_half_documents)} documents...")
+    negative_queries_df = generate_negative_synthetic_queries(positive_queries_df, second_half_documents, settings)
+    
+    # Combine positive, duplicated, and negative queries
+    combined_queries_df = pd.concat([positive_queries_for_answers_df, positive_queries_duplicate_df, negative_queries_df], ignore_index=True)
+    save_synthetic_queries(combined_queries_df, settings['synthetic_queries_filename'])
+    
+    message = "Synthetic query generation completed."
+    box_width = len(message) + 4
+
+    print("\n" + "=" * box_width)
+    print(f"| {message} |")
+    print("=" * box_width + "\n")
+    
+    print(f"Total queries saved: {len(combined_queries_df)} (Positive: {len(positive_queries_for_answers_df)}, Duplicate: {len(positive_queries_duplicate_df)}, Negative: {len(negative_queries_df)})")
+    
+    return combined_queries_df
 
 def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings: dict) -> pd.DataFrame:
     """
@@ -433,6 +577,7 @@ def label_answers(synthetic_queries: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with additional columns for answer faithfulness and relevance labels.
     """
+    
     # Label each generated answer for faithfulness
     synthetic_queries["Answer_Faithfulness_Label"] = [
         check_generated_answer(synthetic_queries.iloc[i]['generated_answer']) for i in range(len(synthetic_queries))
@@ -560,29 +705,77 @@ def Generate_Synthetic_Answers(synthetic_queries_filename: str, answer_generatio
     """
     # Read the synthetic queries from the specified file
     synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
-    # Filter out queries with a length of 10 or less
-    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
+    
+    # Drop any duplicated columns
+    synth_queries = synth_queries.loc[:, ~synth_queries.columns.duplicated()]
 
     # Check if answers need to be regenerated
     if answer_generation_settings['regenerate_answers']:
-        print("Beginning answer generation!")
-        # Generate answers for the synthetic queries
-        synth_queries = generate_answers(synth_queries, answer_generation_settings)
+        message = "Beginning answer generation!"
+        box_width = len(message) + 4
+
+        print("\n" + "=" * box_width)
+        print(f"| {message} |")
+        print("=" * box_width + "\n")
+        
+        # Determine the number of documents to process for answers
+        total_queries = len(synth_queries)
+        num_documents = total_queries // 3  # Since we have duplicated the first half
+        half_num_documents = num_documents
+        
+        # Adjust for odd number of documents
+        if num_documents % 2 != 0:
+            half_num_documents += 1
+
+        # Select first chunk queries for generating answers (excluding duplicates)
+        first_half_queries = synth_queries.head(half_num_documents)
+
+        print(f"Generating answers for {len(first_half_queries)} queries...")
+
+        # Generate answers for the first chunk of the synthetic queries
+        first_half_queries = generate_answers(first_half_queries, answer_generation_settings)
+        
         # Label the generated answers
-        synth_queries = label_answers(synth_queries)
-        print("Generating contradictory answers!")
-        # Generate contradictory answers
-        synth_queries = generate_contradictory_answers_wrapper(synth_queries, answer_generation_settings)
+        first_half_queries = label_answers(first_half_queries)
+        
+        print(f"Generated answers for {len(first_half_queries)} queries.")
+
+        # Ensure the columns 'generated_answer', 'Answer_Faithfulness_Label', and 'Answer_Relevance_Label' are correctly updated
+        synth_queries.loc[first_half_queries.index, 'generated_answer'] = first_half_queries['generated_answer']
+        synth_queries.loc[first_half_queries.index, 'Answer_Faithfulness_Label'] = first_half_queries['Answer_Faithfulness_Label']
+        synth_queries.loc[first_half_queries.index, 'Answer_Relevance_Label'] = first_half_queries['Answer_Relevance_Label']
+        
+        # Save the synthetic queries with positive answers back to the file
+        synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
+        print(f"Saved positive answers to: {synthetic_queries_filename}")
+
+        # Generate negative answers for the second chunk
+        print("Generating negative answers for the second chunk of queries...")
+        
+        second_half_queries = synth_queries.iloc[half_num_documents:2 * half_num_documents].copy()
+        sampled_answers = np.random.choice(first_half_queries['generated_answer'].values, size=len(second_half_queries), replace=False)
+        second_half_queries['generated_answer'] = sampled_answers
+        second_half_queries['Answer_Faithfulness_Label'] = "No"
+        second_half_queries['Answer_Relevance_Label'] = "No"
+
+        # Update the original dataframe with the generated negative answers
+        synth_queries.loc[second_half_queries.index, 'generated_answer'] = second_half_queries['generated_answer']
+        synth_queries.loc[second_half_queries.index, 'Answer_Faithfulness_Label'] = second_half_queries['Answer_Faithfulness_Label']
+        synth_queries.loc[second_half_queries.index, 'Answer_Relevance_Label'] = second_half_queries['Answer_Relevance_Label']
+        
         # Save the synthetic queries with answers back to the file
         synth_queries.to_csv(synthetic_queries_filename, index=False, sep="\t")
         print(f"Saved answers to: {synthetic_queries_filename}")
 
     # Re-read the synthetic queries from the file
     synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
-    # Filter out queries with a length of 10 or less
-    synth_queries = synth_queries[synth_queries["synthetic_query"].str.len() > 10]
-
-    # Process embeddings for the synthetic queries
-    synth_queries = process_embeddings(synth_queries, answer_generation_settings)
+    
     # Shuffle and save the synthetic queries
     shuffle_and_save(synth_queries, synthetic_queries_filename)
+
+    message = "Answer generation and processing completed."
+    box_width = len(message) + 4
+
+    print("\n" + "=" * box_width)
+    print(f"| {message} |")
+    print("=" * box_width + "\n")
