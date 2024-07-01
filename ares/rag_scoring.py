@@ -17,8 +17,8 @@ machine_label_system_prompt = (
 )
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
-model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_path, rag_type, vllm, host_url, request_delay, debug_mode, 
-machine_label_llm_model, gold_machine_label_path, prediction_filepath):
+model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
+machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
     """
     Configures and runs the RAG scoring process.
 
@@ -33,7 +33,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
     - llm_judge: LLM judge to use.
     - assigned_batch_size: Batch size to use.
     - number_of_labels: Number of labels.
-    - gold_label_path: Path to the gold labels.
+    - gold_label_paths: List of paths to the gold labels.
     - rag_type: Type of RAG.
     - vllm: VLLM to use.
     - host_url: Host URL.
@@ -41,14 +41,15 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
     - debug_mode: Whether to run in debug mode.
     - machine_label_llm_model: Machine label LLM model.
     - gold_machine_label_path: Path to the gold machine labels.
+    - prediction_filepaths: List of file paths to save predictions.
     """
     
     if few_shot_examples_filepath == "None" and (llm_judge != "None" or machine_label_llm_model != "None"):
         raise ValueError("'few_shot_examples_filepath' cannot be None if generating machine labels.")
     
-    # Validate if either gold_label_path or gold_machine_label_path is provided
-    if gold_label_path == "None" and gold_machine_label_path == "None":
-        raise ValueError("Either 'gold_label_path' or 'gold_machine_label_path' must be provided.")
+    # Validate if either gold_label_paths or gold_machine_label_path is provided
+    if gold_label_paths == ["None"] and gold_machine_label_path == "None":
+        raise ValueError("Either 'gold_label_paths' or 'gold_machine_label_path' must be provided.")
 
     # Validate inputs and determine model loading strategy
     if checkpoints:
@@ -70,7 +71,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
 
     all_evaluation_results = []
     
-    for checkpoint, label_column in pairings:
+    for idx, (checkpoint, label_column) in enumerate(pairings):
 
         chekpoint_results = []
 
@@ -79,7 +80,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
         validation_set_ratios = []
         ppi_confidence_intervals = []
         accuracy_scores = []
-        for test_set_selection in evaluation_datasets:
+        for test_set_idx, test_set_selection in enumerate(evaluation_datasets):
 
             few_shot_examples = begin(evaluation_datasets, checkpoints, labels, few_shot_examples_filepath)
 
@@ -124,7 +125,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
                 "label_column": label_column,
                 "total_predictions": total_predictions,
                 "labels": labels,
-                "gold_label_path": gold_label_path,
+                "gold_label_path": gold_label_paths[test_set_idx] if test_set_idx < len(gold_label_paths) else gold_label_paths[-1],
                 "tokenizer": tokenizer,
                 "assigned_batch_size": assigned_batch_size,
                 "device": device,
@@ -171,7 +172,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepath):
                 "host_url": host_url,
                 "request_delay": request_delay,
                 "debug_mode": debug_mode,
-                "prediction_filepath": prediction_filepath
+                "prediction_filepath": prediction_filepaths[test_set_idx] if test_set_idx < len(prediction_filepaths) else prediction_filepaths[-1]
             }
             dataset_results = evaluate_and_scoring_data(evaluate_scoring_settings)
             chekpoint_results.append(dataset_results)
