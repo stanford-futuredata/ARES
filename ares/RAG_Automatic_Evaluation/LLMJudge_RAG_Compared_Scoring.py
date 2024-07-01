@@ -31,6 +31,7 @@ import scipy.stats as stats
 import argparse
 import openai
 from tqdm import tqdm
+import subprocess
 tqdm.pandas()
 
 # Set random seed for reproducibility
@@ -679,6 +680,8 @@ def evaluate_model(params: dict) -> tuple:
             except KeyError:
                 sys.exit("Both 'Query' and 'Question' keys are missing for the given row in few shot dataset.")
 
+        failed_extraction_count = 0
+        
         if "Context_Relevance_Label" == label_column:
             if vllm:
                 test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring_vllm(
