@@ -1,5 +1,3 @@
-
-
 import os
 import re
 import ast
@@ -389,15 +387,17 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
     Returns:
     - pd.DataFrame: A DataFrame containing the processed and filtered data.
     """
-
     # Read the dataset
     synth_queries = pd.read_csv(dataset, sep="\t")
-    
+
     # If the dataset is reformatted, rename columns accordingly
     if "nq_reformatted" in dataset:
         synth_queries['synthetic_query'] = synth_queries['Query']
         synth_queries['generated_answer'] = synth_queries['Answer']
         synth_queries['document'] = synth_queries['Document']
+
+    # Print initial count
+    print(f"Initial count: {len(synth_queries)}")
 
     # Filter out rows with NaN values in the specified columns
     synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
@@ -406,32 +406,69 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
     synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
     synth_queries = synth_queries[synth_queries[label_column].notna()]
 
+    # Print count after initial filtering
+    print(f"Count after initial filtering: {len(synth_queries)}")
+
     # Shuffle the dataset
     synth_queries = synth_queries.sample(n=len(synth_queries), random_state=42)
+
+    # Print counts of Answer_Relevance_Label before any further filtering
+    print(f"Answer_Relevance_Label counts before filtering: Yes - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'No'].shape[0]}")
 
     # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
         synth_queries["concat_text"] = [
-            combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document']) 
-            for i in range(len(synth_queries))
-        ]
-    else:
-        synth_queries["concat_text"] = [
-            combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer']) 
+            combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'])
             for i in range(len(synth_queries))
         ]
 
+        # Print the count before filtering duplicates
+        print(f"Count before filtering duplicates for context relevance: {len(synth_queries)}")
+
+        # Temporarily remove rows with duplicate query/document pairs for context relevance
+        synth_queries = synth_queries.drop_duplicates(subset=["synthetic_query", "document"])
+
+        # Print the count after filtering
+        print(f"Count after filtering duplicates for context relevance: {len(synth_queries)}")
+
+    else:
+        synth_queries["concat_text"] = [
+            combine_query_document(synth_queries.iloc[i]['synthetic_query'], synth_queries.iloc[i]['document'], synth_queries.iloc[i]['generated_answer'])
+            for i in range(len(synth_queries))
+        ]
+
+        # Print the count before filtering
+        print(f"Count before filtering for context relevance: {len(synth_queries)}")
+
+        # Print counts of Context_Relevance_Label before filtering
+        print(f"Context_Relevance_Label counts before filtering: Yes - {synth_queries[synth_queries['Context_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Context_Relevance_Label'] == 'No'].shape[0]}")
+
+        # Temporarily remove rows where context relevance is "No" for answer relevance/faithfulness
+        synth_queries = synth_queries[synth_queries["Context_Relevance_Label"] != "No"]
+
+        # Print the count after filtering
+        print(f"Count after filtering for context relevance: {len(synth_queries)}")
+
+    # Print counts of Answer_Relevance_Label after filtering for context relevance
+    print(f"Answer_Relevance_Label counts after filtering: Yes - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'No'].shape[0]}")
+
     # Tokenize the concatenated text and calculate token lengths
     synth_queries['token_length'] = [
-        len(tokenizer.encode(text, return_tensors='pt')[0]) 
+        len(tokenizer.encode(text, return_tensors='pt')[0])
         for text in tqdm(synth_queries['concat_text'], desc="Tokenizing")
     ]
+
+    # Print count before token length filtering
+    print(f"Count before token length filtering: {len(synth_queries)}")
 
     # Remove duplicate rows based on the concatenated text
     synth_queries = synth_queries.drop_duplicates(["concat_text"])
 
     # Filter out rows where token length exceeds the maximum allowed token length
-    synth_queries = synth_queries[synth_queries['token_length'] <= 2048]
+    synth_queries = synth_queries[synth_queries['token_length'] <= 4096]
+
+    # Print final count
+    print(f"Final count after token length filtering: {len(synth_queries)}")
 
     return synth_queries
 
@@ -447,7 +484,6 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
     Returns:
     - tuple: A tuple containing the transformed training and test DataFrames.
     """
-
     # Initialize the training DataFrame
     train_df = synth_queries
 
@@ -463,17 +499,42 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
     train_df = train_df[train_df["document"].str.len() > 100]
     train_df = train_df[train_df[label_column].notna()]
 
+    # Print counts of Answer_Relevance_Label before any further filtering
+    print(f"Answer_Relevance_Label counts before filtering: Yes - {train_df[train_df['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {train_df[train_df['Answer_Relevance_Label'] == 'No'].shape[0]}")
+
     # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
         test_set['concat_text'] = [
-            combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document']) 
+            combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'])
             for i in range(len(test_set))
         ]
+
+        # Print the count before filtering duplicates
+        print(f"Count before filtering duplicates for context relevance: {len(train_df)}")
+
+        # Temporarily remove rows with duplicate query/document pairs for context relevance
+        train_df = train_df.drop_duplicates(subset=["synthetic_query", "document"])
+
+        # Print the count after filtering
+        print(f"Count after filtering duplicates for context relevance: {len(train_df)}")
+
     else:
         test_set['concat_text'] = [
-            combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer']) 
+            combine_query_document(test_set.iloc[i]['Question'], test_set.iloc[i]['Document'], test_set.iloc[i]['Answer'])
             for i in range(len(test_set))
         ]
+
+        # Print the count before filtering
+        print(f"Count before filtering for context relevance: {len(train_df)}")
+
+        # Temporarily remove rows where context relevance is 0 for answer relevance/faithfulness
+        train_df = train_df[train_df["Context_Relevance_Label"] != "No"]
+
+        # Print the count after filtering
+        print(f"Count after filtering for context relevance: {len(train_df)}")
+
+    # Print counts of Answer_Relevance_Label after filtering for context relevance
+    print(f"Answer_Relevance_Label counts after filtering: Yes - {train_df[train_df['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {train_df[train_df['Answer_Relevance_Label'] == 'No'].shape[0]}")
 
     # Remove duplicate rows based on the concatenated text
     train_df = train_df.drop_duplicates(["concat_text"])
@@ -489,7 +550,6 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
         train_df = train_df[~train_df['generated_answer'].str.contains('|'.join(error_strings))]
 
     return train_df, test_set
-
 def split_dataset(train_df: pd.DataFrame, dataset: str, 
 test_set: pd.DataFrame, label_column: str) -> tuple[list[str], list[int], list[str], list[int], list[str], list[int], list[int]]:
     """
@@ -884,4 +944,3 @@ def print_and_save_model(total_predictions: torch.Tensor, total_references: torc
 
     # Print checkpoint save path
     print("Saved classification checkpoint to: " + str(checkpoint_path))
-
