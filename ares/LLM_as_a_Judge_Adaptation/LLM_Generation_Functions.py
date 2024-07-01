@@ -97,8 +97,6 @@ for_fever_dataset=False, for_wow_dataset=False) -> list:
 
         query = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        breakpoint() 
-
         synthetic_queries.append(query)
 
     return synthetic_queries

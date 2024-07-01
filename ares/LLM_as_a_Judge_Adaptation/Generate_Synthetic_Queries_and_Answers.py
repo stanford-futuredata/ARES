@@ -326,6 +326,11 @@ def generate_query(document: str, settings: dict) -> list:
             settings['for_wow_dataset']
         )
 
+# import logging
+
+# Configure logging
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def generate_positive_synthetic_queries(documents: pd.DataFrame, settings: dict, chunk_size: int) -> pd.DataFrame:
     """
     Processes the documents to generate synthetic queries and remove duplicates.
@@ -339,13 +344,12 @@ def generate_positive_synthetic_queries(documents: pd.DataFrame, settings: dict,
         pd.DataFrame: DataFrame containing the documents with the generated synthetic queries.
     """
     num_documents = len(documents)
-    min_queries = num_documents * 2
+    target_queries = num_documents
 
     all_queries = []
     initial_queries_per_document = 2
     synthetic_queries_filename = settings.get('synthetic_queries_filename', 'intermediate_queries.tsv')
 
-    # Process documents in chunks
     for start in range(0, num_documents, chunk_size):
         end = min(start + chunk_size, num_documents)
         chunk = documents[start:end]
@@ -362,15 +366,22 @@ def generate_positive_synthetic_queries(documents: pd.DataFrame, settings: dict,
         all_queries_flat = [(index, document, query) for index, document, queries in all_queries for query in queries]
         synthetic_queries_df = pd.DataFrame(all_queries_flat, columns=["document_index", "document", "synthetic_query"])
 
+        print(f"Total queries generated before filtering: {len(synthetic_queries_df)}")
+
         synthetic_queries_df = synthetic_queries_df[synthetic_queries_df["synthetic_query"].str.len() > 10]
+        print(f"Total queries after length filtering: {len(synthetic_queries_df)}")
+
         synthetic_queries_df = synthetic_queries_df.drop_duplicates(subset=['synthetic_query'])
+        print(f"Total queries after deduplication: {len(synthetic_queries_df)}")
 
         document_index = generate_index(documents)
         synthetic_queries_df = filter_synthetic_queries(synthetic_queries_df, document_index)
+        print(f"Total queries after filtering: {len(synthetic_queries_df)}")
 
-        while len(synthetic_queries_df) < min_queries:
+        while len(synthetic_queries_df) < target_queries:
+            print(f"Not enough queries. Generating more...")
             counts = synthetic_queries_df['document_index'].value_counts()
-            documents_needing_more_queries = counts[counts < initial_queries_per_document].index.tolist()
+            documents_needing_more_queries = counts[counts < 1].index.tolist()
 
             additional_queries = []
             with tqdm(total=len(documents_needing_more_queries) * initial_queries_per_document, desc="Generating additional synthetic queries...") as pbar:
@@ -384,15 +395,19 @@ def generate_positive_synthetic_queries(documents: pd.DataFrame, settings: dict,
             additional_queries_flat = [(index, document, query) for index, document, queries in additional_queries for query in queries]
             additional_queries_df = pd.DataFrame(additional_queries_flat, columns=["document_index", "document", "synthetic_query"])
 
+            print(f"Additional queries generated before filtering: {len(additional_queries_df)}")
+
             additional_queries_df = additional_queries_df[additional_queries_df["synthetic_query"].str.len() > 10]
+            print(f"Additional queries after length filtering: {len(additional_queries_df)}")
+
             synthetic_queries_df = pd.concat([synthetic_queries_df, additional_queries_df]).drop_duplicates(subset=['synthetic_query'])
             synthetic_queries_df = filter_synthetic_queries(synthetic_queries_df, document_index)
+            print(f"Total queries after adding additional queries and filtering: {len(synthetic_queries_df)}")
 
         # Save intermediate results
         synthetic_queries_df.to_csv(synthetic_queries_filename, mode='a', header=not os.path.exists(synthetic_queries_filename), index=False, sep="\t")
 
     return synthetic_queries_df
-
 
 def generate_negative_synthetic_queries(positive_queries_df: pd.DataFrame, documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
     """
@@ -414,7 +429,6 @@ def generate_negative_synthetic_queries(positive_queries_df: pd.DataFrame, docum
         document = row['document']
         negative_query = None
 
-        # Ensure unique negative queries
         while negative_query is None or negative_query in used_queries:
             negative_query = np.random.choice(sampled_queries)
 
@@ -424,7 +438,6 @@ def generate_negative_synthetic_queries(positive_queries_df: pd.DataFrame, docum
     negative_queries_df = pd.DataFrame(negative_queries, columns=["document_index", "document", "synthetic_query"])
     negative_queries_df['Context_Relevance_Label'] = "No"
 
-    # Save intermediate results
     synthetic_queries_filename = settings.get('synthetic_queries_filename', 'intermediate_queries.tsv')
     negative_queries_df.to_csv(synthetic_queries_filename, mode='a', header=not os.path.exists(synthetic_queries_filename), index=False, sep="\t")
 
@@ -459,49 +472,45 @@ def generate_synthetic_queries(documents: pd.DataFrame, settings: dict) -> pd.Da
     print("\n" + "=" * box_width)
     print(f"| {message} |")
     print("=" * box_width + "\n")
-    
-    # Calculate chunk size based on the total number of documents
+
     total_documents = len(documents)
     initial_queries_per_document = 2
     chunk_size = total_documents
     
-    # Split the documents into two halves
     num_documents = len(documents)
-    half_num_documents = num_documents // 2  # Process first half of the documents
+    half_num_documents = num_documents // 2
     
     if num_documents % 2 != 0:
-        half_num_documents += 1  # Handle odd number of documents
+        half_num_documents += 1
     
     first_half_documents = documents.head(half_num_documents)
     second_half_documents = documents.tail(num_documents - half_num_documents)
     
-    # Generate positive queries
     print(f"Generating positive queries for the first {len(first_half_documents)} documents...")
     positive_queries_df = generate_positive_synthetic_queries(first_half_documents, settings, chunk_size)
     
-    # Ensure correct numbers of queries
     num_to_sample = half_num_documents
     positive_queries_for_answers_df = positive_queries_df.sample(n=num_to_sample, random_state=42)
+    positive_queries_for_answers_df['Context_Relevance_Label'] = 'Yes'
     positive_queries_duplicate_df = positive_queries_for_answers_df.copy()
+    positive_queries_duplicate_df['Context_Relevance_Label'] = 'Yes'
     
-    # Generate negative queries
     print(f"Generating negative queries for the remaining {len(second_half_documents)} documents...")
     negative_queries_df = generate_negative_synthetic_queries(positive_queries_df, second_half_documents, settings)
     negative_queries_df = negative_queries_df.sample(n=num_to_sample, random_state=42)
     
-    # Combine positive, duplicated, and negative queries
     combined_queries_df = pd.concat([positive_queries_for_answers_df, positive_queries_duplicate_df, negative_queries_df], ignore_index=True)
     save_synthetic_queries(combined_queries_df, settings['synthetic_queries_filename'])
-    
+
     message = "Synthetic query generation completed."
     box_width = len(message) + 4
 
     print("\n" + "=" * box_width)
     print(f"| {message} |")
     print("=" * box_width + "\n")
-    
+
     print(f"Total queries saved: {len(combined_queries_df)} (Positive: {len(positive_queries_for_answers_df)}, Duplicate: {len(positive_queries_duplicate_df)}, Negative: {len(negative_queries_df)})")
-    
+
     return combined_queries_df
 
 def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings: dict) -> pd.DataFrame:
@@ -658,6 +667,10 @@ def shuffle_and_save(synthetic_queries: pd.DataFrame, synthetic_queries_filename
     Returns:
         None
     """
+    # Ensure specific conditions for rows where Context_Relevance_Label is "No"
+    condition = synthetic_queries['Context_Relevance_Label'] == "No"
+    synthetic_queries.loc[condition, ['generated_answer', 'Answer_Relevance_Label', 'Answer_Faithfulness_Label']] = ""
+    
     # Shuffle the synthetic queries DataFrame with a fixed random state for reproducibility
     synthetic_queries = synthetic_queries.sample(n=len(synthetic_queries), random_state=42)
     
@@ -754,6 +767,13 @@ def Generate_Synthetic_Answers(synthetic_queries_filename: str, answer_generatio
 
     # Re-read the synthetic queries from the file
     synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
+    
+    # Check if modifications are needed for FEVER dataset formatting
+    if answer_generation_settings['for_fever_dataset']:
+        # Modify answers based on FEVER dataset needs
+        fever_conditions = (synth_queries['Context_Relevance_Label'] == 'Yes') & (synth_queries['Answer_Relevance_Label'] == 'No')
+        synth_queries.loc[fever_conditions, 'generated_answer'] = 'REFUTES'
+        print("FEVER dataset formatting applied to synthetic answers.")
     
     # Shuffle and save the synthetic queries
     shuffle_and_save(synth_queries, synthetic_queries_filename)

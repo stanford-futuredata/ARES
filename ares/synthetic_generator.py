@@ -31,7 +31,8 @@ def synthetic_generator_config(
     ),
     synthetic_valid_answer_prompt: str = (
         "You are an expert question-answering system. You must create an answer for the provided question. "
-        "The answer must be answerable within the context of the document.\n\n"
+        "The answer must be answerable within the context of the document. "
+        "Provide the answer alone without any additional text or formatting.\n\n"
     ),
     synthetic_contradictory_answer_prompt: str = (
         "Create an answer for the given question that contradicts the provided document. "
@@ -64,6 +65,10 @@ def synthetic_generator_config(
         ValueError: If the lengths of document_filepaths and synthetic_queries_filenames do not match.
     """
     
+    print("=" * 40)
+    print("Saving synthetic queries to: ", synthetic_queries_filenames)
+    print("=" * 40)
+    
     model, tokenizer, device = load_model(model_choice, api_model)
 
     if len(document_filepaths) != len(synthetic_queries_filenames):
@@ -72,6 +77,18 @@ def synthetic_generator_config(
     for document_filepath, synthetic_queries_filename in zip(document_filepaths, synthetic_queries_filenames):
         for_fever_dataset = "fever" in document_filepath.lower()
         for_wow_dataset = "wow" in document_filepath.lower()
+
+        if for_fever_dataset:
+            synthetic_query_prompt = (
+                "You are given a document. Extract a factual statement from the document to create a query that can be answered with 'SUPPORT'"
+                "Ensure the query is directly related to the information presented in the document."
+                "Do not return multiple queries, labels, or additional text."
+            )
+            synthetic_valid_answer_prompt = (
+                "You are given a document and a query. Determine if the query is supported or refuted by the information in the document. "
+                "Answer with either 'SUPPORTS' or 'REFUTES' based on the content of the document.  Return only one correct answer."
+                "Do not return multiple answers, labels, or additional text."
+            )
 
         documents = load_documents(document_filepath, clean_documents, documents_sampled)
 
@@ -100,7 +117,9 @@ def synthetic_generator_config(
             'for_wow_dataset': for_wow_dataset,
             'synthetic_query_prompt': synthetic_query_prompt,
             'synthetic_queries_filename': synthetic_queries_filename,
-            'question_temperatures': question_temperatures
+            'question_temperatures': question_temperatures,
+            'number_of_negatives_added_ratio': number_of_negatives_added_ratio,
+            'lower_bound_for_negatives': lower_bound_for_negatives,
         }
 
         generate_synthetic_queries(documents, synthetic_queries_config)

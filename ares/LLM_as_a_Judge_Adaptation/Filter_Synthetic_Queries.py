@@ -101,12 +101,18 @@ def filter_synthetic_queries(queries_dataset: pd.DataFrame, document_index) -> p
     # Iterate over each query in the dataset
     for i in tqdm(range(len(queries_dataset))):
         question = queries_dataset[i]["synthetic_query"]
-        question_embedding = np.array(get_embedding(question)).astype(np.float32)
+        embedding = get_embedding(question)
+        
+        # Check if embedding is valid
+        if embedding is None or len(embedding) == 0:
+            print(f"Warning: No embedding generated for query '{question}'. Skipping.")
+            continue
+        question_embedding = np.array(embedding).astype(np.float32)
         
         # Ensure question_embedding is a 2D array with shape (1, 1536)
         if question_embedding.shape != (1536,):
-            raise ValueError(f"Expected embedding of shape (1536,), but got {question_embedding.shape}")
-
+            print(f"Warning: Invalid embedding shape {question_embedding.shape} for query '{question}'. Skipping.")
+            continue
         question_embedding = question_embedding.reshape(1, -1)
         
         # Retrieve the nearest examples from the document index
@@ -124,7 +130,7 @@ def filter_synthetic_queries(queries_dataset: pd.DataFrame, document_index) -> p
                 total_labels.append("No")
             else:
                 total_labels.append("N/A")
-
+    
     # Convert the Hugging Face Dataset back to a pandas DataFrame
     queries_dataset = queries_dataset.to_pandas()
     
