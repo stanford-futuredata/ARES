@@ -4,6 +4,7 @@ from .rag_scoring import rag_scoring_config
 from .ues_idp import ues_idp_config
 from .kilt_filter import KILT_dataset_process
 from .superglue_filter import superGlue
+from .label_filter import filter_tsv_by_label
 from .prompts import context_relevance_system_prompt, answer_relevance_system_prompt, answer_faithfulness_system_prompt
 from typing import List
 
@@ -50,8 +51,8 @@ class ARES:
             "number_of_contradictory_answers_added_ratio": (float, 0.67),  # Optional with default
             "number_of_positives_added_ratio": (float, 0.0),  # Optional with default
             "regenerate_embeddings": (float, True),  # Optional with default
-            "synthetic_query_prompt": (str, "You are an expert question-answering system. You are a model trained to generate a single question based on the provided document. The question must be answerable within the context of the document. Return only the query, nothing else.\n\n"),
-            "synthetic_valid_answer_prompt": (str, "You are an expert question-answering system. You must create an answer for the provided question. The answer must be answerable within the context of the document.\n\n"),
+            "synthetic_query_prompt": (str, "You are an expert question-answering system. Generate only one question based on the provided document. Ensure the question is answerable within the context of the document. Do not generate multiple questions. Do not provide labels, headers, or additional text. Only return a single, clear question. Generating more than one question will be considered incorrect output.\n\n"),
+            "synthetic_valid_answer_prompt": (str, "You are an expert question-answering system. You must create an answer for the provided question. The answer must be answerable within the context of the document. Return only the answer, nothing else.\n\n"),
             "synthetic_contradictory_answer_prompt": (str, "Create an answer for the given question that contradicts the provided document. You should create false information that disagrees with what exists within the content of the document.  Return only the false answer, without any labels or additional text.\n\n")
         },
         
@@ -77,9 +78,9 @@ class ARES:
         "ppi": {
             "evaluation_datasets": (list, None),  # Required parameter with no default value
             "labels": (list, None),  # Required parameter with no default value
-            "checkpoints": (list, []),  # Required parameter with no default value
+            "checkpoints": (list, None),  # Required parameter with no default value
             "few_shot_examples_filepath": (str, "None"), # Optional with default
-            "gold_label_path": (str, "None"),  # Optional with default
+            "gold_label_paths": (list, ["None"]),  # Optional with default
             "rag_type": (str, "question_answering"),  # Optional with default
             "model_choice": (str, "microsoft/deberta-v3-large"),  # Optional with default
             "llm_judge": (str, "None"),  # Optional with default
@@ -93,7 +94,7 @@ class ARES:
             "debug_mode": (bool, False),  # Optional with default
             "machine_label_llm_model": (str, "None"),  # Optional with default
             "gold_machine_label_path": (str, "None"),  # Optional with default
-            "prediction_filepath": (str, "None")  # Optional with default
+            "prediction_filepaths": (list, ["None"])  # Optional with default
         }
     }
 
@@ -162,6 +163,12 @@ class ARES:
         Processes the SuperGlue dataset with the specified dataset name.
         """
         superGlue(dataset_name)
+    
+    def filter_tsv_by_label(self, tsv_file, label, output_file=None):
+        """
+        Filters the TSV file by the specified label and saves the filtered data to a new TSV file.
+        """
+        filter_tsv_by_label(tsv_file, label, output_file)
 
     def run(self):
         """
