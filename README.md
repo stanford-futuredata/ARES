@@ -23,7 +23,7 @@
     <img alt="Static Badge" src="https://img.shields.io/badge/Read-documentation-purple?style=flat">
   </a>
 
-  <a href="https://colab.research.google.com/drive/1lc8Tkcair7wWZVbsdNKmfSM5rbAqOeeO#scrollTo=03609iqyArxM" target="_blank">
+  <a href="https://colab.research.google.com/drive/1DvXr9SvWOw6xaNW8LHcy9C06LKevDPxe#scrollTo=wBDuO0n5c1mz" target="_blank">
     <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
   </a>
 
