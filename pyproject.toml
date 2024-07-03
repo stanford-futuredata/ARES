@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ares-ai"
-version = "0.6.1"
+version = "0.6.5"
 description = """ 
 ARES is an advanced evaluation framework for Retrieval-Augmented Generation (RAG) systems, 
 utilizing fine-tuned classifiers and synthetic data to assess performance efficiently. It streamlines 
@@ -40,9 +40,7 @@ dependencies = [
     "evaluate==0.4.2",
     "fastapi == 0.110.2",
     "faiss-cpu >= 1.8.0", 
-    "ipywidgets >=8.0.6, <9.0.0",
-    "ipython >=8.12.2, <9.0.0",
-    "ipykernel >=6.23.1, <7.0.0",
+    "ipywidgets == 7.7.1",
     "joblib >=1.2.0, <2.0.0",
     "matplotlib >=3.7.1, <4.0.0",
     "matplotlib-inline >=0.1.6, <0.2.0",
@@ -51,7 +49,6 @@ dependencies = [
     "numpy >=1.20.0, <2.0.0",
     "openai == 1.14.2",
     "pandas >= 2.0.1",
-    "protobuf >= 4.23.2",
     "python-dateutil >=2.8.2,<3.0.0",
     "pytorch-ranger >=0.1.1,<0.2.0",
     "pytz >=2023.3,<2024.0",
