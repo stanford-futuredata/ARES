@@ -224,7 +224,7 @@ print(results)
 
 Note: This code creates a checkpoint for the trained classifier.
 Training may take some time. You can download our jointly trained checkpoint on context relevance here!:
-[Download Checkpoint](https://drive.google.com/file/d/15poFyeoqdnaNZVjl41HllL2213DKyZjH/view?usp=sharing)
+[Download Checkpoint](https://drive.google.com/file/d/1INyHfZpsUsn5UEBLSRehI9AX08AI12Lt/view?usp=sharing)
 
 
 <hr>
