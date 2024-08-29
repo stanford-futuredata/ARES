@@ -403,7 +403,8 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
     synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
     synth_queries = synth_queries[synth_queries["synthetic_query"].notna()]
     synth_queries = synth_queries[synth_queries["document"].notna()]
-    synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
+    if "Context" not in label_column:
+        synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
     synth_queries = synth_queries[synth_queries[label_column].notna()]
 
     # Print count after initial filtering
