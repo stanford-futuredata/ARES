@@ -451,7 +451,7 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
         print(f"Count after filtering for context relevance: {len(synth_queries)}")
 
     # Print counts of Answer_Relevance_Label after filtering for context relevance
-    print(f"Answer_Relevance_Label counts a filtering: Yes - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'No'].shape[0]}")
+    print(f"Answer_Relevance_Label counts after filtering: Yes - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'No'].shape[0]}")
 
     # Tokenize the concatenated text and calculate token lengths
     synth_queries['token_length'] = [
