@@ -501,7 +501,7 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
     train_df = train_df[train_df[label_column].notna()]
 
     # Print counts of Answer_Relevance_Label before any further filtering
-    print(f"Answer_Relevance_Label counts before filtering: Yes - {train_df[train_df['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {train_df[train_df['Answer_Relevance_Label'] == 'No'].shape[0]}")
+    print(f"Answer_Relevance_Label counts before filtering: Yes - {test_set[test_set['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {test_set[test_set['Answer_Relevance_Label'] == 'No'].shape[0]}")
 
     # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
@@ -511,13 +511,13 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
         ]
 
         # Print the count before filtering duplicates
-        print(f"Count before filtering duplicates for context relevance: {len(train_df)}")
+        print(f"Count before filtering duplicates for context relevance: {len(test_set)}")
 
         # Temporarily remove rows with duplicate query/document pairs for context relevance
-        train_df = train_df.drop_duplicates(subset=["synthetic_query", "document"])
+        test_set = test_set.drop_duplicates(subset=["synthetic_query", "document"])
 
         # Print the count after filtering
-        print(f"Count after filtering duplicates for context relevance: {len(train_df)}")
+        print(f"Count after filtering duplicates for context relevance: {len(test_set)}")
 
     else:
         test_set['concat_text'] = [
@@ -526,16 +526,16 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
         ]
 
         # Print the count before filtering
-        print(f"Count before filtering for context relevance: {len(train_df)}")
+        print(f"Count before filtering for context relevance: {len(test_set)}")
 
         # Temporarily remove rows where context relevance is 0 for answer relevance/faithfulness
-        train_df = train_df[train_df["Context_Relevance_Label"] != "No"]
+        test_set = test_set[test_set["Context_Relevance_Label"] != "No"]
 
         # Print the count after filtering
-        print(f"Count after filtering for context relevance: {len(train_df)}")
+        print(f"Count after filtering for context relevance: {len(test_set)}")
 
     # Print counts of Answer_Relevance_Label after filtering for context relevance
-    print(f"Answer_Relevance_Label counts after filtering: Yes - {train_df[train_df['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {train_df[train_df['Answer_Relevance_Label'] == 'No'].shape[0]}")
+    print(f"Answer_Relevance_Label counts after filtering: Yes - {test_set[test_set['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {test_set[test_set['Answer_Relevance_Label'] == 'No'].shape[0]}")
 
     # Remove duplicate rows based on the concatenated text
     train_df = train_df.drop_duplicates(["concat_text"])
