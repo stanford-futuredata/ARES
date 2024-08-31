@@ -28,9 +28,10 @@ from tqdm.auto import tqdm
 from transformers import (
     PreTrainedTokenizer, T5Tokenizer, T5EncoderModel, T5ForConditionalGeneration,
     BertModel, AutoTokenizer, AutoModel, GPT2Tokenizer,
-    TrainingArguments, Trainer, get_scheduler,
+    TrainingArguments, get_scheduler,
     AutoModelForCausalLM, AutoConfig, AutoModelForSequenceClassification
 )
+
 import datasets
 from datasets import load_metric
 
@@ -182,7 +183,18 @@ class CustomBERTModel(nn.Module):
             model_encoding = AutoModel.from_pretrained(model_choice)
             embedding_size = 1536
             self.encoderModel = model_encoding
-
+            
+        elif "electra" in model_choice.lower():
+            config = AutoConfig.from_pretrained(model_choice)
+            model_encoding = AutoModel.from_pretrained(model_choice)
+            embedding_size = config.hidden_size
+            self.encoderModel = model_encoding
+        
+        elif model_choice in ["meta-llama/Meta-Llama-3-70B"]: 
+            model_encoding = AutoModelForCausalLM.from_pretrained(model_choice) 
+            embedding_size = 8192
+            self.encoderModel = model_encoding
+            
         else:
             model_encoding = AutoModel.from_pretrained(model_choice)
             embedding_size = 768
@@ -216,6 +228,12 @@ class CustomBERTModel(nn.Module):
             # Perform a forward pass for the specified models
             total_output = self.encoderModel(input_ids=ids, attention_mask=mask)
             return total_output['logits']
+
+        elif "electra" in self.model_choice.lower():
+            outputs = self.encoderModel(input_ids=ids, attention_mask=mask)
+            pooled_output = outputs.last_hidden_state[:, 0]
+            logits = self.classifier(pooled_output)
+            return logits
         else:
             # Perform a forward pass for other models
             total_output = self.encoderModel(ids, attention_mask=mask)
@@ -285,7 +303,8 @@ def load_model(model_choice: str) -> tuple[AutoTokenizer, int]:
            - tokenizer (AutoTokenizer): The tokenizer loaded from the specified model.
            - max_token_length (int): The maximum token length set for the tokenizer.
     """
-    max_token_length = 2048
+    # max_token_length = 2048
+    max_token_length = 512 if "electra" in model_choice.lower() else 2048
     tokenizer = AutoTokenizer.from_pretrained(model_choice, model_max_length=max_token_length)
     
     return tokenizer, max_token_length
@@ -398,13 +417,16 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
 
     # Print initial count
     print(f"Initial count: {len(synth_queries)}")
+    print(f"Context_Relevance_Label counts before ANY filtering: Yes - {synth_queries[synth_queries['Context_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Context_Relevance_Label'] == 'No'].shape[0]}")
 
     # Filter out rows with NaN values in the specified columns
     synth_queries = synth_queries[synth_queries[label_column] != "NaN"]
     synth_queries = synth_queries[synth_queries["synthetic_query"].notna()]
     synth_queries = synth_queries[synth_queries["document"].notna()]
-    synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
     synth_queries = synth_queries[synth_queries[label_column].notna()]
+
+    if "Context" not in label_column:
+        synth_queries = synth_queries[synth_queries['generated_answer'].notna()]
 
     # Print count after initial filtering
     print(f"Count after initial filtering: {len(synth_queries)}")
@@ -414,7 +436,9 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
 
     # Print counts of Answer_Relevance_Label before any further filtering
     print(f"Answer_Relevance_Label counts before filtering: Yes - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Answer_Relevance_Label'] == 'No'].shape[0]}")
-
+    # Print counts of Context_Relevance_Label before any further filtering
+    print(f"Context_Relevance_Label counts before filtering: Yes - {synth_queries[synth_queries['Context_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Context_Relevance_Label'] == 'No'].shape[0]}")
+    
     # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
         synth_queries["concat_text"] = [
@@ -425,11 +449,21 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
         # Print the count before filtering duplicates
         print(f"Count before filtering duplicates for context relevance: {len(synth_queries)}")
 
+        # Count and print Yes and No labels before filtering
+        yes_count = synth_queries[synth_queries[label_column] == 'Yes'].shape[0]
+        no_count = synth_queries[synth_queries[label_column] == 'No'].shape[0]
+        print(f"CR - Before filtering - Yes: {yes_count}, No: {no_count}")
+
         # Temporarily remove rows with duplicate query/document pairs for context relevance
         synth_queries = synth_queries.drop_duplicates(subset=["synthetic_query", "document"])
 
         # Print the count after filtering
         print(f"Count after filtering duplicates for context relevance: {len(synth_queries)}")
+
+        # Count and print Yes and No labels after filtering
+        yes_count = synth_queries[synth_queries[label_column] == 'Yes'].shape[0]
+        no_count = synth_queries[synth_queries[label_column] == 'No'].shape[0]
+        print(f"CR - After filtering - Yes: {yes_count}, No: {no_count}")
 
     else:
         synth_queries["concat_text"] = [
@@ -444,7 +478,8 @@ def analyze_and_report_data(dataset: str, label_column: str, tokenizer: AutoToke
         print(f"Context_Relevance_Label counts before filtering: Yes - {synth_queries[synth_queries['Context_Relevance_Label'] == 'Yes'].shape[0]}, No - {synth_queries[synth_queries['Context_Relevance_Label'] == 'No'].shape[0]}")
 
         # Temporarily remove rows where context relevance is "No" for answer relevance/faithfulness
-        synth_queries = synth_queries[synth_queries["Context_Relevance_Label"] != "No"]
+        if label_column == "Answer_Relevance_Label" or label_column == "Answer_Faithfulness_Label":
+            synth_queries = synth_queries[synth_queries["Context_Relevance_Label"] != "No"]
 
         # Print the count after filtering
         print(f"Count after filtering for context relevance: {len(synth_queries)}")
