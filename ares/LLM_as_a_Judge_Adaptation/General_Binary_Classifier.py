@@ -535,7 +535,7 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
         print(f"Count after filtering for context relevance: {len(test_set)}")
 
     # Print counts of Answer_Relevance_Label after filtering for context relevance
-    print(f"Answer_Relevance_Label counts after filtering: Yes - {test_set[test_set['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {test_set[test_set['Answer_Relevance_Label'] == 'No'].shape[0]}")
+    print(f"Answer_Relevance_Label counts after filtering: Yes - {test_set[test_set['Answer_Relevance_Label'] == 1.0].shape[0]}, No - {test_set[test_set['Answer_Relevance_Label'] == 0.0].shape[0]}")
 
     # Remove duplicate rows based on the concatenated text
     train_df = train_df.drop_duplicates(["concat_text"])
