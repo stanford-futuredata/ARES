@@ -501,7 +501,7 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
     train_df = train_df[train_df[label_column].notna()]
 
     # Print counts of Answer_Relevance_Label before any further filtering
-    print(f"Answer_Relevance_Label counts before filtering: Yes - {test_set[test_set['Answer_Relevance_Label'] == 'Yes'].shape[0]}, No - {test_set[test_set['Answer_Relevance_Label'] == 'No'].shape[0]}")
+    print(f"Answer_Relevance_Label counts before filtering: Yes - {test_set[test_set['Answer_Relevance_Label'] == 1.0].shape[0]}, No - {test_set[test_set['Answer_Relevance_Label'] == 0.0].shape[0]}")
 
     # Combine query and document (and generated answer if applicable) into a single text field
     if "Context" in label_column:
@@ -514,7 +514,7 @@ def transform_data(synth_queries: pd.DataFrame, validation_set: str, label_colum
         print(f"Count before filtering duplicates for context relevance: {len(test_set)}")
 
         # Temporarily remove rows with duplicate query/document pairs for context relevance
-        test_set = test_set.drop_duplicates(subset=["synthetic_query", "document"])
+        test_set = test_set.drop_duplicates(subset=["Question", "Document"])
 
         # Print the count after filtering
         print(f"Count after filtering duplicates for context relevance: {len(test_set)}")
