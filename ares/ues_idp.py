@@ -6,6 +6,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring 
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_azure
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_togetherai
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_togetherai
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_togetherai
@@ -122,7 +123,8 @@ def score_row(row: pd.Series,
               query_id: str, 
               debug_mode: bool, 
               request_delay: int, 
-              vllm: bool, 
+              vllm: bool,
+              azure_openai_config: dict,
               host_url: str) -> tuple:
     """
     Scores a row based on context relevance, answer relevance, and answer faithfulness.
@@ -138,6 +140,7 @@ def score_row(row: pd.Series,
     debug_mode (bool): Flag to enable or disable debug mode.
     request_delay (int): The delay between requests.
     vllm (bool): Flag to indicate if vllm is used.
+    azure_openai_config (dict): Dictionary containing information on Azure OpenAI Config
     host_url (str): The host URL for the scoring service.
 
     Returns:
@@ -147,7 +150,18 @@ def score_row(row: pd.Series,
     document = row['Document']
     answer = row['Answer']
 
-    if vllm:
+    if azure_openai_config:
+        context_score = few_shot_context_relevance_scoring_azure(
+                context_relevance_system_prompt, query, document, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, in_domain_prompts_dataset)
+        
+        if context_score == 0:
+            return 0, 0, 0
+        else:
+            answer_relevance_score = few_shot_answer_relevance_scoring(
+                answer_relevance_system_prompt, query, document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, in_domain_prompts_dataset)
+            answer_faithfulness_score = few_shot_answer_faithfulness_scoring(
+                answer_faithfulness_system_prompt, query, document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, in_domain_prompts_dataset)
+    elif vllm:
         context_score = few_shot_context_relevance_scoring_vllm(
             context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, in_domain_prompts_dataset)
         
@@ -200,6 +214,7 @@ def evaluate_documents(
     debug_mode: bool, 
     request_delay: int, 
     vllm: bool, 
+    azure_openai_config: dict,
     host_url: str, 
     documents: int
 ) -> tuple[list[float], list[float], list[float]]:
@@ -216,6 +231,7 @@ def evaluate_documents(
     debug_mode (bool): Flag to enable or disable debug mode.
     request_delay (int): Delay between requests in seconds.
     vllm (bool): Flag to indicate if vllm is used.
+    azure_openai_config (dict): Dictionary containing information to setup Azure OpenAI model.
     host_url (str): The host URL for the model.
     documents (int): Number of documents to evaluate.
 
@@ -229,7 +245,7 @@ def evaluate_documents(
     with tqdm(total=documents, desc=f"Evaluating large subset with {model_choice}") as pbar:
         for index, row in unlabeled_evaluation_set[:documents].iterrows():
             context_score, answer_relevance_score, answer_faithfulness_score = score_row(
-                row, in_domain_prompts_dataset, context_relevance_system_prompt, answer_relevance_system_prompt, answer_faithfulness_system_prompt, model_choice, "Query", debug_mode, request_delay, vllm, host_url)
+                row, in_domain_prompts_dataset, context_relevance_system_prompt, answer_relevance_system_prompt, answer_faithfulness_system_prompt, model_choice, "Query", debug_mode, request_delay, vllm, azure_openai_config, host_url)
             
             context_relevance_scores.append(context_score)
             answer_relevance_scores.append(answer_relevance_score)
@@ -249,6 +265,7 @@ def ues_idp_config(
     documents: int, 
     model_choice: str, 
     vllm: bool, 
+    azure_openai_config: dict,
     host_url: str, 
     request_delay: int
 ) -> dict:
@@ -265,6 +282,7 @@ def ues_idp_config(
     documents (int): Number of documents to evaluate.
     model_choice (str): The model choice for evaluation.
     vllm (bool): Flag to indicate if vllm is used.
+    azure_openai_config (dict): Dictionary containing information to setup Azure OpenAI model.
     host_url (str): The host URL for the model.
     request_delay (int): Delay between requests in seconds.
 

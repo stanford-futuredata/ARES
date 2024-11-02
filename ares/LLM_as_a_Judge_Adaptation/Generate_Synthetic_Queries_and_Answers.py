@@ -35,7 +35,9 @@ from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import (check_gener
                                                                       generate_synthetic_query_openai_approach)
 
 from ares.LLM_as_a_Judge_Adaptation.LLM_Synthetic_Generation import (generate_synthetic_query_api_approach,
+                                                                     generate_synthetic_query_azure_approach,
                                                                     generate_synthetic_answer_api_approach,
+                                                                    generate_synthetic_answer_azure_approach,
                                                                     generate_synthetic_contradictory_answers_api_approach)
 
 
@@ -303,16 +305,29 @@ def generate_query(document: str, settings: dict) -> list:
         list: List of generated synthetic queries.
     """
 
-    if settings['api_model']:
+    if settings['azure_api_config']:
+        return generate_synthetic_query_azure_approach(
+            document, 
+            settings['azure_api_config'],
+            settings["synthetic_query_prompt"], 
+            settings['few_shot_examples'], 
+            settings['length_of_fewshot_prompt'], 
+            settings['model'], 
+            settings['percentiles'], 
+            settings['for_fever_dataset'], 
+            settings['for_wow_dataset']
+        )
+    elif settings['api_model']:
         return generate_synthetic_query_api_approach(
-        document, 
-        settings["synthetic_query_prompt"], 
-        settings['few_shot_examples'], 
-        settings['length_of_fewshot_prompt'], 
-        settings['model'], 
-        settings['percentiles'], 
-        settings['for_fever_dataset'], 
-        settings['for_wow_dataset'])
+            document, 
+            settings["synthetic_query_prompt"], 
+            settings['few_shot_examples'], 
+            settings['length_of_fewshot_prompt'], 
+            settings['model'], 
+            settings['percentiles'], 
+            settings['for_fever_dataset'], 
+            settings['for_wow_dataset']
+        )
     else: 
         return generate_synthetic_query_llm_approach(
             document, 
@@ -524,7 +539,22 @@ def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings
     Returns:
         pd.DataFrame: DataFrame containing the synthetic queries with generated answers.
     """
-    if answer_generation_settings['api_model']:
+    if answer_generation_settings['azure_openai_config']:
+        tqdm.pandas(desc=f"Generating answers... (Azure OpenAI Model)", total=synthetic_queries.shape[0])
+        synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
+            lambda x: generate_synthetic_answer_azure_approach(
+                x["document"], 
+                x["synthetic_query"], 
+                answer_generation_settings['synthetic_valid_answer_prompt'], 
+                answer_generation_settings['answer_gen_few_shot_examples'], 
+                answer_generation_settings['length_of_fewshot_prompt_answer_gen'], 
+                answer_generation_settings['azure_openai_config'],
+                answer_generation_settings['for_fever_dataset'], 
+                answer_generation_settings['for_wow_dataset']
+            ), 
+            axis=1
+        )
+    elif answer_generation_settings['api_model']:
         tqdm.pandas(desc=f"Generating answers... ({answer_generation_settings['model']})", total=synthetic_queries.shape[0])
         synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
             lambda x: generate_synthetic_answer_api_approach(
