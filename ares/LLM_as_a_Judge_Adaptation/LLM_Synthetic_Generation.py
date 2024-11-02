@@ -234,7 +234,7 @@ def generate_synthetic_answer_api_approach(document: str, question: str, synthet
             continue
 
 def generate_synthetic_answer_azure_approach(document: str, question: str, synthetic_answer_prompt: str, prompt: str, 
-                                           length_of_fewshot_prompt: int, azure_openai_config: str, for_fever_dataset=False, 
+                                           length_of_fewshot_prompt: int, azure_openai_config: dict, for_fever_dataset=False, 
                                            for_wow_dataset=False): 
     # Construct the prompt without the document based on the dataset type
     prompt_without_document = prompt + "Example " + str(length_of_fewshot_prompt + 1) + ":\n"

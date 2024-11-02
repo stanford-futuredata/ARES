@@ -7,6 +7,8 @@ from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_f
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_azure
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_azure
+from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_azure
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_context_relevance_scoring_togetherai
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_faithfulness_scoring_togetherai
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import few_shot_answer_relevance_scoring_togetherai
@@ -157,9 +159,9 @@ def score_row(row: pd.Series,
         if context_score == 0:
             return 0, 0, 0
         else:
-            answer_relevance_score = few_shot_answer_relevance_scoring(
+            answer_relevance_score = few_shot_answer_relevance_scoring_azure(
                 answer_relevance_system_prompt, query, document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, in_domain_prompts_dataset)
-            answer_faithfulness_score = few_shot_answer_faithfulness_scoring(
+            answer_faithfulness_score = few_shot_answer_faithfulness_scoring_azure(
                 answer_faithfulness_system_prompt, query, document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, in_domain_prompts_dataset)
     elif vllm:
         context_score = few_shot_context_relevance_scoring_vllm(
@@ -299,7 +301,7 @@ def ues_idp_config(
     context_relevance_scores, answer_relevance_scores, answer_faithfulness_scores = evaluate_documents(
         unlabeled_evaluation_set, in_domain_prompts_dataset, context_relevance_system_prompt, 
         answer_relevance_system_prompt, answer_faithfulness_system_prompt, model_choice, 
-        debug_mode, request_delay, vllm, host_url, documents
+        debug_mode, request_delay, vllm, azure_openai_config, host_url, documents
     )
 
     # Create a DataFrame to store the results
