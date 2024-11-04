@@ -17,8 +17,8 @@ machine_label_system_prompt = (
 )
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
-model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
-machine_label_llm_model, gold_machine_label_path, prediction_filepaths, azure_openai_config):
+    model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
+    machine_label_llm_model, gold_machine_label_path, prediction_filepaths, azure_openai_config):
     """
     Configures and runs the RAG scoring process.
 
@@ -183,8 +183,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths, azure_op
                 "azure_openai_config": azure_openai_config
             }
             dataset_results = evaluate_and_scoring_data(evaluate_scoring_settings)
-            chekpoint_results.append(dataset_results)
-            
-        all_evaluation_results.append(chekpoint_results)
+        
+        all_evaluation_results.append(dataset_results)
             
     return all_evaluation_results

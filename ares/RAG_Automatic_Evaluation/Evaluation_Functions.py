@@ -20,7 +20,6 @@ from datasets import Dataset
 from openai import OpenAI
 from openai import AzureOpenAI
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoConfig, AutoModelForCausalLM
 
 try:

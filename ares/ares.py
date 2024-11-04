@@ -1,3 +1,5 @@
+# ares.py
+
 from .synthetic_generator import synthetic_generator_config
 from .binary_classifier import binary_classifer_config
 from .rag_scoring import rag_scoring_config
@@ -37,12 +39,14 @@ class ARES:
 
         "synthetic_query_generator": {
             "document_filepaths": (list, None),  # Required parameter with no default value
-            "few_shot_prompt_filename": (str, None),  # Required parameter with no default value
+            "few_shot_prompt_filenames": (list, None),  # Required parameter with no default value
             "synthetic_queries_filenames": (list, None),  # Required parameter with no default value
             "documents_sampled": (int, None),  # Required parameter with no default value
             "model_choice": (str, "google/flan-t5-xxl"),  # Optional with default
             "api_model": (bool, False), # Optional with default
             "azure_openai_config": (dict, None), # Optional with default
+            "vllm": (bool, False),  # Optional with default
+            "host_url": (str, "http://0.0.0.0:8000/v1"),  # Optional with default
             "clean_documents": (bool, False),  # Optional with default
             "regenerate_synth_questions": (bool, True),  # Optional with default
             "percentiles": (list, [0.05, 0.25, 0.5, 0.95]),  # Optional with default
