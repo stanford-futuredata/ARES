@@ -106,7 +106,7 @@ wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/ex
 wget https://raw.githubusercontent.com/stanford-futuredata/ARES/main/datasets/example_files/nq_unlabeled_output.tsv
 ```
 
-OPTIONAL: You can run the following command to get the full NQ dataset! (347 MB)
+OPTIONAL: You can run the following command to get the full NQ dataset! (37.3 GB)
 ```python
 from ares import ARES
 ares = ARES() 
