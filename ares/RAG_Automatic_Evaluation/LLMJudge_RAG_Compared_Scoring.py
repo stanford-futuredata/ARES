@@ -46,8 +46,8 @@ os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 from ares.RAG_Automatic_Evaluation.ppi import clt_iid, binomial_iid, pp_mean_iid_asymptotic
 from ares.RAG_Automatic_Evaluation.Evaluation_Functions import (
-    calculate_accuracy, few_shot_context_relevance_scoring, 
-    few_shot_answer_faithfulness_scoring, few_shot_answer_relevance_scoring, 
+    calculate_accuracy, few_shot_answer_faithfulness_scoring_azure, few_shot_answer_relevance_scoring_azure, few_shot_context_relevance_scoring, 
+    few_shot_answer_faithfulness_scoring, few_shot_answer_relevance_scoring, few_shot_context_relevance_scoring_azure, 
     few_shot_context_relevance_scoring_togetherai, few_shot_answer_faithfulness_scoring_togetherai, 
     few_shot_answer_relevance_scoring_togetherai, few_shot_context_relevance_scoring_claude, 
     few_shot_answer_faithfulness_scoring_claude, few_shot_answer_relevance_scoring_claude, 
@@ -609,6 +609,7 @@ def evaluate_model(params: dict) -> tuple:
         - host_url (str): The host URL for the LLM judge.
         - request_delay (int): The delay between requests.
         - debug_mode (bool): Flag indicating if debug mode is enabled.
+        - azure_openai_config (dict): Information to config Azure model
 
     Returns:
     - tuple: A tuple containing total_predictions, total_references, results, and metric.
@@ -631,6 +632,7 @@ def evaluate_model(params: dict) -> tuple:
     host_url = params["host_url"]
     request_delay = params["request_delay"]
     debug_mode = params["debug_mode"]
+    azure_openai_config = params["azure_openai_config"]
 
     metric = evaluate.load("accuracy")
 
@@ -683,7 +685,10 @@ def evaluate_model(params: dict) -> tuple:
         failed_extraction_count = 0
         
         if "Context_Relevance_Label" == label_column:
-            if vllm:
+            if azure_openai_config:
+                test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring_azure(
+                    context_relevance_system_prompt, clean_query(x[query_id]), x["Document"], azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples), axis=1)
+            elif vllm:
                 test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring_vllm(
                     context_relevance_system_prompt, clean_query(x[query_id]), x["Document"], llm_judge, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples), axis=1)
             elif "gpt" in llm_judge:
@@ -696,7 +701,10 @@ def evaluate_model(params: dict) -> tuple:
                 test_set["Context_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_context_relevance_scoring_togetherai(
                     context_relevance_system_prompt, clean_query(x[query_id]), x["Document"], llm_judge, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples), axis=1)
         elif "Answer_Faithfulness_Label" == label_column:
-            if vllm:
+            if azure_openai_config:
+                test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring_azure(
+                    answer_faithfulness_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples), axis=1)
+            elif vllm:
                 test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring_vllm(
                     answer_faithfulness_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples), axis=1)
             elif "gpt" in llm_judge:
@@ -709,7 +717,10 @@ def evaluate_model(params: dict) -> tuple:
                 test_set["Answer_Faithfulness_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_faithfulness_scoring_togetherai(
                     answer_faithfulness_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples), axis=1)
         elif "Answer_Relevance_Label" == label_column:
-            if vllm:
+            if azure_openai_config:
+                test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring_azure(
+                    answer_relevance_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples), axis=1)
+            elif vllm:
                 test_set["Answer_Relevance_Prediction"] = test_set.progress_apply(lambda x: few_shot_answer_relevance_scoring_vllm(
                     answer_relevance_system_prompt, clean_query(x[query_id]), x["Document"], x["Answer"], llm_judge, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples), axis=1)
             elif "gpt" in llm_judge:
@@ -843,7 +854,8 @@ def apply_labeling_functions(
     failed_extraction_count: int, 
     few_shot_examples: pd.DataFrame, 
     machine_label_prompt: str, 
-    label_column: str
+    label_column: str,
+    azure_openai_config: dict
 ) -> None:
     """
     Applies labeling functions to each row in the machine_labels DataFrame.
@@ -861,6 +873,7 @@ def apply_labeling_functions(
     - few_shot_examples (pd.DataFrame): The DataFrame containing few-shot examples.
     - machine_label_prompt (str): The prompt used for machine labeling.
     - label_column (str): The column to store the labels.
+    - azure_openai_config (dict): Necessary information to setup Azure OpenAI model.
 
     Returns:
     - None
@@ -869,7 +882,12 @@ def apply_labeling_functions(
     for index, row in tqdm(machine_labels.iterrows(), total=machine_labels.shape[0], desc="Generating machine labels!"):
         current_query = query.iloc[index]
         
-        if "gpt" in machine_label_llm_model:
+        if azure_openai_config:
+            context_relevance_score = few_shot_context_relevance_scoring_azure(
+                machine_label_prompt, current_query, row['Document'], azure_openai_config, 
+                query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples
+            )
+        elif "gpt" in machine_label_llm_model:
             if vllm:
                 context_relevance_score = few_shot_context_relevance_scoring_vllm(
                     machine_label_prompt, current_query, row['Document'], machine_label_llm_model, 
@@ -902,6 +920,12 @@ def apply_labeling_functions(
             answer_faithfulness_score = 0
         else:
             if label_column == "Answer_Relevance_Label":
+                if azure_openai_config:
+                    answer_relevance_score = few_shot_answer_relevance_scoring(
+                            machine_label_prompt, current_query, row['Document'], row['Answer'], 
+                            machine_label_llm_model, query_id, debug_mode, request_delay, 
+                            failed_extraction_count, few_shot_examples
+                        )
                 if "gpt" in machine_label_llm_model:
                     if vllm:
                         answer_relevance_score = few_shot_answer_relevance_scoring_vllm(
@@ -970,7 +994,8 @@ def generate_machine_labels(
     debug_mode: bool, 
     request_delay: int, 
     label_column: str, 
-    few_shot_examples: list
+    few_shot_examples: list,
+    azure_openai_config: dict
 ) -> None:
     """
     Generates machine labels for the given evaluation set and saves them to a file.
@@ -986,6 +1011,7 @@ def generate_machine_labels(
     - request_delay (int): Delay between requests to the language model service.
     - label_column (str): The column name for the label to be generated.
     - few_shot_examples (list): List of few-shot examples to be used for generating labels.
+    - azure_openai_config (dict): Dictionary containing information to config Azure model.
 
     Returns:
     - None
@@ -1009,7 +1035,7 @@ def generate_machine_labels(
     apply_labeling_functions(
         machine_labels, query, machine_label_llm_model, query_id, vllm, host_url, 
         debug_mode, request_delay, failed_extraction_count, few_shot_examples, 
-        machine_label_prompt, label_column
+        machine_label_prompt, label_column, azure_openai_config
     )
     
     # Save the updated DataFrame back to the TSV file
@@ -1034,6 +1060,7 @@ def post_process_predictions(params: dict):
     debug_mode = params["debug_mode"]
     request_delay = params["request_delay"]
     few_shot_examples = params["few_shot_examples"]
+    azure_openai_config = params["azure_openai_config"]
 
     prediction_column = label_column + "_Model_Predictions"
     test_set[prediction_column] = total_predictions.tolist()
@@ -1042,12 +1069,13 @@ def post_process_predictions(params: dict):
         test_set = test_set[test_set[label_column].notna()]
         
     for label in labels:
-        if label != label_column:
-            test_set = test_set[test_set[label] != 0]
+        if label in test_set.columns:
+            if label != label_column:
+                test_set = test_set[test_set[label] != 0]
 
     # Generate machine labels if parameters are provided
     if machine_label_path != "None" and machine_label_llm_model != "None":
-        generate_machine_labels(machine_label_path, unlabeled_eval_set, machine_label_prompt, machine_label_llm_model, vllm, host_url, debug_mode, request_delay, label_column, few_shot_examples)
+        generate_machine_labels(machine_label_path, unlabeled_eval_set, machine_label_prompt, machine_label_llm_model, vllm, host_url, debug_mode, request_delay, label_column, few_shot_examples, azure_openai_config)
         Y_labeled_dataset = pd.read_csv(machine_label_path, sep='\t')
         Y_labeled_dataset = Y_labeled_dataset.head(500)
     else:
@@ -1104,6 +1132,7 @@ def evaluate_and_scoring_data(params: dict):
     request_delay = params["request_delay"]
     debug_mode = params["debug_mode"]
     prediction_filepath = params["prediction_filepath"]
+    azure_openai_config = params["azure_openai_config"]
     
     failed_extraction_count = {'failed': 0}  # Reset failed extraction count
 
@@ -1153,7 +1182,9 @@ def evaluate_and_scoring_data(params: dict):
                     answer = row["Answer"]
                     
                     if "Context_Relevance_Label" == label_column:
-                        if vllm:
+                        if azure_openai_config:
+                            score = few_shot_context_relevance_scoring_azure(context_relevance_system_prompt, clean_query(query), document, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
+                        elif vllm:
                             score = few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
                         elif "gpt" in llm_judge:
                             score = few_shot_context_relevance_scoring(context_relevance_system_prompt, clean_query(query), document, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
@@ -1163,7 +1194,9 @@ def evaluate_and_scoring_data(params: dict):
                             score = few_shot_context_relevance_scoring_togetherai(context_relevance_system_prompt, clean_query(query), document, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
                     
                     elif "Answer_Faithfulness_Label" == label_column:
-                        if vllm:
+                        if azure_openai_config:
+                            score = few_shot_answer_faithfulness_scoring_azure(answer_faithfulness_system_prompt, clean_query(query), document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
+                        elif vllm:
                             score = few_shot_answer_faithfulness_scoring_vllm(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
                         elif "gpt" in llm_judge:
                             score = few_shot_answer_faithfulness_scoring(answer_faithfulness_system_prompt, clean_query(query), document, answer, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
@@ -1173,7 +1206,9 @@ def evaluate_and_scoring_data(params: dict):
                             score = few_shot_answer_faithfulness_scoring_togetherai(answer_faithfulness_system_prompt, clean_query(query), document, answer, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
                     
                     elif "Answer_Relevance_Label" == label_column:
-                        if vllm:
+                        if azure_openai_config:
+                            score = few_shot_answer_relevance_scoring_vllm(answer_relevance_system_prompt, query, document, answer, azure_openai_config, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
+                        elif vllm:
                             score = few_shot_answer_relevance_scoring_vllm(answer_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
                         elif "gpt" in llm_judge:
                             score = few_shot_answer_relevance_scoring(answer_relevance_system_prompt, clean_query(query), document, answer, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
@@ -1200,19 +1235,25 @@ def evaluate_and_scoring_data(params: dict):
                     answer = row["Answer"]
                     
                     if "Context_Relevance_Label" == label_column:
-                        if vllm:
+                        if azure_openai_config:
+                            score = few_shot_context_relevance_scoring_azure(context_relevance_system_prompt, clean_query(query), document, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
+                        elif vllm:
                             score = few_shot_context_relevance_scoring_vllm(context_relevance_system_prompt, query, document, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
                         else:
                             score = few_shot_context_relevance_scoring_togetherai(context_relevance_system_prompt, clean_query(query), document, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
                     
                     elif "Answer_Faithfulness_Label" == label_column:
-                        if vllm:
+                        if azure_openai_config:
+                            score = few_shot_answer_faithfulness_scoring_azure(answer_faithfulness_system_prompt, clean_query(query), document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
+                        elif vllm:
                             score = few_shot_answer_faithfulness_scoring_vllm(answer_faithfulness_system_prompt, query, document, answer, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
                         else:
                             score = few_shot_answer_faithfulness_scoring_togetherai(answer_faithfulness_system_prompt, clean_query(query), document, answer, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
                     
                     elif "Answer_Relevance_Label" == label_column:
-                        if vllm:
+                        if azure_openai_config:
+                            score = few_shot_answer_relevance_scoring_azure(answer_relevance_system_prompt, clean_query(query), document, answer, azure_openai_config, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)
+                        elif vllm:
                             score = few_shot_answer_relevance_scoring_vllm(answer_relevance_system_prompt, query, document, answer, model_choice, query_id, debug_mode, host_url, request_delay, failed_extraction_count, few_shot_examples)
                         else:
                             score = few_shot_answer_relevance_scoring_togetherai(answer_relevance_system_prompt, clean_query(query), document, answer, model_choice, query_id, debug_mode, request_delay, failed_extraction_count, few_shot_examples)

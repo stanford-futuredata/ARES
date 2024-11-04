@@ -18,7 +18,7 @@ machine_label_system_prompt = (
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
 model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
-machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
+machine_label_llm_model, gold_machine_label_path, prediction_filepaths, azure_openai_config):
     """
     Configures and runs the RAG scoring process.
 
@@ -42,6 +42,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
     - machine_label_llm_model: Machine label LLM model.
     - gold_machine_label_path: Path to the gold machine labels.
     - prediction_filepaths: List of file paths to save predictions.
+    - azure_openai_config: Dictionary of information to setup Azure model
     """
     
     if few_shot_examples_filepath == "None" and (llm_judge != "None" or machine_label_llm_model != "None"):
@@ -53,9 +54,13 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
 
     # Validate inputs and determine model loading strategy
     if checkpoints:
-        if llm_judge and llm_judge != "None":
-            print("Warning: Both checkpoint and llm_judge were provided. Using checkpoints.")
+        if (llm_judge and llm_judge != "None") or azure_openai_config:
+            print("Warning: Both checkpoint and llm_judge/azure openai model were provided. Using checkpoints.")
         model_loader = lambda chk: load_tokenizer_and_model(model_choice, number_of_labels, chk)
+    # elif azure_openai_config:
+    #     if llm_judge and llm_judge != "None":
+    #         print("Warning: Both azure openai model and llm_judge were provided. Using azure openai model.")
+    #     model_loader = lambda _: load_azure_model(azure_openai_config)
     elif llm_judge and llm_judge != "None":
         model_loader = lambda _: load_api_model(llm_judge, vllm)
     else:
@@ -114,7 +119,8 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
                 "vllm": vllm,
                 "host_url": host_url,
                 "request_delay": request_delay,
-                "debug_mode": debug_mode
+                "debug_mode": debug_mode,
+                "azure_openai_config": azure_openai_config
             }
 
             total_predictions, total_references, results, metric = evaluate_model(eval_model_settings)
@@ -136,7 +142,8 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
                 "host_url": host_url,
                 "debug_mode": debug_mode,
                 "request_delay": request_delay,
-                "few_shot_examples": few_shot_examples
+                "few_shot_examples": few_shot_examples,
+                "azure_openai_config": azure_openai_config
             }
 
             test_set, Y_labeled_dataset, Y_labeled_dataloader, Y_labeled_predictions, Yhat_unlabeled_dataset, prediction_column = post_process_predictions(post_process_settings) 
@@ -172,7 +179,8 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
                 "host_url": host_url,
                 "request_delay": request_delay,
                 "debug_mode": debug_mode,
-                "prediction_filepath": prediction_filepaths[test_set_idx] if test_set_idx < len(prediction_filepaths) else prediction_filepaths[-1]
+                "prediction_filepath": prediction_filepaths[test_set_idx] if test_set_idx < len(prediction_filepaths) else prediction_filepaths[-1],
+                "azure_openai_config": azure_openai_config
             }
             dataset_results = evaluate_and_scoring_data(evaluate_scoring_settings)
             chekpoint_results.append(dataset_results)

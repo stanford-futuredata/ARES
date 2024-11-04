@@ -37,7 +37,8 @@ def synthetic_generator_config(
     synthetic_contradictory_answer_prompt: str = (
         "Create an answer for the given question that contradicts the provided document. "
         "You should create false information that disagrees with what exists within the content of the document.\n\n"
-    )
+    ),
+    azure_openai_config: dict = None
 ) -> None:
     """
     Configures and generates synthetic queries and answers based on the provided parameters.
@@ -60,6 +61,7 @@ def synthetic_generator_config(
         number_of_positives_added_ratio (float, optional): Ratio of positives to add. Defaults to 0.0.
         regenerate_embeddings (float, optional): Whether to regenerate embeddings. Defaults to True.
         synthetic_query_prompt (str, optional): Prompt for synthetic query generation. Defaults to a predefined string.
+        azure_openai_config (dict, optional): Contains information to configure OpenAI Azure model
 
     Raises:
         ValueError: If the lengths of document_filepaths and synthetic_queries_filenames do not match.
@@ -120,6 +122,7 @@ def synthetic_generator_config(
             'question_temperatures': question_temperatures,
             'number_of_negatives_added_ratio': number_of_negatives_added_ratio,
             'lower_bound_for_negatives': lower_bound_for_negatives,
+            'azure_openai_config': azure_openai_config
         }
 
         generate_synthetic_queries(documents, synthetic_queries_config)
@@ -141,7 +144,8 @@ def synthetic_generator_config(
             'lower_bound_for_negatives': lower_bound_for_negatives,
             'number_of_contradictory_answers_added_ratio': number_of_contradictory_answers_added_ratio,
             'number_of_positives_added_ratio': number_of_positives_added_ratio,
-            'regenerate_embeddings': regenerate_embeddings
+            'regenerate_embeddings': regenerate_embeddings,
+            'azure_openai_config': azure_openai_config
         }
 
         Generate_Synthetic_Answers(synthetic_queries_filename, synthetic_answers_config)
