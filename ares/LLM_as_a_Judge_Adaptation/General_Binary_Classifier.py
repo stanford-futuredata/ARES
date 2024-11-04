@@ -1,3 +1,5 @@
+# General_binary_classifier.py
+
 import os
 import re
 import ast
@@ -316,16 +318,12 @@ def prepare_and_clean_data(params: dict) -> tuple[str, int]:
     Parameters:
     params (dict): A dictionary containing the following keys:
         - "training_dataset_path" (str): Path to the training dataset.
-        - "learning_rate_choices" (list): List of possible learning rates.
         - "chosen_learning_rate" (float): The chosen learning rate for the model.
         - "model_choice" (str): The model identifier.
-        - "number_of_runs" (int): Number of runs for the training.
-        - "validation_set_scoring" (str): Scoring method for the validation set.
         - "label" (str): The label column name in the dataset.
         - "validation_dataset_path" (str): Path to the validation dataset.
         - "patience_value" (int): Patience value for early stopping.
         - "num_epochs" (int): Number of epochs for training.
-        - "num_warmup_steps" (int): Number of warmup steps for the learning rate scheduler.
         - "gradient_accumulation_multiplier" (int): Multiplier for gradient accumulation.
         - "assigned_batch_size" (int): Batch size assigned for training.
         - "tokenizer" (AutoTokenizer): Tokenizer to be used.
@@ -337,16 +335,12 @@ def prepare_and_clean_data(params: dict) -> tuple[str, int]:
     """
     # Extract parameters from the dictionary
     dataset = params["training_dataset_path"]
-    learning_rate_choices = params["learning_rate_choices"]
     chosen_learning_rate = params["chosen_learning_rate"]
     model_choice = params["model_choice"]
-    number_of_runs = params["number_of_runs"]
-    validation_set_scoring = params["validation_set_scoring"]
     label_column = params["label"]
     validation_set = params["validation_dataset_path"]
     patience_value = params["patience_value"]
     num_epochs = params["num_epochs"]
-    num_warmup_steps = params["num_warmup_steps"]
     gradient_accumulation_multiplier = params["gradient_accumulation_multiplier"]
     assigned_batch_size = params["assigned_batch_size"]
     tokenizer = params["tokenizer"]
@@ -382,13 +376,10 @@ def prepare_and_clean_data(params: dict) -> tuple[str, int]:
     print("Dataset: " + dataset)
     print("Model: " + model_choice)
     print("Test Set Selection: " + validation_set)
-    print("Number of Runs: " + str(number_of_runs))
     print('Learning Rate: ' + str(chosen_learning_rate))
     print("Checkpoint Path: " + checkpoint_path)
     print("Patience: " + str(patience_value))
-    print("Validation Set Choice: " + str(validation_set_scoring))
     print("Number of Epochs: " + str(num_epochs))
-    print("Number of warmup steps: " + str(num_warmup_steps))
     print("--------------------------------------------------------------------------")
 
     return checkpoint_path, patience_value

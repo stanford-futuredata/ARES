@@ -51,13 +51,13 @@ def validate_inputs(vllm: bool, host_url: str, in_domain_prompts_dataset: str, u
 
     # Load in-domain prompts dataset if provided
     if in_domain_prompts_dataset is not None:
-        in_domain_prompts_dataset = pd.read_csv(in_domain_prompts_dataset, sep='\t')
+        in_domain_prompts_dataset = pd.read_csv(in_domain_prompts_dataset, sep='\t', engine="python", on_bad_lines='skip')
     else:
         in_domain_prompts_dataset = None
 
     # Load unlabeled evaluation set if provided
     if unlabeled_evaluation_set is not None:
-        unlabeled_evaluation_set = pd.read_csv(unlabeled_evaluation_set, sep='\t')
+        unlabeled_evaluation_set = pd.read_csv(unlabeled_evaluation_set, sep='\t', engine="python", on_bad_lines='skip')
     else:
         unlabeled_evaluation_set = None
 

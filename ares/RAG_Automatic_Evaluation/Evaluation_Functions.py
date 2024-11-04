@@ -19,7 +19,6 @@ from together import Together
 from datasets import Dataset
 from openai import OpenAI
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoConfig, AutoModelForCausalLM
 
 try:

@@ -17,8 +17,8 @@ machine_label_system_prompt = (
 )
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
-model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
-machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
+    model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
+    machine_label_llm_model, gold_machine_label_path, prediction_filepaths, use_late_chunking):
     """
     Configures and runs the RAG scoring process.
 
@@ -55,7 +55,7 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
     if checkpoints:
         if llm_judge and llm_judge != "None":
             print("Warning: Both checkpoint and llm_judge were provided. Using checkpoints.")
-        model_loader = lambda chk: load_tokenizer_and_model(model_choice, number_of_labels, chk)
+        model_loader = lambda chk: load_tokenizer_and_model(model_choice, number_of_labels, chk, use_late_chunking)
     elif llm_judge and llm_judge != "None":
         model_loader = lambda _: load_api_model(llm_judge, vllm)
     else:
@@ -114,7 +114,8 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
                 "vllm": vllm,
                 "host_url": host_url,
                 "request_delay": request_delay,
-                "debug_mode": debug_mode
+                "debug_mode": debug_mode,
+                "use_late_chunking": use_late_chunking
             }
 
             total_predictions, total_references, results, metric = evaluate_model(eval_model_settings)
@@ -172,11 +173,11 @@ machine_label_llm_model, gold_machine_label_path, prediction_filepaths):
                 "host_url": host_url,
                 "request_delay": request_delay,
                 "debug_mode": debug_mode,
-                "prediction_filepath": prediction_filepaths[test_set_idx] if test_set_idx < len(prediction_filepaths) else prediction_filepaths[-1]
+                "prediction_filepath": prediction_filepaths[test_set_idx] if test_set_idx < len(prediction_filepaths) else prediction_filepaths[-1],
+                "use_late_chunking": use_late_chunking
             }
             dataset_results = evaluate_and_scoring_data(evaluate_scoring_settings)
-            chekpoint_results.append(dataset_results)
-            
-        all_evaluation_results.append(chekpoint_results)
+        
+        all_evaluation_results.append(dataset_results)
             
     return all_evaluation_results
