@@ -76,8 +76,7 @@ class ARES:
             "number_of_runs": (int, 1),  # Optional with default
             "num_warmup_steps": (int, 100),  # Optional with default
             "training_row_limit": (int, -1),  # Optional with default
-            "validation_row_limit": (int, -1),  # Optional with default
-            "use_late_chunking": (bool, False)  # Optional with default
+            "validation_row_limit": (int, -1)  # Optional with default
         },
 
         "ppi": {
@@ -99,8 +98,7 @@ class ARES:
             "debug_mode": (bool, False),  # Optional with default
             "machine_label_llm_model": (str, "None"),  # Optional with default
             "gold_machine_label_path": (str, "None"),  # Optional with default
-            "prediction_filepaths": (list, ["None"]),  # Optional with default
-            "use_late_chunking": (bool, False)  # Optional with default
+            "prediction_filepaths": (list, ["None"])  # Optional with default
         }
     }
 

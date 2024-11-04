@@ -558,7 +558,7 @@ def load_api_model(model_identifier: str, vllm: bool) -> str:
     else:
         raise ValueError("Model identifier does not correspond to an API model.")
 
-def load_tokenizer_and_model(model_identifier: str, number_of_labels: int, checkpoint: str = None, use_late_chunking: bool = False) -> tuple:
+def load_tokenizer_and_model(model_identifier: str, number_of_labels: int, checkpoint: str = None) -> tuple:
     """
     Loads a tokenizer and model based on the provided model identifier and number of labels.
 
@@ -573,11 +573,7 @@ def load_tokenizer_and_model(model_identifier: str, number_of_labels: int, check
     Raises:
     - FileNotFoundError: If the checkpoint file is not found.
     """
-    from ares.LLM_as_a_Judge_Adaptation.Late_Chunking_Classifier import SBERTBinaryClassifier, get_late_chunked_embeddings, get_query_embedding
-    from sentence_transformers import SentenceTransformer
-
     max_token_length = 512 if "electra" in model_identifier.lower() else 2048
-    # max_token_length = 2048
     tokenizer = AutoTokenizer.from_pretrained(model_identifier, model_max_length=max_token_length)
     torch.cuda.empty_cache()
     device = torch.device("cuda:0")
@@ -585,24 +581,6 @@ def load_tokenizer_and_model(model_identifier: str, number_of_labels: int, check
     model = CustomBERTModel(number_of_labels, model_identifier)
     model.to(device)
 
-    if use_late_chunking:
-        # Load embedding model and tokenizer
-        embedding_model_name = "jinaai/jina-embeddings-v2-base-en"
-        embedding_model = SentenceTransformer(embedding_model_name, device=device, trust_remote_code=True)
-        embedding_model.max_seq_length = 8192
-        tokenizer = AutoTokenizer.from_pretrained(embedding_model_name, trust_remote_code=True)
-        
-        embedding_size = embedding_model.get_sentence_embedding_dimension()
-        # Initialize with embedding_dim instead of input_size
-        classifier_model = SBERTBinaryClassifier(embedding_dim=embedding_size)
-        classifier_model.to(device)
-        classifier_model.load_state_dict(torch.load(checkpoint))
-        classifier_model.eval()
-
-        print(f"Loaded checkpoint: {checkpoint}")
-        print(f"Model loaded successfully")
-
-        return classifier_model, tokenizer, device
     if checkpoint:
         checkpoint_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
         model_dict = model.state_dict()
@@ -630,11 +608,6 @@ def load_tokenizer_and_model(model_identifier: str, number_of_labels: int, check
         
         print(f"Loaded checkpoint: {checkpoint}")
         print(f"Matched keys: {len(pretrained_dict)}/{len(model_dict)}")
-        # checkpoint_dict = torch.load(checkpoint)
-        # if "encoderModel.embeddings.position_ids" in checkpoint_dict:
-        #     del checkpoint_dict["encoderModel.embeddings.position_ids"]
-        # model.load_state_dict(checkpoint_dict)
-        # print("Loaded model from checkpoint:", checkpoint)
     else:
         print("Loaded model based on model identifier:", model_identifier)
 

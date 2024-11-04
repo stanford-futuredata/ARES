@@ -623,7 +623,7 @@ test_set: pd.DataFrame, label_column: str) -> tuple[list[str], list[int], list[s
 
     return train_set_text, train_set_label, dev_set_text, dev_set_label, test_set_text, test_set_label, labels_list
 
-    ############################################################
+############################################################
 
 def prepare_dataset(validation_set_scoring: bool, 
                     train_set_label: list[int], 
@@ -932,7 +932,7 @@ device: torch.device, eval_dataloader: DataLoader, inference_times: list) -> tup
 
     return total_predictions, total_references, metric
 
-        ############################################################
+############################################################
 
 def print_and_save_model(total_predictions: torch.Tensor, total_references: torch.Tensor, checkpoint_path: str, metric) -> None:
     """
