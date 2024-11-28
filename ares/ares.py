@@ -38,6 +38,7 @@ class ARES:
         },
 
         "synthetic_query_generator": {
+            "query_decomposition": (bool, False), # Optional with default
             "document_filepaths": (list, None),  # Required parameter with no default value
             "few_shot_prompt_filenames": (list, None),  # Required parameter with no default value
             "synthetic_queries_filenames": (list, None),  # Required parameter with no default value
