@@ -34,10 +34,11 @@ class ARES:
             "request_delay": (int, 0),  # Optional with default
             "vllm": (bool, False),  # Optional with default
             "azure_openai_config": (dict, None),  # Optional with default
-            "host_url": (str, "None")  # Optional with default
+            "host_url": (str, "None"),  # Optional with default
         },
 
         "synthetic_query_generator": {
+            "query_decomposition": (bool, False), # Optional with default
             "document_filepaths": (list, None),  # Required parameter with no default value
             "few_shot_prompt_filenames": (list, None),  # Required parameter with no default value
             "synthetic_queries_filenames": (list, None),  # Required parameter with no default value
@@ -60,7 +61,7 @@ class ARES:
             "synthetic_query_prompt": (str, "You are an expert question-answering system. Generate only one question based on the provided document. Ensure the question is answerable within the context of the document. Do not generate multiple questions. Do not provide labels, headers, or additional text. Only return a single, clear question. Generating more than one question will be considered incorrect output.\n\n"),
             "synthetic_valid_answer_prompt": (str, "You are an expert question-answering system. You must create an answer for the provided question. The answer must be answerable within the context of the document. Return only the answer, nothing else.\n\n"),
             "synthetic_contradictory_answer_prompt": (str, "Create an answer for the given question that contradicts the provided document. You should create false information that disagrees with what exists within the content of the document.  Return only the false answer, without any labels or additional text.\n\n"),
-            "azure_openai_config": (dict, None)  # Optional with default
+            "azure_openai_config": (dict, None),  # Optional with default
         },
         
         "classifier_model": {
@@ -79,7 +80,7 @@ class ARES:
             "number_of_runs": (int, 1),  # Optional with default
             "num_warmup_steps": (int, 100),  # Optional with default
             "training_row_limit": (int, -1),  # Optional with default
-            "validation_row_limit": (int, -1)  # Optional with default
+            "validation_row_limit": (int, -1),  # Optional with default
         },
 
         "ppi": {
@@ -103,7 +104,8 @@ class ARES:
             "machine_label_llm_model": (str, "None"),  # Optional with default
             "gold_machine_label_path": (str, "None"),  # Optional with default
             "prediction_filepaths": (list, ["None"]),  # Optional with default
-            "azure_openai_config": (dict, None)  # Optional with default
+            "azure_openai_config": (dict, None),  # Optional with default
+            "query_decomposition": (bool, False), # Optional with default
         }
 
         # azure_openai_config dictionary is formatted with 3 entries:

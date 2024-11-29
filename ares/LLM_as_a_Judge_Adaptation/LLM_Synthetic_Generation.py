@@ -261,6 +261,25 @@ def generate_synthetic_query_vllm_approach(document: str, synthetic_query_prompt
 def generate_synthetic_answer_api_approach(document: str, question: str, synthetic_answer_prompt: str, prompt: str, 
                                            length_of_fewshot_prompt: int, model_name: str, for_fever_dataset=False, 
                                            for_wow_dataset=False): 
+    """
+    Generates synthetic answers using a model's API based on the provided document and question.
+
+    This function constructs an answer dynamically using the api and model provided.
+
+    Args:
+        document (str): The document text based on which the contradictory answer is to be generated.
+        question (str): The question text based on the document.
+        synthetic_answer_prompt (str): The initial prompt text to which the document and question will be appended.
+        fewshot_examples (str): Few-shot examples to include in the prompt for the API.
+        api_url (str): The API endpoint URL.
+        api_key (str): The API key for authentication.
+        model_name (str): The model name to be used in the API.
+        for_fever_dataset (bool, optional): Flag to indicate if the function is being used for the FEVER dataset. Defaults to False.
+        for_wow_dataset (bool, optional): Flag to indicate if the function is being used for the WoW dataset. Defaults to False.
+
+    Returns:
+        str: The generated answer text.
+    """
     # Construct the prompt without the document based on the dataset type
     prompt_without_document = prompt + "Example " + str(length_of_fewshot_prompt + 1) + ":\n"
     if for_fever_dataset:
@@ -317,12 +336,31 @@ def generate_synthetic_answer_api_approach(document: str, question: str, synthet
             
             return final_response
         except Exception as e:
-            print(f"Error generating synthetic queries: {e}")
+            print(f"Error generating synthetic answers: {e}")
             continue
 
 def generate_synthetic_answer_azure_approach(document: str, question: str, synthetic_answer_prompt: str, prompt: str, 
                                            length_of_fewshot_prompt: int, azure_openai_config: dict, for_fever_dataset=False, 
                                            for_wow_dataset=False): 
+    """
+    Generates synthetic answers using provided Azure OpenAI model based on the provided document and question.
+
+    This function constructs an answer dynamically using the api and model provided.
+
+    Args:
+        document (str): The document text based on which the contradictory answer is to be generated.
+        question (str): The question text based on the document.
+        synthetic_answer_prompt (str): The initial prompt text to which the document and question will be appended.
+        fewshot_examples (str): Few-shot examples to include in the prompt for the API.
+        api_url (str): The API endpoint URL.
+        api_key (str): The API key for authentication.
+        model_name (str): The model name to be used in the API.
+        for_fever_dataset (bool, optional): Flag to indicate if the function is being used for the FEVER dataset. Defaults to False.
+        for_wow_dataset (bool, optional): Flag to indicate if the function is being used for the WoW dataset. Defaults to False.
+
+    Returns:
+        str: The generated answer text.
+    """
     # Construct the prompt without the document based on the dataset type
     prompt_without_document = prompt + "Example " + str(length_of_fewshot_prompt + 1) + ":\n"
     if for_fever_dataset:
@@ -382,12 +420,31 @@ def generate_synthetic_answer_azure_approach(document: str, question: str, synth
             
             return final_response
         except Exception as e:
-            print(f"Error generating synthetic queries: {e}")
+            print(f"Error generating synthetic answers: {e}")
             continue
 
 def generate_synthetic_answer_vllm_approach(document: str, question: str, synthetic_answer_prompt: str, prompt: str, 
                                            length_of_fewshot_prompt: int, model_name: str, host_url: str, for_fever_dataset=False, 
-                                           for_wow_dataset=False): 
+                                           for_wow_dataset=False):
+    """
+    Generates synthetic answers using an API model based on the provided document and question.
+
+    This function constructs an answer dynamically using the vllm provided at the host url.
+
+    Args:
+        document (str): The document text based on which the contradictory answer is to be generated.
+        question (str): The question text based on the document.
+        synthetic_answer_prompt (str): The initial prompt text to which the document and question will be appended.
+        fewshot_examples (str): Few-shot examples to include in the prompt for the API.
+        api_url (str): The API endpoint URL.
+        api_key (str): The API key for authentication.
+        model_name (str): The model name to be used in the API.
+        for_fever_dataset (bool, optional): Flag to indicate if the function is being used for the FEVER dataset. Defaults to False.
+        for_wow_dataset (bool, optional): Flag to indicate if the function is being used for the WoW dataset. Defaults to False.
+
+    Returns:
+        str: The generated answer text.
+    """
     # Construct the prompt without the document based on the dataset type
     prompt_without_document = prompt + "Example " + str(length_of_fewshot_prompt + 1) + ":\n"
     if for_fever_dataset:
@@ -446,7 +503,7 @@ def generate_synthetic_answer_vllm_approach(document: str, question: str, synthe
             
             return final_response
         except Exception as e:
-            print(f"Error generating synthetic queries: {e}")
+            print(f"Error generating synthetic answers: {e}")
             continue
 
 def generate_synthetic_contradictory_answers_api_approach(document: str, question: str, synthetic_contradictory_answer_prompt: str, fewshot_examples: str, 

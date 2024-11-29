@@ -18,7 +18,7 @@ machine_label_system_prompt = (
 
 def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples_filepath, checkpoints, labels,
     model_choice, llm_judge, assigned_batch_size, number_of_labels, gold_label_paths, rag_type, vllm, host_url, request_delay, debug_mode, 
-    machine_label_llm_model, gold_machine_label_path, prediction_filepaths, azure_openai_config):
+    machine_label_llm_model, gold_machine_label_path, prediction_filepaths, azure_openai_config, query_decomposition):
     """
     Configures and runs the RAG scoring process.
 
@@ -43,6 +43,7 @@ def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples
     - gold_machine_label_path: Path to the gold machine labels.
     - prediction_filepaths: List of file paths to save predictions.
     - azure_openai_config: Dictionary of information to setup Azure model
+    - query_decomposition: Will query decomposition be used when evaluating
     """
     
     if few_shot_examples_filepath == "None" and (llm_judge != "None" or machine_label_llm_model != "None"):
@@ -91,7 +92,7 @@ def rag_scoring_config(alpha, num_trials, evaluation_datasets, few_shot_examples
 
             context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt = filter_dataset(rag_type)
             
-            test_set, text_column = preprocess_data(test_set_selection, label_column, labels)
+            test_set, text_column = preprocess_data(test_set_selection, label_column, labels, query_decomposition)
 
             loaded_model = model_loader(checkpoint)
             if isinstance(loaded_model, tuple):

@@ -3,9 +3,10 @@ from transformers import (
     T5Tokenizer, T5EncoderModel, T5ForConditionalGeneration, 
     BertModel, AutoTokenizer, AutoModel, GPT2Tokenizer, 
     TrainingArguments, get_scheduler, 
-    AutoModelForCausalLM, AutoConfig, AutoModelForSequenceClassification, 
-    MptForSequenceClassification
+    AutoModelForCausalLM, AutoConfig, AutoModelForSequenceClassification,
+    MptForSequenceClassification, AutoModelForSeq2SeqLM
 )
+
 import sys
 import pandas as pd
 import numpy as np
@@ -449,7 +450,7 @@ def filter_dataset(rag_type: str = "question_answering") -> tuple[str, str, str]
 
     return context_relevance_system_prompt, answer_faithfulness_system_prompt, answer_relevance_system_prompt
 
-def preprocess_data(test_set_selection: str, label_column: str, labels: list):
+def preprocess_data(test_set_selection: str, label_column: str, labels: list, query_decomposition: bool):
     """
     Preprocesses the data for evaluation.
 
@@ -457,6 +458,7 @@ def preprocess_data(test_set_selection: str, label_column: str, labels: list):
     - test_set_selection (str): The file path to the test set selection in CSV format.
     - label_column (str): The column name in the test set that contains the labels.
     - labels (list): A list of labels to be used for filtering the test set.
+    - query_decomposition (bool): When processing the data do we want to decompose queries?
 
     Returns:
     - Tuple[pd.DataFrame, str]: A tuple containing the preprocessed test set DataFrame and the name of the text column.
@@ -488,14 +490,94 @@ def preprocess_data(test_set_selection: str, label_column: str, labels: list):
 
     # Filter out rows where the text column has the value "Error"
     test_set = test_set[test_set[text_column] != "Error"]
+
     
     # Check if the dataset has fewer than 10 rows after filtering
     if len(test_set) < 10:
         raise ValueError("Insufficient Data: Dataset has fewer than 10 rows after filtering!")
+
+    if query_decomposition:
+        model_name = "google/flan-t5-xl"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+        decomposed_data = []
+        for _, row in df.iterrows():
+            # Decompose the complex query
+            simple_queries = decompose_query_with_model(row["Queries"], tokenizer, model)
+
+            # Add a new row for each decomposed query
+            for simple_query in simple_queries:
+                new_row = row.copy()
+                new_row["Queries"] = simple_query
+                decomposed_data.append(new_row)
+
+        # Replace the original processing loop with the batch processing function
+        test_set = pd.DataFrame(decomposed_data)
     
     return test_set, text_column
 
         ############################################################
+
+def decompose_query_with_model(query, tokenizer, model):
+    """
+    Provided a lightweight model decompose a given query into subqueries.
+
+    Parameters:
+    - query (str): The query to be decomposed.
+    - tokenizer (): Tokenizer for model
+    - model (model): LM used to process query decomposition
+
+    Returns:
+    - list: A list of resultant queries that are in the question.
+    """
+    
+    input_text = f"""
+    You are an expert at decomposing questions. At the end of this prompt I have provided you a query.
+    This query could be decomposed into simple queries. It can be decomposed if the original query has multiple questions.
+    If there are not multiple questions then return the original query. If the original query has multiple questions
+    return the multiple questions in the format below. Be very cautious to not repeat any queries, this is very important.
+    There may be no simple queries and there may be many simple queries.
+
+    The output should be all the questions split by commas.
+    There should be no other information. Do not have double quotes either.
+    
+    The following are examples of a complex query being decomposed into simple queries. 
+
+    Examples: 
+
+    Decompose: "What were Einstein’s key theories and how did they influence nuclear technology?"
+    - "What were Einstein’s key theories?"
+    - "How did Einstein's key theories influence nuclear technology?"
+
+    Decompose: "Explain the concept of quantum entanglement and its potential applications."
+    - "Explain the concept of quantum entanglement."
+    - "What are the potential applications of quantum entanglement?"
+
+    Decompose: "Describe the process of photosynthesis and its importance to the ecosystem."
+    - "What is the process of photosynthesis?"
+    - "Why is photosynthesis important to the ecosystem?"
+
+    Decompose: "How did the industrial revolution shape modern economies, influence technology, and society?"
+    - "How did the industrial revolution shape modern economies?"
+    - "How did the industrial revolution influence technology?"
+    - "How did the industrial revolution influence society?"
+     
+    Decompose: "What is the first letter of the alphabet?"
+    - "What is the first letter of the alphabet?"
+
+    Decompose: "How many cows are in America?"
+    "How many cows are in America?"
+
+    Here is the query to decompose: {query}"""
+    inputs = tokenizer(input_text, return_tensors="pt", truncation=True)
+
+    # Generate the model output
+    outputs = model.generate(**inputs, max_length=128, num_return_sequences=1)
+
+    # Decode the generated text into a list of simple queries
+    simple_queries = [tokenizer.decode(output, skip_special_tokens=True).replace(' - ', ',').split(',') for output in outputs]
+    return simple_queries[0]
 
 def togetherai_list_models(api_key: str) -> list:
     """

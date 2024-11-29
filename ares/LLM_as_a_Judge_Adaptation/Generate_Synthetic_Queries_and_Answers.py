@@ -492,6 +492,94 @@ def save_synthetic_queries(documents: pd.DataFrame, filename: str) -> None:
     documents.to_csv(filename, index=False, sep="\t")
     print("Saved synthetic queries to: " + filename)
 
+def query_decomposition_post_processing(synthetic_queries_filename: str):
+    # Read the synthetic queries from the specified file
+    synth_queries = pd.read_csv(synthetic_queries_filename, sep="\t")
+    
+    # Drop any duplicated columns
+    synth_queries = synth_queries.loc[:, ~synth_queries.columns.duplicated()]
+
+    model_name = "google/flan-t5-xl"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+    decomposed_data = []
+    for _, row in synth_queries.iterrows():
+        # Decompose the complex query
+        simple_queries = decompose_query_with_model(row["Queries"], tokenizer, model)
+
+        # Add a new row for each decomposed query
+        for simple_query in simple_queries:
+            new_row = row.copy()
+            new_row["Queries"] = simple_query
+            decomposed_data.append(new_row)
+
+    # Replace the original processing loop with the batch processing function
+    synth_queries = pd.DataFrame(decomposed_data)
+
+    # Save the new synth queries to the file
+    save_synthetic_queries(synth_queries, synthetic_queries_filename)
+
+def decompose_query_with_model(query: str, tokenizer, model):
+    """
+    Provided a lightweight model decompose a given query into subqueries.
+
+    Parameters:
+    - query (str): The query to be decomposed.
+    - tokenizer (): Tokenizer for model
+    - model (model): LM used to process query decomposition
+
+    Returns:
+    - list: A list of resultant queries that are in the question.
+    """
+    
+    input_text = f"""
+    You are an expert at decomposing questions. At the end of this prompt I have provided you a query.
+    This query could be decomposed into simple queries. It can be decomposed if the original query has multiple questions.
+    If there are not multiple questions then return the original query. If the original query has multiple questions
+    return the multiple questions in the format below. Be very cautious to not repeat any queries, this is very important.
+    There may be no simple queries and there may be many simple queries.
+
+    The output should be all the questions split by commas.
+    There should be no other information. Do not have double quotes either.
+    
+    The following are examples of a complex query being decomposed into simple queries. 
+
+    Examples: 
+
+    Decompose: "What were Einstein’s key theories and how did they influence nuclear technology?"
+    - "What were Einstein’s key theories?"
+    - "How did Einstein's key theories influence nuclear technology?"
+
+    Decompose: "Explain the concept of quantum entanglement and its potential applications."
+    - "Explain the concept of quantum entanglement."
+    - "What are the potential applications of quantum entanglement?"
+
+    Decompose: "Describe the process of photosynthesis and its importance to the ecosystem."
+    - "What is the process of photosynthesis?"
+    - "Why is photosynthesis important to the ecosystem?"
+
+    Decompose: "How did the industrial revolution shape modern economies, influence technology, and society?"
+    - "How did the industrial revolution shape modern economies?"
+    - "How did the industrial revolution influence technology?"
+    - "How did the industrial revolution influence society?"
+     
+    Decompose: "What is the first letter of the alphabet?"
+    - "What is the first letter of the alphabet?"
+
+    Decompose: "How many cows are in America?"
+    "How many cows are in America?"
+
+    Here is the query to decompose: {query}"""
+    inputs = tokenizer(input_text, return_tensors="pt", truncation=True)
+
+    # Generate the model output
+    outputs = model.generate(**inputs, max_length=128, num_return_sequences=1)
+
+    # Decode the generated text into a list of simple queries
+    simple_queries = [tokenizer.decode(output, skip_special_tokens=True).replace(' - ', ',').split(',') for output in outputs]
+    return simple_queries[0]
+
 def generate_synthetic_queries(documents: pd.DataFrame, settings: dict) -> pd.DataFrame:
     """
     Generate synthetic queries using the FLAN approach.

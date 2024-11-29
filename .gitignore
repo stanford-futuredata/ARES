@@ -68,6 +68,9 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+test.py
+tests/
+aresdocs/
 
 # Sphinx documentation
 docs/_build/

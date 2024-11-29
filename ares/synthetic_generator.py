@@ -5,12 +5,14 @@ from .LLM_as_a_Judge_Adaptation.Generate_Synthetic_Queries_and_Answers import (
     # generate_contradictory_answers,
     generate_few_shot_prompts,
     generate_synthetic_queries,
+    query_decomposition_post_processing,
     Generate_Synthetic_Answers
 )
 
 import os
 
 def synthetic_generator_config(
+    query_decomposition: bool,
     document_filepaths: list, 
     few_shot_prompt_filenames: list,
     synthetic_queries_filenames: list, 
@@ -42,12 +44,13 @@ def synthetic_generator_config(
         "Create an answer for the given question that contradicts the provided document. "
         "You should create false information that disagrees with what exists within the content of the document.\n\n"
     ),
-    azure_openai_config: dict = None
+    azure_openai_config: dict = None,
 ) -> None:
     """
     Configures and generates synthetic queries and answers based on the provided parameters.
 
     Args:
+        query_decomposition (bool): Will synthetically generated queries be decomposed.
         document_filepaths (list): List of file paths to the documents.
         few_shot_prompt_filenames (list): List of filenames for the few-shot prompts.
         synthetic_queries_filenames (list): List of filenames for the synthetic queries.
@@ -132,6 +135,9 @@ def synthetic_generator_config(
         }
 
         generate_synthetic_queries(documents, synthetic_queries_config)
+
+        if query_decomposition:
+            query_decomposition_post_processing(synthetic_queries_filename)
 
         synthetic_answers_config = {
             'regenerate_answers': regenerate_answers,
