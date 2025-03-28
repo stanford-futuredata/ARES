@@ -33,7 +33,7 @@ class ARES:
             "model_choice": (str, "gpt-3.5-turbo-1106"),  # Optional with default
             "request_delay": (int, 0),  # Optional with default
             "vllm": (bool, False),  # Optional with default
-            "azure_openai_config": (dict, None),  # Optional with default
+            "azure_openai_config": (dict, "None"),  # Optional with default
             "host_url": (str, "None")  # Optional with default
         },
 
@@ -79,7 +79,7 @@ class ARES:
             "number_of_runs": (int, 1),  # Optional with default
             "num_warmup_steps": (int, 100),  # Optional with default
             "training_row_limit": (int, -1),  # Optional with default
-            "validation_row_limit": (int, -1)  # Optional with default
+            "validation_row_limit": (int, -1),  # Optional with default
         },
 
         "ppi": {
@@ -113,23 +113,17 @@ class ARES:
         # deployment_name(str, azure deployment name)
     }
 
-    def __init__(self, synthetic_query_generator={}, ues_idp={}, classifier_model={}, ppi={}):
+    def __init__(self, components=None, **configs):
         """
-        Initializes the ARES class with configurations for different components.
-
         Args:
-            synthetic_query_generator (dict): Configuration for the synthetic query generator.
-            ues_idp (dict): Configuration for UES IDP.
-            classifier_model (dict): Configuration for the classifier model.
-            ppi (dict): Configuration for PPI (Protein-Protein Interaction).
-
-        Each configuration dictionary is passed to the `prepare_config` method to validate
-        and prepare the final configuration based on the default settings defined in `config_spec`.
+            components: List of components to initialize ['synthetic', 'classifier', 'rag', 'ues']
         """
-        self.synthetic_query_generator_config = self.prepare_config("synthetic_query_generator", synthetic_query_generator)
-        self.classifier_model_config = self.prepare_config("classifier_model", classifier_model)
-        self.ppi_config = self.prepare_config("ppi", ppi)
-        self.ues_idp_config = self.prepare_config("ues_idp", ues_idp)
+        self.components = components or []
+        if 'synthetic' in self.components:
+            self.setup_synthetic(configs.get('synthetic_query_generator', {}))
+        self.ues_idp_config = self.prepare_config("ues_idp", configs.get("ues_idp", {}))
+        self.classifier_model_config = self.prepare_config("classifier_model", configs.get("classifier_model", {}))
+        self.ppi_config = self.prepare_config("ppi", configs.get("ppi", {}))
 
     def generate_synthetic_data(self):
         """
