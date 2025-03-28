@@ -19,26 +19,22 @@ import torch
 from datasets import Dataset
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-from transformers import (AutoConfig, AutoModelForCausalLM, AutoModelForSeq2SeqLM,
-                          AutoTokenizer, BitsAndBytesConfig)
+from transformers import (AutoModelForCausalLM, AutoModelForSeq2SeqLM,
+                          AutoTokenizer)
 
 from ares.LLM_as_a_Judge_Adaptation.Filter_Synthetic_Queries import (filter_synthetic_queries,
                                                                       generate_additional_negatives,
                                                                       generate_additional_positives,
-                                                                      generate_index, get_embedding)
+                                                                      generate_index)
 from ares.LLM_as_a_Judge_Adaptation.LLM_Generation_Functions import (check_generated_answer,
-                                                                      generate_answer_from_context,
                                                                       generate_answer_llm_approach,
-                                                                      generate_contradictory_answer_examples,
-                                                                      generate_contradictory_answer_from_context,
                                                                       generate_synthetic_query_llm_approach,
-                                                                      generate_synthetic_query_openai_approach)
+                                                                      )
 
 from ares.LLM_as_a_Judge_Adaptation.LLM_Synthetic_Generation import (generate_synthetic_query_api_approach,
                                                                      generate_synthetic_query_azure_approach,
                                                                     generate_synthetic_answer_api_approach,
-                                                                    generate_synthetic_answer_azure_approach,
-                                                                    generate_synthetic_contradictory_answers_api_approach)
+                                                                    generate_synthetic_answer_azure_approach)
 
 from ares.LLM_as_a_Judge_Adaptation.vLLM_Generation_Functions import (generate_synthetic_query_vllm_approach,
                                                                 generate_synthetic_answer_vllm_approach)
@@ -315,10 +311,10 @@ def generate_query(document: str, settings: dict) -> list:
         list: List of generated synthetic queries.
     """
 
-    if settings['azure_api_config']:
+    if settings['azure_openai_config'] == True:
         return generate_synthetic_query_azure_approach(
             document, 
-            settings['azure_api_config'],
+            settings['azure_openai_config'],
             settings["synthetic_query_prompt"], 
             settings['few_shot_examples'], 
             settings['length_of_fewshot_prompt'], 
@@ -571,7 +567,7 @@ def generate_answers(synthetic_queries: pd.DataFrame, answer_generation_settings
     Returns:
         pd.DataFrame: DataFrame containing the synthetic queries with generated answers.
     """
-    if answer_generation_settings['azure_openai_config']:
+    if answer_generation_settings['azure_openai_config'] == True:
         tqdm.pandas(desc=f"Generating answers... (Azure OpenAI Model)", total=synthetic_queries.shape[0])
         synthetic_queries["generated_answer"] = synthetic_queries.progress_apply(
             lambda x: generate_synthetic_answer_azure_approach(
